@@ -210,7 +210,27 @@
       bar.parentElement.appendChild(label);
     });
   }
-  function showDetail(item, doc, forecast) {
+  function openLightbox(shots, index) {
+    document.querySelector('.lightbox')?.remove();
+    const box=el('div','lightbox');box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');
+    const img=document.createElement('img'),caption=el('div','lightbox__caption');
+    const show=i=>{
+      index=(i+shots.length)%shots.length;
+      const s=shots[index];
+      img.src=global.RoadmapShots.url(s);img.alt=s.caption||'';
+      caption.textContent=`${index+1}/${shots.length} · ${global.Forecast.dateTime(Date.parse(s.at))} · ${s.caption||''}`;
+    };
+    const close=()=>{document.removeEventListener('keydown',onKey,true);box.remove();};
+    const onKey=e=>{
+      if(e.key==='Escape'){e.stopPropagation();close();}
+      else if(e.key==='ArrowRight')show(index+1);
+      else if(e.key==='ArrowLeft')show(index-1);
+    };
+    box.addEventListener('click',e=>{if(e.target===box)close();});
+    document.addEventListener('keydown',onKey,true);
+    box.append(img,caption);document.body.appendChild(box);show(index);
+  }
+  function showDetail(item, doc, forecast, focusShotId) {
     document.querySelector('.task-detail-overlay')?.remove();
     const overlay=el('div','task-detail-overlay');
     const panel=el('section','task-detail-panel');
@@ -239,20 +259,40 @@
       const line=el('div','task-detail-row');line.append(el('span','',label),el('strong','',value));panel.appendChild(line);
     });
     if(item.note)panel.appendChild(el('p','task-detail-note',item.note));
-    const changes=(doc.estimateChanges||[]).filter(change=>change.taskId.toUpperCase()===(item.taskId||'').toUpperCase());
-    if(changes.length){
-      panel.appendChild(el('h3','hud-card__head-label',t('estimateHistory')));
-      changes.forEach(change=>panel.appendChild(el('div','estimate-event',`${change.at} · ${change.remaining} ${t('remaining')} · ${change.reason||t('noReason')}`)));
-    }
-    const commits=item.taskId?(global.RoadmapGit||[]).filter(c=>c.tasks.includes(item.taskId.toUpperCase())):[];
-    if(commits.length){
-      panel.appendChild(el('h3','hud-card__head-label',t('commits')));
-      commits.slice(0,8).forEach(c=>{
-        const line=el('div','estimate-event commit-event');
-        line.append(el('code','',c.hash),document.createTextNode(` ${c.subject} `),el('span','diff-add',`+${c.add}`),document.createTextNode(' '),el('span','diff-sub',`-${c.del}`));
-        panel.appendChild(line);
-      });
-    }
+    const id=(item.taskId||'').toUpperCase();
+    const when=v=>global.Forecast.timestamp(v);
+    const events=[];
+    if(item.start)events.push({at:when(item.start),icon:'▶',text:t('started')});
+    (doc.estimateChanges||[]).filter(c=>c.taskId.toUpperCase()===id)
+      .forEach(c=>events.push({at:when(c.at),icon:'↻',text:`ETA ${c.remaining} ${t('remaining')} · ${c.reason||t('noReason')}`}));
+    (id?(global.RoadmapGit||[]).filter(c=>c.tasks.includes(id)):[])
+      .forEach(c=>events.push({at:c.time,icon:'⎇',text:`${c.hash} ${c.subject}`,diff:`+${c.add} -${c.del}`}));
+    const shots=global.RoadmapShots?.available?global.RoadmapShots.forTask(id):[];
+    shots.forEach((s,i)=>events.push({at:Date.parse(s.at),shot:s,index:i}));
+    if(item.status==='done'&&item.end)events.push({at:when(item.end),icon:'✓',text:t('done')});
+    events.sort((a,b)=>(a.at||0)-(b.at||0));
+    panel.appendChild(el('h3','hud-card__head-label',t('activity')));
+    const logEl=el('div','task-log');
+    events.forEach(ev=>{
+      const row=el('div','task-log__row');
+      row.appendChild(el('span','task-log__time',ev.at?global.Forecast.dateTime(ev.at):'—'));
+      if(ev.shot){
+        const thumb=document.createElement('img');
+        Object.assign(thumb,{className:'task-log__thumb',loading:'lazy',src:global.RoadmapShots.url(ev.shot),alt:ev.shot.caption||item.name});
+        thumb.addEventListener('click',()=>openLightbox(shots,ev.index));
+        const body=el('div','task-log__shot');
+        body.append(thumb,el('div','task-log__caption',`${ev.shot.kind==='final'?'★ ':''}${ev.shot.caption||''}`),el('div','task-log__meta',ev.shot.source));
+        row.append(el('span','task-log__icon','📷'),body);
+        if(ev.shot.id===focusShotId)requestAnimationFrame(()=>row.scrollIntoView({block:'center'}));
+      }else{
+        row.append(el('span','task-log__icon',ev.icon),el('span','task-log__text',ev.text));
+        if(ev.diff)row.appendChild(el('span','task-log__diff',ev.diff));
+      }
+      logEl.appendChild(row);
+    });
+    if(!events.length)logEl.appendChild(el('div','task-log__empty',t('noActivity')));
+    panel.appendChild(logEl);
+    if(!global.RoadmapShots?.available)panel.appendChild(el('p','task-log__hint',t('shotsServeOnly')));
     overlay.appendChild(panel);document.body.appendChild(overlay);close.focus();
   }
   function tickNow() {
