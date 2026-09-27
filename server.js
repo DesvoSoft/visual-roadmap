@@ -7,6 +7,7 @@
    - GET /sse        → text/event-stream with "roadmap" events
    - GET /ping       → 200 OK (health check)
    - GET /content    → current ROADMAP.md as JSON { content }
+   - GET /git        → recent commits { commits: [{hash,time,subject,tasks,add,del}] }
    - OPTIONS *       → CORS preflight
 */
 
@@ -28,6 +29,7 @@ function serve({ file, port = 3579 } = {}) {
   const clients = new Set();
   let lastContent = '';
   let lastMtime   = 0;
+  let gitCache    = null;
 
   function readFile() {
     try { return fs.readFileSync(file, 'utf8'); }
@@ -35,6 +37,7 @@ function serve({ file, port = 3579 } = {}) {
   }
 
   function broadcast(content) {
+    gitCache = null;   /* a roadmap change usually follows a commit */
     const payload = `event: roadmap\ndata: ${JSON.stringify(content)}\n\n`;
     for (const res of clients) {
       try { res.write(payload); }
@@ -125,6 +128,16 @@ function serve({ file, port = 3579 } = {}) {
     if (url.pathname === '/ping') {
       res.writeHead(200, { 'Content-Type': 'text/plain' });
       res.end('pong');
+      return;
+    }
+
+    /* Recent commits (task IDs in subjects link them to tasks); cached briefly */
+    if (url.pathname === '/git') {
+      if (!gitCache || Date.now() - gitCache.at > 10000) {
+        gitCache = { at: Date.now(), commits: require('./git.js').recentCommits(path.dirname(file), 60) };
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
+      res.end(JSON.stringify({ commits: gitCache.commits }));
       return;
     }
 

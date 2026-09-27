@@ -1,7 +1,7 @@
 {
   "name": "visual-roadmap",
   "version": "0.1.0",
-  "description": "Live roadmap viewer for autonomous AI sessions. Any AI agent can update ROADMAP.md; the browser viewer renders it in real time.",
+  "description": "Live roadmap for vibecoding: your coding agent keeps ROADMAP.md current with one-line commands and you watch progress, ETAs and problems in the browser.",
   "author": "DesvoSoft",
   "license": "MIT",
   "keywords": [
@@ -20,6 +20,8 @@
   "main": "./cli.js",
   "files": [
     "cli.js",
+    "agent.js",
+    "git.js",
     "server.js",
     "build.js",
     "dist/",
