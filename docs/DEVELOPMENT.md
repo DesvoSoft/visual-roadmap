@@ -5,7 +5,9 @@
 | Ruta | Función |
 | --- | --- |
 | `cli.js` | Comandos `init`, `live`, `serve`, `open` y `skill`. |
-| `server.js` | Servidor local y eventos SSE al cambiar el roadmap. |
+| `agent.js` | Ediciones deterministas de `ROADMAP.md` para los comandos del agente (`start`, `done`, `eta`…). Funciones puras texto → texto. |
+| `git.js` | Lectura de git sin escribir: commits recientes con IDs de tarea y líneas cambiadas desde una hora dada. |
+| `server.js` | Servidor local, eventos SSE al cambiar el roadmap y `/git` para commits. |
 | `viewer/` | Fuentes del visor: parser, previsiones, vistas, idiomas y estilos. |
 | `build.js` | Inserta CSS y JavaScript del visor en un HTML portátil. |
 | `dist/roadmap.html` | HTML generado que se copia con `init` y sirve en modo live. |

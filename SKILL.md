@@ -1,78 +1,79 @@
 ---
 name: visual-roadmap
-description: Keep ROADMAP.md current so a local viewer can show agent progress and changing ETAs.
-applies_to:
-  - "ROADMAP.md"
-  - "roadmap.md"
+description: Use when doing coding work in a project with ROADMAP.md. Split each request into small verifiable tasks and keep the user informed with one-line `npx visual-roadmap` commands (start, done, block, eta).
 ---
 
-# Visual Roadmap: protocolo breve para agentes
+# Visual Roadmap: protocolo para agentes
 
-Actualiza `ROADMAP.md` **solo cuando cambia un hecho**: inicio, fin, bloqueo, alcance, progreso verificable o estimación. El visor calcula el reloj y las alertas entre escrituras. No reescribas el archivo cada minuto.
+El usuario ve `ROADMAP.md` en vivo: tarea actual, tiempo transcurrido, ETA, bloqueos y problemas del plan. Tu parte es **planificar bien una vez y ejecutar un comando corto en cada cambio de estado**. El visor calcula relojes, ETAs y proyecciones. No escribas nada solo porque pasó el tiempo.
 
-## Al comenzar
+## Ciclo
 
-1. Lee la petición y el repositorio. Si falta `ROADMAP.md`, créalo con entregables comprobables; conserva un roadmap existente y corrige solo lo que haga falta.
-2. Agrupa las tareas por **versiones o entregas reales**, en orden de dependencia. Usa encabezados `### v0.1 · Nombre`, `### v0.2 · Nombre` (o `### R1 · Nombre`) bajo `## Releases`. No mezcles tareas de instalación del visor con la visión del producto salvo que sean un entregable explícito.
-3. Da a cada tarea un ID estable (`T001`), estado, progreso, esfuerzo estimado y dependencias. Mantén una sola tarea `active` si estás trabajando; si acabaste la sesión, deja claro cuál sigue. No marques una versión `done` mientras conserve tareas abiertas.
-4. Para el trabajo actual, escribe `now_task.started_at` con fecha y hora local y `now_task.expected` con **tu mejor estimación**, aunque sea aproximada (`45m`, `01:30`, `2h`). Actualiza `updated`.
-5. Pon fechas `Inicio` y `Fin` para tareas ya realizadas y para una ventana próxima que puedas planificar razonablemente. Para trabajo lejano o incierto, deja `—`; el visor dibuja una proyección rayada a partir del esfuerzo. No presentes esa proyección como fecha comprometida.
+1. **Retomar:** lee el resumen `[visual-roadmap]` del inicio de sesión. Si no aparece, ejecuta `npx visual-roadmap status`.
+2. **Planificar**, solo si la petición todavía no está en el roadmap: divídela con `add` (ver abajo).
+3. **Trabajar:** `start T004` → implementar → verificar → `done T004 --note "evidencia" --next`.
+   `done` registra fin, duración real y líneas cambiadas, y `--next` arranca la siguiente tarea lista.
+4. **Imprevistos:** `block T004 "causa"` · `eta T004 20m "razón"` (tiempo **restante**) · `split T004 …` si creció.
 
-```yaml
----
-title: Mi proyecto
-updated: 2026-09-26 14:20
-capacity: 1
-version: "0.1"
-now_task:
-  id: T001
-  name: Integrar autenticación
-  context: Fase 1 · Acceso
-  started_at: 2026-09-26 14:20
-  expected: 01:30
----
+Pon el ID en el mensaje de commit (`T004: valida email`): el visor enlaza el commit con la tarea.
+
+## Cómo dividir una petición
+
+Hazlo antes de escribir código:
+
+- **Una tarea es un resultado verificable de 15 a 90 min**, verificación incluida. Nómbrala por lo observable ("El login rechaza contraseñas incorrectas"), no por la actividad ("Trabajar en login").
+- **Si pasa de 2 h, divídela** por resultado (rebanadas verticales: endpoint + UI + prueba de un caso), no por capa ("todo el backend").
+- **La verificación va dentro de cada tarea.** Solo crea una tarea de pruebas aparte para e2e o QA manual reales.
+- **Una versión es algo que el usuario puede usar** (`v0.1 · Login básico`), con 3 a 8 tareas. Primero lo que desbloquea lo demás.
+- **Declara dependencias solo si son reales.** `--after T002` coloca la tarea detrás de T002 y la hace depender de ella.
+- **Estima con honestidad**, incluyendo leer código y verificar: ajuste acotado 10–30 min, función pequeña con prueba 30–60, integración 60–120. No copies la misma cifra a todo.
+- **No sobreplanifiques:** una petición de un solo paso y menos de 30 min es una sola tarea.
+- **Si cambia el alcance:** `add` para lo nuevo, `split` para lo que creció y `cancelled` a mano para lo que ya no aplica.
+
+```bash
+npx visual-roadmap add "El login acepta credenciales válidas" --effort 45m --release "v0.1 · Acceso"
+npx visual-roadmap add "La sesión persiste al recargar" --effort 30m --after T001
+npx visual-roadmap split T003 "Enviar email de reset:30m" "Pantalla de nueva contraseña:45m"
 ```
 
-## Tareas
+`add` sin `--release` usa la versión de la tarea activa. `split` cancela la original, encadena las partes y pasa sus dependientes a la última parte.
+
+## Comandos
+
+| Cuándo | Comando |
+| --- | --- |
+| Retomar | `status` — tarea actual, ETA, siguientes listas, errores |
+| Planificar | `add "Resultado" --effort 30m [--release "v0.2 · Nombre"] [--after T003]` |
+| Tarea demasiado grande | `split T005 "Parte A:30m" "Parte B:45m"` |
+| Empezar | `start T004 [--expected 40m]` (por defecto usa el esfuerzo) |
+| Avance verificable | `progress T004 60` |
+| La ETA ya no es creíble | `eta T004 25m "razón"` |
+| Terminar | `done T004 --note "evidencia" [--next]` |
+| Bloqueo | `block T004 "causa"` |
+| Decisión o nota | `log "texto"` |
+| Tras editar a mano | `check` — corrige todo `✗` |
+
+Todos se ejecutan con `npx visual-roadmap …` y responden en una línea. `status` y `check` aceptan `--json`.
+
+## Reglas
+
+- Marca `done` solo con evidencia: prueba, build o comprobación descrita en `--note`. Nunca inventes resultados.
+- Una sola tarea `active` por agente. Si la dejas sin terminar, usa `block` con la causa.
+- Si la ETA venció: `done` si terminaste; si no, `eta` con el tiempo restante y la razón. Ir lento no es un problema; dejar una ETA vieja sí.
+- No edites a mano `updated`, `now_task`, `Inicio`, `Fin` ni `Real`: los comandos los mantienen.
+- Edita el archivo a mano solo para reordenar, renombrar o cancelar, y luego ejecuta `check`.
+- Si al terminar un turno recibes un mensaje `[visual-roadmap] …` (hook de Claude Code), resuélvelo con el comando que indica y continúa.
+
+## Formato, por si editas a mano
 
 ```markdown
 ## Releases
 
-### v0.1 · Acceso inicial
-`2026-09-26 → 2026-09-28` · **active**
-
-| Item | Estado | Progreso | Owner | Esfuerzo | Inicio | Fin | Depende | Prio |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| T001 Integrar autenticación | active | 20% | @agente | 1.5h | 2026-09-26 | 2026-09-26 | — | P0 |
-| T002 Pruebas de acceso | planned | 0% | @agente | 1h | 2026-09-26 | 2026-09-28 | T001 | P1 |
+### v0.1 · Acceso
+| Item | Estado | Progreso | Esfuerzo | Inicio | Fin | Depende | Real |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| T001 El login acepta credenciales válidas | done | 100% | 45m | 2026-09-26 14:20 | 2026-09-26 15:02 | — | 42m |
+| T002 La sesión persiste al recargar | planned | 0% | 30m | — | — | T001 | — |
 ```
 
-El progreso debe representar trabajo comprobable. No incrementes porcentajes solo porque pasó tiempo. Mantén el orden de las filas según la secuencia prevista; así el cronograma puede proyectarlas sin depender de una fecha inventada para cada una.
-
-## Al cambiar la ETA
-
-Estima los minutos **restantes** y añade una línea a `## Estimaciones`:
-
-```markdown
-## Estimaciones
-
-- 2026-09-26 15:10 | T001 | 50m | Apareció un caso de sesión expirada
-```
-
-El visor conserva la ETA inicial, calcula la nueva y muestra la razón. Si la ETA venció, revisa el tiempo restante en el siguiente punto de trabajo relevante. No actualices `elapsed`; el visor lo calcula desde `started_at`.
-
-## Al terminar o bloquearse
-
-- Cambia el estado de la fila y su progreso. Si se terminó, usa `done` y `100%`. Si conoces la duración real, añádela en una columna opcional `Real` (`55m`, `2h`); ayuda a calibrar previsiones futuras.
-- Si hay bloqueo, usa `blocked` y registra la causa en `## Últimos cambios`.
-- Al empezar la siguiente tarea, cambia `now_task` y su `started_at` y `expected`.
-- Actualiza `updated` únicamente cuando escribas cambios reales.
-
-```markdown
-## Últimos cambios
-
-- 15:35 | ✓ | T001 Autenticación terminada | +84 -12
-- 15:10 | ⚠ | T001 ETA revisada por sesión expirada |
-```
-
-Las horas y duraciones son estimaciones; los estados `done`, los porcentajes y los cambios registrados deben corresponder a evidencia del trabajo.
+Estados: `planned`, `active`, `blocked`, `risk`, `done`, `cancelled`. Esfuerzo: `20m`, `1.5h`. El orden de las filas es la secuencia prevista. Detalles en `docs/ROADMAP_FORMAT.md` del paquete.
