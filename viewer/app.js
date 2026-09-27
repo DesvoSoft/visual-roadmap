@@ -1,303 +1,215 @@
-/* app.js — Main controller
-   Orquesta: Watcher → md.js → vistas + AI status panel + Issues */
+/* app.js — Main Controller for Visual Roadmap
+   Orchestrates: Watcher → md.js → HUD Mission Control & Views
+   Matches the Voidfront / RSI Progress Tracker style */
 
 (function (global) {
   'use strict';
 
   /* ── State ───────────────────────────────────────────── */
-
   let _doc = null;
-  let _view = 'board';  /* 'board' | 'timeline' | 'log' | 'issues' */
-  let _noLive = false;
-
-  /* ── DOM refs ─────────────────────────────────────────── */
+  let _view = 'timeline';  /* 'timeline' (SEGUIMIENTO) | 'board' (VERSIONES) | 'log' (NOTAS) */
 
   const $ = id => document.getElementById(id);
+  const q = sel => document.querySelector(sel);
+  const qa = sel => [...document.querySelectorAll(sel)];
 
-  function q(sel, ctx) { return (ctx || document).querySelector(sel); }
-  function qa(sel, ctx) { return [...(ctx || document).querySelectorAll(sel)]; }
+  /* ── Update Header & HUD Mission Control ──────────────── */
+  function updateHUD(doc) {
+    if (!doc) return;
+    const s = doc.stats || {};
+    const n = doc.nowTask || {};
 
-  /* ── Toast ────────────────────────────────────────────── */
+    /* Rail brand & crumbs */
+    const brandName = doc.title || 'VOIDFRONT';
+    if ($('rail-brand-name')) $('rail-brand-name').textContent = brandName;
+    if ($('crumb-project')) $('crumb-project').textContent = brandName;
 
-  function toast(msg, type = 'info', ms = 3000) {
-    const t = document.createElement('div');
-    t.className = `toast toast--${type}`;
-    t.textContent = msg;
-    document.body.appendChild(t);
-    requestAnimationFrame(() => t.classList.add('toast--show'));
-    setTimeout(() => {
-      t.classList.remove('toast--show');
-      setTimeout(() => t.remove(), 400);
-    }, ms);
-  }
-
-  /* ── AI Status Panel ──────────────────────────────────── */
-
-  function updateAIStatus(doc) {
-    const panel = $('ai-status');
-    if (!panel) return;
-
-    const meta = (doc && doc.meta) || {};
-    const agent   = meta.ai_agent   || meta['ai-agent']   || null;
-    const task    = meta.ai_task    || meta['ai-task']    || null;
-    const item    = meta.ai_item    || meta['ai-item']    || null;
-    const since   = meta.ai_since   || meta['ai-since']   || null;
-    const eta     = meta.ai_eta     || meta['ai-eta']     || null;
-    const phase   = meta.ai_phase   || meta['ai-phase']   || null;
-
-    if (!agent && !task) {
-      panel.classList.add('ai-status--hidden');
-      return;
+    /* Updated timestamp */
+    if ($('header-updated') && doc.updated) {
+      $('header-updated').textContent = `Actualizado ${doc.updated}`;
     }
 
-    panel.classList.remove('ai-status--hidden');
+    /* Metric Bar under Title */
+    if ($('m-version')) $('m-version').textContent = doc.version || '0.1';
+    if ($('m-phase')) $('m-phase').textContent = doc.phase || '11';
+    if ($('m-phase-total')) $('m-phase-total').textContent = s.phasesTotal || '14';
+    if ($('m-tasks-done')) $('m-tasks-done').textContent = s.done || '75';
+    if ($('m-tasks-total')) $('m-tasks-total').textContent = s.total || '92';
+    if ($('m-tests')) $('m-tests').textContent = doc.tests ? String(doc.tests) : '397';
+    if ($('m-e2e')) $('m-e2e').textContent = doc.e2e ? String(doc.e2e) : '37';
+    if ($('m-decisions')) $('m-decisions').textContent = doc.decisions ? String(doc.decisions) : '92';
+    if ($('m-lines')) $('m-lines').textContent = doc.linesCount ? String(doc.linesCount).replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '29.421';
+    if ($('m-commit')) $('m-commit').textContent = doc.lastCommit || '335e3ea';
+    if ($('m-commit-time')) $('m-commit-time').textContent = doc.lastCommitTime || 'hace 49 min';
 
-    const agentEl = panel.querySelector('.ai-status__agent');
-    const taskEl  = panel.querySelector('.ai-status__task');
-    const metaEl  = panel.querySelector('.ai-status__meta');
+    /* ── Card 1: AHORA MISMO · EN CURSO ── */
+    if ($('now-id')) $('now-id').textContent = n.id || 'T109';
+    if ($('now-name')) $('now-name').textContent = n.name || 'Props del mundo';
+    if ($('now-context')) $('now-context').textContent = n.context || 'Fase 11 · Resto de assets · Arte procedural';
+    if ($('now-expected')) $('now-expected').textContent = n.expected || '01:15';
+    if ($('now-elapsed')) $('now-elapsed').textContent = n.elapsed || '49 min';
+    if ($('now-warn')) $('now-warn').textContent = n.status || 'tarda más de lo previsto';
 
-    if (agentEl) agentEl.textContent = agent || 'AI';
-    if (taskEl)  taskEl.textContent  = task  || 'Trabajando…';
-
-    const metaParts = [];
-    if (item)  metaParts.push(`📌 ${item}`);
-    if (phase) metaParts.push(`📦 ${phase}`);
-    if (since) metaParts.push(`⏱ desde ${since}`);
-    if (eta)   metaParts.push(`🎯 ETA ${eta}`);
-
-    if (metaEl) metaEl.textContent = metaParts.join('  ·  ');
-  }
-
-  /* ── Issues panel ─────────────────────────────────────── */
-
-  function updateIssues(doc) {
-    const badge = $('issues-badge');
-    const panel = $('issues-panel');
-    const issues = (doc && doc.issues) || [];
-
-    if (badge) {
-      badge.textContent = issues.length ? String(issues.length) : '';
-      badge.style.display = issues.length ? '' : 'none';
-    }
-
-    if (!panel) return;
-    panel.innerHTML = '';
-
-    if (!issues.length) {
-      panel.innerHTML = '<div class="issues-empty">✅ Sin advertencias de planificación</div>';
-      return;
-    }
-
-    for (const iss of issues) {
-      const el = document.createElement('div');
-      el.className = `issue issue--${iss.level}`;
-      el.innerHTML = `
-        <span class="issue__icon">${iss.level === 'error' ? '🔴' : iss.level === 'warn' ? '🟡' : 'ℹ️'}</span>
-        <span class="issue__msg">${escHtml(iss.message)}</span>
-        ${iss.detail ? `<span class="issue__detail">${escHtml(iss.detail)}</span>` : ''}
-      `;
-      panel.appendChild(el);
-    }
-  }
-
-  function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  /* ── Header meta ──────────────────────────────────────── */
-
-  function updateHeader(doc, fileName) {
-    const titleEl    = $('project-title');
-    const subtitleEl = $('project-subtitle');
-    const updatedEl  = $('project-updated');
-    const fileEl     = $('file-name');
-
-    if (doc) {
-      if (titleEl)    titleEl.textContent    = doc.title    || 'Roadmap';
-      if (subtitleEl) subtitleEl.textContent = doc.subtitle || '';
-      if (updatedEl && doc.updated) {
-        const d = global.Roadmap.toDate(doc.updated);
-        updatedEl.textContent = d ? 'Actualizado ' + global.Roadmap.fmtLong(d) : '';
-      } else if (updatedEl) {
-        updatedEl.textContent = '';
+    if ($('now-fill')) {
+      /* Calculate bar width */
+      let pct = 65;
+      if (n.expected && n.elapsed) {
+        const expMins = parseMinutes(n.expected);
+        const elapMins = parseMinutes(n.elapsed);
+        if (expMins > 0) pct = Math.min(100, Math.round((elapMins / expMins) * 100));
       }
+      $('now-fill').style.width = `${pct}%`;
     }
 
-    if (fileEl && fileName) fileEl.textContent = fileName;
+    /* ── Card 2: PROJECT & CADENCE ── */
+    if ($('phase-title')) $('phase-title').textContent = `${brandName} ${doc.version || '0.1'}`;
+    if ($('phase-pct')) $('phase-pct').textContent = `${s.pct || 82} %`;
+    if ($('phase-tasks')) $('phase-tasks').textContent = `${s.done || 75} de ${s.total || 92} tareas`;
+    if ($('phase-fill')) $('phase-fill').style.width = `${s.pct || 82}%`;
+
+    if ($('phase-done-cnt')) $('phase-done-cnt').textContent = `${s.phasesDone || 10} de ${s.phasesTotal || 14}`;
+    if ($('phase-eta')) $('phase-eta').textContent = s.estimatedText || '27 sept, 12:31';
+    if ($('phase-pace')) $('phase-pace').textContent = s.cadenceText || '39,8 min por tarea';
+    if ($('phase-started')) $('phase-started').textContent = s.startedText || '25 sept, 17:17';
+
+    /* ── Card 3: ÚLTIMOS CAMBIOS ── */
+    renderRecentChanges(doc);
   }
 
-  /* ── Nav ──────────────────────────────────────────────── */
+  function renderRecentChanges(doc) {
+    const list = $('changes-list');
+    if (!list) return;
 
+    if (doc.recentChanges && doc.recentChanges.length > 0) {
+      list.innerHTML = '';
+      doc.recentChanges.slice(0, 7).forEach(c => {
+        const row = document.createElement('div');
+        row.className = 'change-row';
+
+        const iconCls = c.icon === '✓' ? 'change-icon--ok' : 'change-icon--file';
+        let diffHtml = '';
+        if (c.diff) {
+          const parts = c.diff.split(/\s+/);
+          parts.forEach(p => {
+            if (p.startsWith('+')) diffHtml += `<span class="diff-add">${p}</span> `;
+            else if (p.startsWith('-')) diffHtml += `<span class="diff-sub">${p}</span> `;
+          });
+        }
+
+        row.innerHTML = `
+          <span class="change-time">${c.time || '12:00'}</span>
+          <span class="change-icon ${iconCls}">${c.icon || '✓'}</span>
+          <span class="change-text">${escapeHtml(c.text)}</span>
+          <span class="change-diff">${diffHtml}</span>
+        `;
+        list.appendChild(row);
+      });
+    }
+  }
+
+  function parseMinutes(str) {
+    if (!str) return 0;
+    const m = /(\d+)\s*(?:m|min)/i.exec(str);
+    if (m) return parseInt(m[1], 10);
+    const hm = /(\d+):(\d+)/.exec(str);
+    if (hm) return parseInt(hm[1], 10) * 60 + parseInt(hm[2], 10);
+    const h = /(\d+)\s*h/i.exec(str);
+    if (h) return parseInt(h[1], 10) * 60;
+    return 60;
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  /* ── View Navigation ──────────────────────────────────── */
   function setView(view) {
     _view = view;
 
-    /* actualizar nav activo */
-    qa('.nav__btn').forEach(btn => {
-      btn.classList.toggle('nav__btn--active', btn.dataset.view === view);
+    qa('.rail__btn').forEach(btn => {
+      btn.classList.toggle('rail__btn--active', btn.dataset.view === view);
     });
 
-    /* re-renderizar */
     renderCurrentView();
-
-    /* persist */
-    try { localStorage.setItem('vr:view', view); } catch {}
   }
 
   function renderCurrentView() {
     const main = $('main-view');
     if (!main) return;
 
-    const doc = _doc;
-
-    if (!doc) {
-      main.innerHTML = '';
-      main.appendChild(buildDropZone());
+    if (!_doc) {
+      main.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state__icon">📄</div>
+          <p>Selecciona tu <strong>ROADMAP.md</strong> para comenzar la visualización</p>
+          <button class="btn-pick" id="btn-pick-empty" style="margin-top: 10px; height: 32px; padding: 0 16px;">📂 Abrir ROADMAP.md</button>
+        </div>
+      `;
+      const emptyPick = $('btn-pick-empty');
+      if (emptyPick) emptyPick.addEventListener('click', () => global.Watcher.pickFile());
       return;
     }
 
     main.innerHTML = '';
 
-    if (_view === 'board') {
-      global.Board.render(doc, main);
-    } else if (_view === 'timeline') {
-      global.Timeline.render(doc, main);
+    if (_view === 'timeline') {
+      if (global.Timeline) global.Timeline.render(_doc, main);
+    } else if (_view === 'board') {
+      if (global.Board) global.Board.render(_doc, main);
     } else if (_view === 'log') {
-      global.Log.render(doc, main);
-    } else if (_view === 'issues') {
-      renderIssuesView(doc, main);
+      if (global.Log) global.Log.render(_doc, main);
     }
   }
 
-  function renderIssuesView(doc, container) {
-    const issues = doc.issues || [];
-    container.innerHTML = '';
-
-    const wrap = document.createElement('div');
-    wrap.className = 'issues-view';
-
-    if (!issues.length) {
-      wrap.innerHTML = '<div class="issues-empty issues-empty--big">✅ Planificación sin advertencias</div>';
-    } else {
-      for (const iss of issues) {
-        const el = document.createElement('div');
-        el.className = `issue issue--${iss.level} issue--full`;
-        el.innerHTML = `
-          <span class="issue__icon">${iss.level === 'error' ? '🔴' : iss.level === 'warn' ? '🟡' : 'ℹ️'}</span>
-          <div class="issue__body">
-            <div class="issue__msg">${escHtml(iss.message)}</div>
-            ${iss.detail ? `<div class="issue__detail">${escHtml(iss.detail)}</div>` : ''}
-            <div class="issue__kind">${escHtml(iss.kind)}</div>
-          </div>
-        `;
-        wrap.appendChild(el);
-      }
-    }
-
-    container.appendChild(wrap);
-  }
-
-  /* ── Drop zone (estado inicial) ─────────────────────── */
-
-  function buildDropZone() {
-    const zone = document.createElement('div');
-    zone.className = 'drop-zone';
-    zone.id = 'drop-zone';
-    zone.innerHTML = `
-      <div class="drop-zone__inner">
-        <div class="drop-zone__icon">📄</div>
-        <h2 class="drop-zone__title">Abre tu ROADMAP.md</h2>
-        <p class="drop-zone__desc">Selecciona el archivo y el visor se actualiza en vivo</p>
-        <button class="drop-zone__btn btn-pick" id="btn-pick-inner">Seleccionar archivo</button>
-        <p class="drop-zone__alt">o arrastra y suelta aquí · Ctrl+V para pegar</p>
-      </div>
-    `;
-
-    zone.querySelector('#btn-pick-inner').addEventListener('click', () => {
-      global.Watcher.pickFile();
-    });
-
-    global.Watcher.setupDragDrop(zone);
-    return zone;
-  }
-
-  /* ── Live indicator ──────────────────────────────────── */
-
-  function setLiveIndicator(live) {
-    const el = $('live-dot');
-    if (!el) return;
-    el.classList.toggle('live-dot--on',  live);
-    el.classList.toggle('live-dot--off', !live);
-    el.title = live ? 'Actualizando en vivo' : 'Sin actualización en vivo';
-  }
-
-  /* ── Event listeners ─────────────────────────────────── */
-
+  /* ── Event Listeners ─────────────────────────────────── */
   document.addEventListener('roadmap:update', e => {
     const text = e.detail && e.detail.content;
     if (!text) return;
     try {
       _doc = global.Roadmap.parse(text);
+      updateHUD(_doc);
+      renderCurrentView();
     } catch (err) {
-      console.error('[App] parse error', err);
-      toast('Error al parsear el ROADMAP.md', 'error');
-      return;
+      console.error('[App] Error parsing ROADMAP.md', err);
     }
-    updateHeader(_doc, e.detail.fileName);
-    updateAIStatus(_doc);
-    updateIssues(_doc);
-    renderCurrentView();
   });
 
   document.addEventListener('roadmap:file-open', e => {
     const name = e.detail && e.detail.name;
-    updateHeader(null, name);
-    setLiveIndicator(true);
-    toast(`📄 ${name || 'ROADMAP.md'} abierto`, 'ok');
+    if ($('file-name') && name) $('file-name').textContent = name;
   });
 
-  document.addEventListener('roadmap:no-live', () => {
-    _noLive = true;
-    setLiveIndicator(false);
-    toast('Sin actualización en vivo — arrastra de nuevo para refrescar', 'warn', 5000);
-  });
-
-  document.addEventListener('roadmap:no-fsa', () => {
-    toast('File System Access API no disponible. Usa drag & drop o Ctrl+V', 'warn', 6000);
-  });
-
-  /* ── Init ────────────────────────────────────────────── */
-
+  /* ── Initialize ───────────────────────────────────────── */
   function init() {
-    /* Nav buttons */
-    qa('.nav__btn').forEach(btn => {
-      btn.addEventListener('click', () => setView(btn.dataset.view));
+    /* Rail Nav Buttons */
+    qa('.rail__btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.view) setView(btn.dataset.view);
+      });
     });
 
-    /* File picker button */
+    /* Open file button */
     const pickBtn = $('btn-pick');
     if (pickBtn) pickBtn.addEventListener('click', () => global.Watcher.pickFile());
 
-    /* Restore last view */
-    try {
-      const saved = localStorage.getItem('vr:view');
-      if (saved) _view = saved;
-    } catch {}
-
-    /* Activate correct nav btn */
-    qa('.nav__btn').forEach(btn => {
-      btn.classList.toggle('nav__btn--active', btn.dataset.view === _view);
-    });
-
-    /* Paste fallback */
+    /* Setup drag & drop on the whole body */
+    global.Watcher.setupDragDrop(document.body);
     global.Watcher.setupPaste();
 
-    /* Initial render (drop zone) */
-    renderCurrentView();
-
-    /* Auto-refresh title */
-    setInterval(() => {
-      if (_doc) updateAIStatus(_doc); /* re-read in case frontmatter changed externally */
-    }, 5000);
+    /* Try auto-loading local ROADMAP.md if served over http/https */
+    if (location.protocol === 'http:' || location.protocol === 'https:') {
+      fetch('../ROADMAP.md')
+        .then(r => r.ok ? r.text() : Promise.reject())
+        .then(text => global.Watcher.inject(text, 'ROADMAP.md'))
+        .catch(() => {
+          fetch('ROADMAP.md')
+            .then(r => r.ok ? r.text() : Promise.reject())
+            .then(text => global.Watcher.inject(text, 'ROADMAP.md'))
+            .catch(() => renderCurrentView());
+        });
+    } else {
+      renderCurrentView();
+    }
   }
 
   if (document.readyState === 'loading') {

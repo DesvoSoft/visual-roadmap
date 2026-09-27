@@ -66,6 +66,18 @@
   --purple-2:   #a878f0;
   --purple-dim: rgba(144,96,224,.14);
 
+  /* ── sci-fi HUD & mission control accents ──────────── */
+  --neon-orange:      #ff7a00;
+  --neon-orange-dim:  rgba(255,122,0,.15);
+  --neon-orange-glow: rgba(255,122,0,.50);
+  --cyan:             #00d4ff;
+  --cyan-dim:         rgba(0,212,255,.14);
+  --cyan-glow:        rgba(0,212,255,.45);
+  --hud-bg:           #07101d;
+  --hud-border:       rgba(0,180,255,.16);
+  --hud-border-2:     rgba(0,180,255,.32);
+  --rail-w:           64px;
+
   /* ── layout ─────────────────────────────────────────── */
   --topbar-h:  56px;
   --nav-h:     44px;

@@ -106,10 +106,21 @@ function cmdInit() {
     ok(`Created  → ${path.relative(CWD, roadmapFile)}`);
   }
 
-  /* 2. Copy viewer */
-  const copied = copyViewer(viewerDir);
+  /* 2. Copy standalone single-file viewer (zero dependencies) */
+  const standaloneSrc = path.join(SELF, 'dist', 'roadmap.html');
+  const standaloneDest = path.join(CWD, 'roadmap.html');
+  if (fs.existsSync(standaloneSrc) && (!fs.existsSync(standaloneDest) || FLAGS.force)) {
+    fs.copyFileSync(standaloneSrc, standaloneDest);
+    ok(`Created  → ${path.relative(CWD, standaloneDest)} (Standalone viewer local)`);
+  }
 
-  /* 3. Copy SKILL.md next to ROADMAP.md */
+  /* 3. Copy modular viewer if flag --modular is provided */
+  if (FLAGS.modular) {
+    copyViewer(viewerDir);
+    info(`Modular viewer copied to: ${path.relative(CWD, viewerDir)}/`);
+  }
+
+  /* 4. Copy SKILL.md next to ROADMAP.md */
   const skillSrc  = path.join(SELF, 'SKILL.md');
   const skillDest = path.join(CWD, 'SKILL.md');
   if (fs.existsSync(skillSrc) && !fs.existsSync(skillDest)) {
@@ -118,14 +129,10 @@ function cmdInit() {
   }
 
   log('');
-  info(`Viewer copied to: ${path.relative(CWD, viewerDir)}/`);
-  log('');
-  log(bold('  Next steps:'));
-  log(`  1. Open ${bold(path.relative(CWD, path.join(viewerDir, 'index.html')))} in Chrome or Edge`);
-  log(`  2. Click  ${bold('📂 Open')} and select ${bold(path.relative(CWD, roadmapFile))}`);
-  log(`  3. The viewer auto-refreshes every 2 s as the AI updates the file`);
-  log('');
-  log(dim('  Tip: run  visual-roadmap serve  for SSE live updates (no File System API needed)'));
+  log(bold('  ¡Listo para usar!'));
+  log(`  1. Haz doble clic en ${bold(path.relative(CWD, standaloneDest))} para abrir el visor en tu navegador.`);
+  log(`  2. Haz clic en ${bold('📂 Abrir')} y selecciona ${bold(path.relative(CWD, roadmapFile))}.`);
+  log(`  3. Tu agente de IA actualizará ${bold('ROADMAP.md')} en silencio y el HUD reflejará el progreso en vivo.`);
   log('');
 }
 

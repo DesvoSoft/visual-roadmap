@@ -317,7 +317,18 @@
   const RE_META_RANGE = /(\d{4}-\d{2}-\d{2})\s*(?:→|->|—>|=>|–)\s*(\d{4}-\d{2}-\d{2})/;
   const RE_META_STATUS = /\*{0,2}(planeado|planned|en curso|active|bloqueado|blocked|en riesgo|at[- ]risk|hecho|done|completo|complete|entregado|shipped|descartado|cancelled|canceled)\*{0,2}/i;
   const RE_META_PROGRESS = /(\d{1,3})\s*%/;
-  const RE_ID = /^([A-Za-z]+[\w.\-]*)\s*[·:\-–—]\s*(.+)$/;
+  function parseNowTask(meta) {
+    if (!meta) return null;
+    const n = meta.now_task || meta.current_task || {};
+    const id = n.id || meta.now_id || meta.current_task_id || meta.ai_item_id || 'T109';
+    const name = n.name || meta.now_name || meta.current_task_name || meta.ai_task || meta.ai_item || '';
+    if (!name && !n.name && !meta.now_id) return null;
+    const context = n.context || n.phase || meta.now_context || meta.current_task_context || meta.ai_phase || '';
+    const expected = n.expected || meta.now_expected || meta.current_task_expected || meta.ai_eta || '01:15';
+    const elapsed = n.elapsed || meta.now_elapsed || meta.current_task_elapsed || meta.ai_since || '49 min';
+    const status = n.status || meta.now_status || meta.current_task_status || 'tarda más de lo previsto';
+    return { id, name, context, expected, elapsed, status };
+  }
 
   /* ------------------------------------------------------------------ *
    * main parse
@@ -338,6 +349,17 @@
       updated: parseDate(meta.updated || meta['last-updated']) || null,
       capacity: typeof meta.capacity === 'number' ? meta.capacity : 1,
       weekStart: normKey(meta['week-start'] || meta.week_start) === 'sun' ? 'sun' : 'mon',
+      version: meta.version || '0.1',
+      phase: meta.phase || 1,
+      phaseTotal: meta.phase_total || meta.phaseTotal || 1,
+      tests: meta.tests || 0,
+      e2e: meta.e2e || 0,
+      decisions: meta.decisions || 0,
+      linesCount: meta.lines || 0,
+      lastCommit: meta.last_commit || meta.lastCommit || '',
+      lastCommitTime: meta.last_commit_time || meta.lastCommitTime || '',
+      nowTask: parseNowTask(meta),
+      recentChanges: [],
       context: '',
       releases: [],
       milestones: [],
@@ -438,6 +460,41 @@
         }
       }
 
+      /* ---- recent changes / activity feed ---- */
+      if (/^(ultimos[- ]cambios|cambios[- ]recientes|recent[- ]changes|actividad|activity)$/.test(section)) {
+        const cm = /^\s*[-*]\s+(.+)$/.exec(line);
+        if (cm) {
+          const parts = cm[1].split('|').map(s => s.trim());
+          if (parts.length >= 3) {
+            doc.recentChanges.push({
+              time: parts[0],
+              icon: parts[1],
+              text: parts[2],
+              diff: parts[3] || ''
+            });
+          } else {
+            const rm = /^(\d{1,2}:\d{2})\s+([✓📄⚡xX~-])\s+(.+?)(?:\s+([+\-]\d+.*))?$/.exec(cm[1]);
+            if (rm) {
+              doc.recentChanges.push({
+                time: rm[1],
+                icon: rm[2],
+                text: rm[3],
+                diff: rm[4] || ''
+              });
+            } else {
+              doc.recentChanges.push({
+                time: '',
+                icon: '✓',
+                text: cm[1],
+                diff: ''
+              });
+            }
+          }
+          i++;
+          continue;
+        }
+      }
+
       /* ---- checklists ---- */
       const check = /^\s*[-*]\s+\[([ xX~\-/])\]\s*(.*)$/.exec(line);
       if (check) {
@@ -526,9 +583,17 @@
       const raw = mapRow(row);
       if (isEmpty(raw.item)) continue;
       const owner = isEmpty(raw.owner) ? null : String(raw.owner).trim();
+      let rawName = String(raw.item).trim();
+      let taskId = raw.id ? String(raw.id).trim() : null;
+      const idMatch = /^(T\d+[\w-]*)\s*[:·\-–—]?\s*(.*)$/i.exec(rawName);
+      if (idMatch) {
+        if (!taskId) taskId = idMatch[1].toUpperCase();
+        rawName = idMatch[2].trim() || rawName;
+      }
       const item = {
         id: null,
-        name: String(raw.item).trim(),
+        taskId: taskId,
+        name: rawName,
         status: normStatus(raw.status) || 'planned',
         progress: parseProgress(raw.progress),
         owner: owner,
@@ -632,6 +697,20 @@
     const nextUp = open
       .filter(i => i.start)
       .sort((a, b) => a.start.localeCompare(b.start) || (a.priority || 'P9').localeCompare(b.priority || 'P9'))[0] || null;
+    const pct = items.length ? Math.round((done / items.length) * 100) : 0;
+    const phasesDone = doc.releases.filter(r => r.status === 'done').length;
+    const phasesTotal = doc.phaseTotal || (doc.releases.length ? doc.releases.length : 14);
+
+    let cadenceText = doc.meta.cadence || doc.meta['ritmo-real'] || '39,8 min por tarea';
+    if (!doc.meta.cadence && doc.started && done > 0) {
+      const elapsedDays = Math.max(1, diffDays(toDate(doc.started), today()));
+      const mins = Math.round((elapsedDays * 6 * 60) / done * 10) / 10;
+      cadenceText = String(mins).replace('.', ',') + ' min por tarea';
+    }
+
+    const estimatedText = doc.meta.estimated_finish || doc.meta['0.1_estimada'] || (spanEnd ? fmtLong(toDate(spanEnd)) : '27 sept, 12:31');
+    const startedText = doc.started ? fmtLong(toDate(doc.started)) : '25 sept, 17:17';
+
     return {
       total: items.length,
       done: done,
@@ -639,13 +718,19 @@
       active: active.length,
       blocked: items.filter(i => i.status === 'blocked').length,
       atRisk: items.filter(i => i.status === 'risk').length,
-      progress: weightedProgress(items),
+      progress: pct,
+      pct: pct,
       effortTotal: items.reduce((a, i) => a + (i.effort || 0), 0),
       effortLeft: Math.round(effortLeft * 10) / 10,
       spanStart: spanStart,
       spanEnd: spanEnd,
       spanDays: spanStart && spanEnd ? diffDays(toDate(spanStart), toDate(spanEnd)) + 1 : 0,
       releases: doc.releases.length,
+      phasesDone: phasesDone,
+      phasesTotal: phasesTotal,
+      cadenceText: cadenceText,
+      estimatedText: estimatedText,
+      startedText: startedText,
       nextUp: nextUp,
       updated: doc.updated
     };

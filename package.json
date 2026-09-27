@@ -21,6 +21,8 @@
   "files": [
     "cli.js",
     "server.js",
+    "build.js",
+    "dist/",
     "viewer/",
     "SKILL.md",
     "ROADMAP.seed.md"
@@ -29,6 +31,7 @@
     "node": ">=18"
   },
   "scripts": {
+    "build": "node build.js",
     "start": "node cli.js serve",
     "test": "node cli.js --version"
   },
