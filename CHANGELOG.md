@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-27
+
 ### Added
 - `pause` and `resume` commands keep paused time out of actual work duration.
 - Claude Code PostToolUse and UserPromptSubmit hooks automatically start the next ready task when code changed without an active task.
@@ -39,6 +41,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Local server with SSE updates and a portable single-file `roadmap.html`.
 - `init`, `live`, `serve`, `open` and `skill` commands.
 
-[Unreleased]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/DesvoSoft/visual-roadmap/compare/a98c45a...v0.2.0
 [0.1.0]: https://github.com/DesvoSoft/visual-roadmap/commit/a98c45a
