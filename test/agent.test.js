@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const Agent = require('../agent.js');
+const Agent = require('../lib/agent.js');
 
 const base = `---
 title: Demo

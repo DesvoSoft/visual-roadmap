@@ -46,7 +46,7 @@ test('serves the viewer and streams roadmap changes', { timeout: 12000 }, async 
   const file = path.join(dir, 'ROADMAP.md');
   fs.writeFileSync(file, '# Initial\n');
   const port = await freePort();
-  const child = spawn(process.execPath, [path.join(__dirname, '../cli.js'), 'serve', '--file', file, '--port', String(port)], { stdio: 'ignore' });
+  const child = spawn(process.execPath, [path.join(__dirname, '../bin/visual-roadmap.js'), 'serve', '--file', file, '--port', String(port)], { stdio: 'ignore' });
   const url = `http://127.0.0.1:${port}/`;
   try {
     await waitForServer(url);
@@ -71,13 +71,13 @@ test('stop hook asks the agent to fix roadmap errors once', () => {
   const { spawnSync } = require('node:child_process');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'visual-roadmap-hook-'));
   fs.writeFileSync(path.join(dir, 'ROADMAP.md'), '---\ntitle: H\n---\n\n## Releases\n### v0.1 · A\n| Item | Estado | Esfuerzo | Depende |\n| --- | --- | --- | --- |\n| T001 Uno | planned | 10m | T404 |\n');
-  const run = input => spawnSync(process.execPath, [path.join(__dirname, '../cli.js'), 'hook', 'stop'], { cwd: dir, input: JSON.stringify(input), encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
+  const run = input => spawnSync(process.execPath, [path.join(__dirname, '../bin/visual-roadmap.js'), 'hook', 'stop'], { cwd: dir, input: JSON.stringify(input), encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
   try {
     const first = run({ stop_hook_active: false });
     assert.equal(first.status, 2);
     assert.match(first.stderr, /T404/);
     assert.equal(run({ stop_hook_active: true }).status, 0);
-    const brief = spawnSync(process.execPath, [path.join(__dirname, '../cli.js'), 'hook', 'session-start'], { cwd: dir, input: '{}', encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
+    const brief = spawnSync(process.execPath, [path.join(__dirname, '../bin/visual-roadmap.js'), 'hook', 'session-start'], { cwd: dir, input: '{}', encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
     assert.match(brief.stdout, /^\[visual-roadmap\] H · 0\/1 tasks/);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* build.js — Standalone Single-File HTML Generator
+/* scripts/build.js — Standalone Single-File HTML Generator
    Bundles all CSS and JS from viewer/ into a single, zero-dependency,
    portable HTML file: dist/roadmap.html.
    Users and AI agents can drop this single file into ANY project!
@@ -10,7 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = __dirname;
+const ROOT = path.join(__dirname, '..');
 const VIEWER_DIR = path.join(ROOT, 'viewer');
 const DIST_DIR = path.join(ROOT, 'dist');
 

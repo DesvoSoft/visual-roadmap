@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* tools/screenshots.js — regenerate the README screenshots.
+/* scripts/screenshots.js — regenerate the README screenshots.
    Builds a demo roadmap with the agent commands, using times relative to
    now (so the viewer shows a live task), serves it and captures each view
    with a headless Chromium browser (Edge or Chrome).
@@ -13,7 +13,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync, spawn, spawnSync } = require('child_process');
-const Agent = require('../agent.js');
+const Agent = require('../lib/agent.js');
 
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'assets', 'screenshots');
@@ -96,12 +96,12 @@ async function waitFor(url) {
 }
 
 async function main() {
-  execFileSync(process.execPath, [path.join(ROOT, 'build.js')], { stdio: 'ignore' });
+  execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'build.js')], { stdio: 'ignore' });
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'visual-roadmap-shots-'));
   const file = path.join(dir, 'ROADMAP.md');
   fs.writeFileSync(file, demoRoadmap(Date.now()));
   fs.mkdirSync(OUT, { recursive: true });
-  const server = spawn(process.execPath, [path.join(ROOT, 'cli.js'), 'serve', '--file', file, '--port', String(PORT)], { stdio: 'ignore' });
+  const server = spawn(process.execPath, [path.join(ROOT, 'bin', 'visual-roadmap.js'), 'serve', '--file', file, '--port', String(PORT)], { stdio: 'ignore' });
   const exe = browser();
   try {
     await waitFor(`http://127.0.0.1:${PORT}/ping`);

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-/* cli.js — visual-roadmap CLI
+/* bin/visual-roadmap.js — visual-roadmap CLI
    Viewer:  init · live · serve · open · skill · agents
    Agent:   status · check · start · done · block · progress · eta · log
-   Agent commands edit ROADMAP.md deterministically (see agent.js). */
+   Agent commands edit ROADMAP.md deterministically (see lib/agent.js). */
 
 'use strict';
 
@@ -10,9 +10,9 @@ const fs   = require('fs');
 const path = require('path');
 const { execSync, spawn } = require('child_process');
 
-const PKG     = require('./package.json');
+const PKG     = require('../package.json');
 const CWD     = process.cwd();
-const SELF    = path.dirname(__filename);
+const SELF    = path.join(__dirname, '..');   /* package root */
 
 const ARGS    = process.argv.slice(2);
 const CMD     = ARGS[0] || 'help';
@@ -102,7 +102,7 @@ function cmdInit() {
   if (fs.existsSync(roadmapFile) && !FLAGS.force) {
     warn(`${path.relative(CWD, roadmapFile)} already exists — use --force to overwrite`);
   } else {
-    const seed = fs.readFileSync(path.join(SELF, 'ROADMAP.seed.md'), 'utf8')
+    const seed = fs.readFileSync(path.join(SELF, 'templates', 'ROADMAP.seed.md'), 'utf8')
       .replace(/\[PROJECT_NAME\]/g, projectName)
       .replace(/\[OWNER\]/g, owner)
       .replace(/\[NOW\]/g, now);
@@ -219,8 +219,8 @@ function cmdServe() {
     process.exit(1);
   }
 
-  /* Delegate to server.js */
-  require('./server.js').serve({ file, port });
+  /* Delegate to lib/server.js */
+  require('../lib/server.js').serve({ file, port });
 }
 
 function cmdSkill() {
@@ -244,7 +244,7 @@ function cmdLive() {
     process.exitCode = 1;
     return;
   }
-  const server = require('./server.js').serve({ file, port });
+  const server = require('../lib/server.js').serve({ file, port });
   server.once('listening', () => openUrl(`http://127.0.0.1:${port}/`));
 }
 
@@ -350,7 +350,7 @@ function agentCommand(run) {
     err(`ROADMAP.md not found from ${CWD}. Run  visual-roadmap init  first, or pass --file.`);
     process.exit(1);
   }
-  const Agent = require('./agent.js');
+  const Agent = require('../lib/agent.js');
   try {
     const result = run(Agent, fs.readFileSync(file, 'utf8'));
     if (result && typeof result.text === 'string') {
@@ -411,7 +411,7 @@ function cmdHook() {
   const base = process.env.CLAUDE_PROJECT_DIR || input.cwd || CWD;
   const file = FLAGS.file ? path.resolve(base, FLAGS.file) : path.join(base, 'ROADMAP.md');
   if (!fs.existsSync(file)) return;
-  const Agent = require('./agent.js');
+  const Agent = require('../lib/agent.js');
   const text = fs.readFileSync(file, 'utf8');
   const event = POS[0];
 
@@ -430,7 +430,7 @@ function cmdHook() {
     const stamp = path.join(base, '.git', 'visual-roadmap-reminded');
     const key = String(updated);
     const already = fs.existsSync(stamp) && fs.readFileSync(stamp, 'utf8') === key;
-    const changed = require('./git.js').changesSince(base, updated);
+    const changed = require('../lib/git.js').changesSince(base, updated);
     if (!already && changed.add + changed.del >= 20) {
       problems.push(`Code changed (+${changed.add} -${changed.del}) but no roadmap task is active. Record it: visual-roadmap start <ID> / done <ID>, or visual-roadmap add "Task" --effort 20m.`);
       try { fs.writeFileSync(stamp, key); } catch {}
@@ -443,9 +443,9 @@ function cmdHook() {
 
 /** How hooks should call this CLI: the local install if present, else this file. */
 function selfCommand() {
-  const local = path.join(CWD, 'node_modules', 'visual-roadmap', 'cli.js');
+  const local = path.join(CWD, 'node_modules', 'visual-roadmap', 'bin', 'visual-roadmap.js');
   if (fs.existsSync(local)) return 'npx --no visual-roadmap';
-  return `node "${path.join(SELF, 'cli.js').replace(/\\/g, '/')}"`;
+  return `node "${path.join(SELF, 'bin', 'visual-roadmap.js').replace(/\\/g, '/')}"`;
 }
 
 function installHooks() {
@@ -483,7 +483,7 @@ const rest = from => POS.slice(from).join(' ') || (typeof FLAGS.reason === 'stri
 const cmdStart    = () => agentCommand((A, text) => A.start(text, POS[0], { expected: FLAGS.expected, context: FLAGS.context }));
 const cmdDone     = () => agentCommand((A, text) => A.done(text, POS[0], {
   actual: FLAGS.actual, note: FLAGS.note, diff: FLAGS.diff, next: FLAGS.next,
-  diffSince: since => require('./git.js').changesSince(path.dirname(roadmapPath()), since)
+  diffSince: since => require('../lib/git.js').changesSince(path.dirname(roadmapPath()), since)
 }));
 const cmdAdd      = () => agentCommand((A, text) => A.add(text, POS.join(' '), { effort: FLAGS.effort, release: FLAGS.release, depends: FLAGS.depends, after: FLAGS.after, note: FLAGS.note }));
 const cmdSplit    = () => agentCommand((A, text) => A.split(text, POS[0], POS.slice(1)));
