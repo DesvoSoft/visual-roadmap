@@ -41,6 +41,19 @@ async function nextEvent(reader, wanted, timeoutMs = 5000) {
   } finally { clearTimeout(timer); }
 }
 
+async function readUntil(reader, pattern, timeoutMs = 5000) {
+  let buffer = '';
+  const timer = setTimeout(() => reader.cancel(), timeoutMs);
+  try {
+    while (!pattern.test(buffer)) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += new TextDecoder().decode(value);
+    }
+  } finally { clearTimeout(timer); }
+  return buffer;
+}
+
 test('serves the viewer and streams roadmap changes', { timeout: 12000 }, async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'visual-roadmap-'));
   const file = path.join(dir, 'ROADMAP.md');
@@ -99,4 +112,51 @@ test('post-tool hook starts a ready task after code changes', () => {
     assert.match(hook.stdout, /T001 started automatically/);
     assert.match(fs.readFileSync(path.join(dir, 'ROADMAP.md'), 'utf8'), /\| T001 Ready \| active \|/);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('serves screenshots safely and streams index changes', { timeout: 12000 }, async () => {
+  const Shots = require('../lib/shots.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'visual-roadmap-'));
+  const file = path.join(dir, 'ROADMAP.md');
+  fs.writeFileSync(file, '# Shots\n');
+  const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(256, 1)]);
+  const { entry } = Shots.add(dir, { task: 'T1', buffer: png });
+  const port = await freePort();
+  const child = spawn(process.execPath, [path.join(__dirname, '../bin/visual-roadmap.js'), 'serve', '--file', file, '--port', String(port)], { stdio: 'ignore' });
+  const url = `http://127.0.0.1:${port}/`;
+  try {
+    await waitForServer(url);
+    const index = await (await fetch(url + 'shots')).json();
+    assert.equal(index.shots[0].id, entry.id);
+    const img = await fetch(url + 'shots/file/' + entry.file);
+    assert.equal(img.headers.get('content-type'), 'image/png');
+    assert.equal((await fetch(url + 'shots/file/..%2F..%2FROADMAP.md')).status, 404);
+    assert.equal((await fetch(url + 'shots/file/T1/missing.png')).status, 404);
+    const sse = (await fetch(url + 'sse')).body.getReader();
+    const webp = Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBP'), Buffer.alloc(8, 1)]);
+    const posted = await fetch(url + 'shots/' + entry.id, { method: 'POST', headers: { 'Content-Type': 'image/webp' }, body: webp });
+    assert.equal(posted.status, 200);
+    assert.match((await posted.json()).file, /\.webp$/);
+    assert.match(await readUntil(sse, /event: shots/), /event: shots/);
+    sse.cancel();
+    assert.equal((await fetch(url + 'shots/nope', { method: 'POST', body: webp })).status, 404);
+  } finally { child.kill(); }
+});
+
+test('announces the first screenshot when the index did not exist at startup', { timeout: 12000 }, async () => {
+  const Shots = require('../lib/shots.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'visual-roadmap-'));
+  const file = path.join(dir, 'ROADMAP.md');
+  fs.writeFileSync(file, '# Fresh\n');
+  const port = await freePort();
+  const child = spawn(process.execPath, [path.join(__dirname, '../bin/visual-roadmap.js'), 'serve', '--file', file, '--port', String(port)], { stdio: 'ignore' });
+  const url = `http://127.0.0.1:${port}/`;
+  try {
+    await waitForServer(url);
+    const sse = (await fetch(url + 'sse')).body.getReader();
+    await readUntil(sse, /event: roadmap/);
+    Shots.add(dir, { task: 'T1', buffer: Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(16, 2)]) });
+    assert.match(await readUntil(sse, /event: shots/), /event: shots/);
+    sse.cancel();
+  } finally { child.kill(); }
 });
