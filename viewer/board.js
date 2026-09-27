@@ -5,7 +5,7 @@
   const t = key => global.UI.t(key);
   function node(tag, cls, value) { const el=document.createElement(tag); if(cls)el.className=cls; if(value!=null)el.textContent=value; return el; }
   function statusName(status) { return t(status==='blocked'?'blockedStatus':status==='cancelled'?'cancelledStatus':status||'planned'); }
-  function date(raw) { if(!raw)return '—'; const d=global.Roadmap.toDate(raw); return d ? new Intl.DateTimeFormat(global.UI.language,{day:'numeric',month:'short',year:'numeric'}).format(d) : raw; }
+  function date(raw) { if(!raw)return '—'; const d=global.Roadmap.toDate(raw); return d ? new Intl.DateTimeFormat(global.UI.language,{day:'numeric',month:'short',year:'numeric'}).format(d)+(raw.length>10?` ${raw.slice(11)}`:'') : raw; }
   function projectEnd(release, forecast) {
     const ends=release.items.map(item=>forecast.projections.get(item.id)?.end).filter(Boolean);
     return ends.length ? Math.max(...ends) : null;

@@ -93,6 +93,7 @@
           <span class="hud-header__updated" id="header-updated"></span>
           <span class="hud-header__filename" id="file-name" title="Archivo activo"></span>
           <select id="language-select" class="preference-select" aria-label="Interface language"><option value="en">EN</option><option value="es">ES</option></select>
+          <button id="notify-toggle" class="preference-button" type="button" aria-pressed="false" hidden>🔕</button>
           <button id="theme-toggle" class="preference-button" type="button" aria-label="Toggle color theme">☀</button>
           <button class="btn-pick" id="btn-pick" title="Open local ROADMAP.md"><span data-i18n="open">Open</span></button>
         </div>
@@ -186,6 +187,7 @@
     </section>
 
     <div class="forecast-note" id="forecast-note"></div>
+    <section class="health" id="health" aria-live="polite" hidden></section>
 
     <!-- ── 4. Main Viewport (Timeline / Deliverables / Board) ─ -->
     <main id="main-view" class="main-viewport" role="main">

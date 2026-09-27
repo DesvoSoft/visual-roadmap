@@ -507,6 +507,9 @@ body {
 
 .change-icon--ok   { color: var(--ok); }
 .change-icon--file { color: #5a7694; }
+.change-icon--start { color: var(--cyan); }
+.change-icon--warn { color: var(--warn); }
+.change-icon--eta { color: var(--neon-orange); }
 
 .change-text {
   flex: 1;
@@ -757,16 +760,17 @@ body {
 }
 
 .time-tick-cell {
+  position: absolute;
+  top: 0;
+  padding-left: 5px;
+  white-space: nowrap;
+  border-left: 1px solid rgba(0, 180, 255, 0.14);
   height: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
   color: #526f8d;
-  border-right: 1px solid rgba(0, 180, 255, 0.07);
-  flex-shrink: 0;
-  position: relative;
 }
 
 .time-tick-cell--now {
@@ -794,6 +798,19 @@ body {
   background: var(--neon-orange);
   box-shadow: 0 0 8px var(--neon-orange);
   z-index: 4;
+  pointer-events: none;
+}
+.vertical-now-label {
+  position: absolute;
+  top: 3px;
+  z-index: 7;
+  transform: translateX(-50%);
+  padding: 2px 5px;
+  background: var(--neon-orange);
+  color: #07111d;
+  font: 700 10px 'JetBrains Mono', monospace;
+  white-space: nowrap;
+  box-shadow: 0 0 9px rgba(255,122,0,.45);
   pointer-events: none;
 }
 
@@ -832,6 +849,7 @@ body {
   filter: brightness(1.2);
   border-color: var(--cyan);
 }
+.tracker-bar--compact { padding: 0; min-width: 3px; }
 
 /* Phase Header Row */
 .phase-head-row {
@@ -1034,6 +1052,26 @@ body {
 .timeline-signal--alert { color: #ffa347; border-color: rgba(255,122,0,.45); }
 .forecast-note { margin: -6px 24px 14px; color: #7798b4; font-size: 11px; letter-spacing: .02em; }
 .awaiting-roadmap .forecast-note { display: none; }
+
+/* Roadmap health: problems the agent should fix in ROADMAP.md */
+.health { margin: -4px 24px 14px; border: 1px solid var(--border-2); border-left-width: 3px; background: rgba(8,20,36,.55); font-size: 12px; }
+.health[hidden], .awaiting-roadmap .health { display: none; }
+.health__head { display: block; width: 100%; padding: 7px 12px; background: none; border: 0; color: #a4bdd4; font: 700 10.5px 'JetBrains Mono', monospace; letter-spacing: .08em; text-align: left; cursor: pointer; }
+.health__head::after { content: ' ▾'; opacity: .6; }
+.health__head[aria-expanded="true"]::after { content: ' ▴'; }
+.health:has(.health__head[data-level="error"]) { border-left-color: var(--danger); }
+.health:has(.health__head[data-level="warn"]) { border-left-color: var(--warn); }
+.health:has(.health__head[data-level="info"]) { border-left-color: var(--blue-300); }
+.health__item { padding: 5px 12px 5px 30px; border-top: 1px solid var(--border); color: #c3d5e6; line-height: 1.4; position: relative; }
+.health__item::before { position: absolute; left: 12px; font-weight: 700; }
+.health__item--error::before { content: '✗'; color: var(--danger); }
+.health__item--warn::before { content: '⚠'; color: var(--warn); }
+.health__item--info::before { content: 'ℹ'; color: var(--blue-300); }
+.health__item--link { cursor: pointer; }
+.health__item--link:hover, .health__item--link:focus-visible { background: rgba(0,180,255,.07); outline: none; }
+.app-layout[data-view="board"] .health { display: none; }
+html[data-theme="light"] .health { background: rgba(255,255,255,.7); }
+html[data-theme="light"] .health__head, html[data-theme="light"] .health__item { color: #365a73; }
 .estimate-event { padding: 5px 0; border-bottom: 1px solid rgba(0,180,255,.1); color: #a4bdd4; line-height: 1.4; }
 .badge-live--offline { border-color: #55718b; background: rgba(64,85,108,.15); color: #90a6b8; text-shadow: none; }
 .badge-live--offline .badge-live__dot { background: #718a9d; box-shadow: none; animation: none; }
@@ -1159,3 +1197,11 @@ html[data-theme="light"] .task-detail-panel { background: #f8fcfe; }
 html[data-theme="light"] .task-detail-title,html[data-theme="light"] .task-detail-row strong { color: #17384f; }
 html[data-theme="light"] .task-detail-row,html[data-theme="light"] .task-detail-note { color: #55778e; border-color: #d2e2ea; }
 .app-layout[data-view="board"] .hud-panel,.app-layout[data-view="board"] .forecast-note { display: none; }
+
+.task-label-row--cancelled { text-decoration: line-through; opacity: .45; }
+.task-label-row--blocked { color: var(--danger-2); }
+.hud-card__now-name--blocked { color: var(--danger-2); }
+html[data-theme="light"] .timeline-title { color: #1d5a7a; }
+html[data-theme="light"] .btn-nav-now { color: #245f80; }
+html[data-theme="light"] .btn-nav-now:hover { color: var(--neon-orange); }
+html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8; }

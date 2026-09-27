@@ -33,16 +33,23 @@
       ? t('updatedAgo').replace('{time}', global.Forecast.duration(forecast.ageMinutes)) : t('unknownUpdate');
 
     /* Metric Bar under Title */
-    const values = { 'm-version': doc.version, 'm-phase': doc.phase, 'm-phase-total': doc.phase ? s.phasesTotal : null, 'm-tasks-done': s.done, 'm-tasks-total': s.total, 'm-tests': doc.meta.tests, 'm-e2e': doc.meta.e2e, 'm-decisions': doc.meta.decisions, 'm-lines': doc.meta.lines, 'm-commit': doc.lastCommit, 'm-commit-time': doc.lastCommitTime };
+    const head = global.RoadmapGit[0];
+    const commit = head && !doc.lastCommit ? head.hash : doc.lastCommit;
+    const commitTime = head && !doc.lastCommit ? t('ago', { time: global.Forecast.duration((Date.now() - head.time) / 60000) }) : doc.lastCommitTime;
+    const values = { 'm-version': doc.version, 'm-phase': doc.phase, 'm-phase-total': doc.phase ? s.phasesTotal : null, 'm-tasks-done': s.done, 'm-tasks-total': s.total, 'm-tests': doc.meta.tests, 'm-e2e': doc.meta.e2e, 'm-decisions': doc.meta.decisions, 'm-lines': doc.meta.lines, 'm-commit': commit, 'm-commit-time': commitTime };
     Object.entries(values).forEach(([id, value]) => { if ($(id)) $(id).textContent = value === '' || value == null ? '—' : value; });
     qa('.m-item').forEach(el => { el.hidden = [...el.querySelectorAll('[id]')].every(child => child.textContent === '—'); });
 
     /* ── Card 1: AHORA MISMO · EN CURSO ── */
     const active = forecast.active;
-    if ($('now-id')) $('now-id').textContent = active?.taskId || n.id || '';
-    if ($('now-name')) $('now-name').textContent = active?.name || t('noTask');
-    if ($('now-context')) $('now-context').textContent = n.context || active?.release || t('markActive');
-    if ($('now-expected')) $('now-expected').textContent = n.expected || (active?.effort ? `${active.effort} h` : '—');
+    /* No active task: surface a blocked one (and why) instead of an empty card. */
+    const stuck = !active && doc.items.find(i => i.status === 'blocked');
+    const stuckWhy = stuck && stuck.taskId && (doc.recentChanges.find(c => c.text.includes(stuck.taskId)) || {}).text;
+    if ($('now-id')) $('now-id').textContent = active?.taskId || n.id || stuck?.taskId || '';
+    if ($('now-name')) $('now-name').textContent = active?.name || (stuck ? `${t('blockedStatus')} · ${stuck.name}` : t('noTask'));
+    if ($('now-context')) $('now-context').textContent = n.context || active?.release || stuckWhy || t('markActive');
+    $('now-name')?.classList.toggle('hud-card__now-name--blocked', !!stuck);
+    if ($('now-expected')) $('now-expected').textContent = n.expected || (active?.effort ? global.Roadmap.fmtEffort(active.effort) : '—');
     if ($('now-elapsed')) $('now-elapsed').textContent = global.Forecast.duration(forecast.elapsed);
     const moved = forecast.initialEta != null && forecast.eta != null
       ? Math.round((forecast.eta - forecast.initialEta) / 60000) : 0;
@@ -94,6 +101,112 @@
 
     /* ── Card 3: ÚLTIMOS CAMBIOS ── */
     renderRecentChanges(doc);
+    renderHealth(doc, forecast);
+
+    /* Tab title: readable from a background tab while the agent works */
+    const tab = active
+      ? `${forecast.overdue ? '⚠' : '▶'} ${active.taskId || active.name} · ${global.Forecast.duration(forecast.elapsed)} · ${brandName}`
+      : `${s.pct}% · ${brandName}`;
+    if (document.title !== tab) document.title = tab;
+  }
+
+  /* ── Git: commits linked to tasks by ID (live server only) ── */
+  global.RoadmapGit = [];
+  function refreshGit() {
+    if (_source !== 'sse') return;
+    fetch('/git').then(r => r.ok ? r.json() : null).then(data => {
+      if (!data) return;
+      global.RoadmapGit = data.commits || [];
+      if (_doc) updateHUD(_doc);
+    }).catch(() => {});
+  }
+
+  /* ── Desktop notifications: task done / blocked, ETA stuck, all done ── */
+  const canNotify = 'Notification' in global && global.isSecureContext;
+  let _notify = false;
+  try { _notify = canNotify && localStorage.getItem('visual-roadmap-notify') === 'on' && Notification.permission === 'granted'; } catch {}
+  const _notified = new Set();
+  function paintNotify() {
+    const b = $('notify-toggle');
+    if (!b) return;
+    b.hidden = !canNotify;
+    b.textContent = _notify ? '🔔' : '🔕';
+    b.setAttribute('aria-pressed', String(_notify));
+    b.title = t(_notify ? 'notifyOn' : 'notifyOff');
+  }
+  function setNotify(on) {
+    _notify = on;
+    try { localStorage.setItem('visual-roadmap-notify', on ? 'on' : 'off'); } catch {}
+    paintNotify();
+  }
+  function toggleNotify() {
+    if (_notify) { setNotify(false); return; }
+    Notification.requestPermission().then(p => setNotify(p === 'granted'));
+  }
+  function notify(key, title, body) {
+    if (!_notify || _notified.has(key)) return;
+    _notified.add(key);
+    if (!document.hidden && document.hasFocus()) return;   /* the user is already looking */
+    try { new Notification(title, { body, tag: key }); } catch {}
+  }
+  function notifyTransitions(prev, doc) {
+    if (!prev) return;
+    const before = new Map(prev.items.map(i => [i.taskId || i.id, i.status]));
+    for (const it of doc.items) {
+      const was = before.get(it.taskId || it.id);
+      if (!was || was === it.status) continue;
+      const label = `${it.taskId ? it.taskId + ' · ' : ''}${it.name}`;
+      if (it.status === 'done') notify(`done:${label}`, `✓ ${t('done')}: ${label}`, doc.title);
+      if (it.status === 'blocked') notify(`blocked:${label}`, `⚠ ${t('blockedStatus')}: ${label}`, doc.title);
+    }
+    if (doc.stats.total && doc.stats.done === doc.stats.total && prev.stats.done !== prev.stats.total) {
+      notify(`complete:${doc.title}`, `✓ ${doc.title}`, t('allDone'));
+    }
+  }
+
+  /* ── Roadmap health: consistency problems the agent should fix ── */
+  let _healthOpen = false;
+  function renderHealth(doc, forecast) {
+    const box = $('health');
+    if (!box) return;
+    const issues = [...(doc.issues || [])];
+    /* The file has not changed since the ETA passed: the agent may be stuck. */
+    if (forecast.overdue && forecast.ageMinutes != null && forecast.ageMinutes >= forecast.overdueMinutes && forecast.overdueMinutes >= 10) {
+      issues.unshift({ level: 'warn', code: 'stale', vars: { minutes: forecast.overdueMinutes } });
+      const a = forecast.active;
+      notify(`stale:${a.taskId || a.id}:${doc.meta.updated}`, `⏱ ${a.taskId || ''} ${a.name}`, global.Roadmap.formatIssue(issues[0], global.UI.language));
+    }
+    box.replaceChildren();
+    box.hidden = !issues.length;
+    if (!issues.length) return;
+    const counts = { error: 0, warn: 0, info: 0 };
+    issues.forEach(i => counts[i.level]++);
+    const head = document.createElement('button');
+    head.type = 'button';
+    head.className = 'health__head';
+    head.setAttribute('aria-expanded', String(_healthOpen));
+    const worst = counts.error ? 'error' : counts.warn ? 'warn' : 'info';
+    head.dataset.level = worst;
+    head.textContent = `${t('health')} · ${[['error', counts.error], ['warn', counts.warn], ['info', counts.info]]
+      .filter(([, n]) => n).map(([k, n]) => `${n} ${t('health_' + k)}`).join(' · ')}`;
+    head.addEventListener('click', () => { _healthOpen = !_healthOpen; renderHealth(doc, forecast); });
+    box.appendChild(head);
+    const visible = _healthOpen ? issues : issues.filter(i => i.level !== 'info');
+    visible.forEach(issue => {
+      const line = document.createElement('div');
+      line.className = `health__item health__item--${issue.level}`;
+      line.textContent = global.Roadmap.formatIssue(issue, global.UI.language);
+      const ref = issue.refs && issue.refs[0] && doc.byId.get(issue.refs[0]);
+      if (ref) {
+        line.classList.add('health__item--link');
+        line.tabIndex = 0;
+        line.setAttribute('role', 'button');
+        const open = () => global.Timeline.openTask(ref, doc, forecast);
+        line.addEventListener('click', open);
+        line.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') open(); });
+      }
+      box.appendChild(line);
+    });
   }
 
   function renderRecentChanges(doc) {
@@ -106,7 +219,7 @@
         const row = document.createElement('div');
         row.className = 'change-row';
 
-        const iconCls = c.icon === '✓' ? 'change-icon--ok' : 'change-icon--file';
+        const iconCls = { '✓': 'change-icon--ok', '▶': 'change-icon--start', '⚠': 'change-icon--warn', '↻': 'change-icon--eta' }[c.icon] || 'change-icon--file';
         let diffHtml = '';
         if (c.diff) {
           const parts = c.diff.split(/\s+/);
@@ -180,8 +293,11 @@
     const text = e.detail && e.detail.content;
     if (!text) return;
     try {
+      const prev = _doc;
       _doc = global.Roadmap.parse(text);
       _source = e.detail.source || 'manual';
+      notifyTransitions(prev, _doc);
+      refreshGit();
       $('app').classList.remove('awaiting-roadmap');
       $('app').classList.add('has-roadmap');
       const panel = q('.hud-panel');
@@ -195,7 +311,7 @@
     } catch (err) {
       console.error('[App] Error parsing ROADMAP.md', err);
       const main = $('main-view');
-      if (main) main.textContent = `No se pudo leer ROADMAP.md: ${err.message}`;
+      if (main) main.textContent = `${t('parseError')}: ${err.message}`;
     }
   });
 
@@ -218,6 +334,7 @@
   document.addEventListener('roadmap:preferences', () => {
     $('page-title').dataset.i18n = _view === 'board' ? 'versionsTitle' : _view === 'log' ? 'notes' : 'progress';
     global.UI.apply();
+    paintNotify();
     if (_doc) { updateHUD(_doc); renderCurrentView(); }
     else renderCurrentView();
     const badge = $('live-indicator');
@@ -226,6 +343,13 @@
 
   /* ── Initialize ───────────────────────────────────────── */
   function init() {
+    /* Shareable links: ?view=board|log|timeline&theme=light&lang=es */
+    const params = new URLSearchParams(location.search);
+    if (params.get('lang')) global.UI.setLanguage(params.get('lang'));
+    if (params.get('theme')) global.UI.setTheme(params.get('theme'));
+    if (['timeline', 'board', 'log'].includes(params.get('view'))) _view = params.get('view');
+    $('page-title').dataset.i18n = _view === 'board' ? 'versionsTitle' : _view === 'log' ? 'notes' : 'progress';
+    qa('.rail__btn').forEach(btn => btn.classList.toggle('rail__btn--active', btn.dataset.view === _view));
     global.UI.apply();
     $('app').dataset.view = _view;
     if (!$('app').classList.contains('has-roadmap')) $('app').classList.add('awaiting-roadmap');
@@ -241,6 +365,9 @@
     if (pickBtn) pickBtn.addEventListener('click', () => global.Watcher.pickFile());
     $('language-select')?.addEventListener('change', e => global.UI.setLanguage(e.target.value));
     $('theme-toggle')?.addEventListener('click', () => global.UI.setTheme(global.UI.theme === 'dark' ? 'light' : 'dark'));
+    $('notify-toggle')?.addEventListener('click', toggleNotify);
+    paintNotify();
+    setInterval(refreshGit, 60000);
 
     /* Setup drag & drop on the whole body */
     global.Watcher.setupDragDrop(document.body);
@@ -249,7 +376,7 @@
 
     /* Try auto-loading local ROADMAP.md if served over http/https */
     if (location.protocol === 'http:' || location.protocol === 'https:') {
-      if (location.pathname === '/' && location.hostname === '127.0.0.1') {
+      if (location.pathname === '/' && (location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {
         global.Watcher.setupSSE('/sse');
         renderCurrentView();
         return;

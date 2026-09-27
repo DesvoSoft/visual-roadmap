@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 require('../viewer/md.js');
 require('../viewer/forecast.js');
+require('../viewer/timeline.js');
 
 const source = `---
 title: Demo
@@ -73,4 +74,28 @@ test('keeps semantic version labels and does not complete a release with open wo
   assert.equal(doc.releases[0].status, 'active');
   assert.equal(doc.releases[0].categories.length, 1);
   assert.equal(doc.releases[0].categories[0].items.length, 2);
+});
+
+test('short tasks use exact timestamps or compact day-precision windows', () => {
+  const doc = global.Roadmap.parse(`---\ntitle: Pilot\n---\n\n## Releases\n### v0.1 · Audio\n| Item | Estado | Progreso | Esfuerzo | Inicio | Fin |\n| --- | --- | --- | --- | --- | --- |\n| T018 Volumen | done | 100% | 1h | 2026-09-26 | 2026-09-27 |\n| T019 Pausa | done | 100% | 1h | 2026-09-26 23:59 | 2026-09-27 00:04 |\n| T020 Revisión | active | 20% | 35m | 2026-09-27 00:05 | — |`);
+  const [coarse, exact, open] = doc.items;
+  assert.equal(open.end, null);
+  const first = global.Timeline.windowForItem(coarse);
+  assert.equal(first.coarse, true);
+  assert.equal(first.end - first.start, 3600000);
+  const second = global.Timeline.windowForItem(exact);
+  assert.equal(second.coarse, false);
+  assert.equal(second.end - second.start, 5 * 60000);
+  assert.equal(global.Timeline.windowForItem(open, { start: 1, end: 2 }).estimated, true);
+});
+
+test('projection waits for dependencies and runs independent work in parallel lanes', () => {
+  const doc = global.Roadmap.parse(`---\ntitle: Lanes\ncapacity: 2\n---\n\n## Releases\n### v0.1 · A\n| Item | Estado | Esfuerzo | Depende |\n| --- | --- | --- | --- |\n| T001 Base | planned | 1h | — |\n| T002 Encima de base | planned | 1h | T001 |\n| T003 Independiente | planned | 1h | — |`);
+  const now = new Date('2026-09-26T10:00:00').getTime();
+  const f = global.Forecast.calculate(doc, now);
+  const p = id => f.projections.get(doc.items.find(i => i.taskId === id).id);
+  assert.equal(p('T001').start, now);
+  assert.equal(p('T003').start, now);
+  assert.equal(p('T002').start, p('T001').end);
+  assert.equal(f.projectEta, now + 2 * 3600000);
 });

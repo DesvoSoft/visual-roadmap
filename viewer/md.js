@@ -19,7 +19,7 @@
   }
 
   function toDate(dateStr) {
-    const p = parts(dateStr);
+    const p = parts(String(dateStr || '').slice(0, 10));
     if (!p) return null;
     return new Date(p.y, p.m - 1, p.d);
   }
@@ -158,6 +158,8 @@
     const t = String(s == null ? '' : s).trim();
     if (!t || t === '—' || t === '-' || t === '?') return null;
     if (parts(t)) return t;
+    const timed = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2})$/.exec(t);
+    if (timed && parts(timed[1]) && +timed[2] < 24 && +timed[3] < 60) return `${timed[1]} ${timed[2]}:${timed[3]}`;
     /* "28/09" or "28/09/2026" or "sept 2026" (month precision) */
     const dmy = /^(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?$/.exec(t);
     if (dmy) {
@@ -661,8 +663,6 @@
           it.id = id;
           it.releaseKey = r.id;
           if (it.start && it.end && it.end < it.start) { const t = it.start; it.start = it.end; it.end = t; }
-          if (!it.start && it.end) it.start = it.end;
-          if (!it.end && it.start) it.end = it.start;
         });
       });
 
@@ -721,7 +721,11 @@
       .filter(i => i.start)
       .sort((a, b) => a.start.localeCompare(b.start) || (a.priority || 'P9').localeCompare(b.priority || 'P9'))[0] || null;
     const pct = weightedProgress(items);
-    const phasesDone = doc.releases.filter(r => r.status === 'done').length;
+    /* A declared current phase implies the earlier ones are finished, even if
+       the file only lists the phases still in progress. */
+    const declaredPhase = parseInt(doc.phase, 10);
+    const phasesDone = Math.max(doc.releases.filter(r => r.status === 'done').length,
+      Number.isFinite(declaredPhase) && doc.phaseTotal ? declaredPhase - 1 : 0);
     const phasesTotal = doc.phaseTotal || doc.releases.length;
 
     let cadenceText = doc.meta.cadence || doc.meta['ritmo-real'] || '';
@@ -757,123 +761,141 @@
     };
   }
 
-  /** Tiempos realistas: detecta lo que un humano detectaría al leer el gantt. */
+  /* ------------------------------------------------------------------ *
+   * health checks — feedback for the agent that maintains the roadmap
+   * Each issue: { level, code, vars, refs }. Text comes from ISSUE_TEXT.
+   * ------------------------------------------------------------------ */
+
+  const ISSUE_TEXT = {
+    en: {
+      duplicateId: 'Task ID {id} is used by {count} rows.',
+      missingDep: '{task} depends on {dep}, which does not exist.',
+      depOrder: '{task} starts before its dependency {dep} ends.',
+      depCancelled: '{task} depends on {dep}, which is cancelled. Point it to the task that replaced it.',
+      depOpen: '{task} is {status} while its dependency {dep} is still open.',
+      multipleActive: '{count} tasks are active ({ids}). Keep one active task per agent.',
+      nowTaskMismatch: 'now_task is {id}, but that task is not active in the table.',
+      activeNoNowTask: '{id} is active but now_task is not set; ETA and elapsed time cannot be shown.',
+      noStartedAt: 'now_task has no started_at; elapsed time and ETA are unavailable.',
+      noExpected: 'now_task has no expected duration; ETA is unavailable.',
+      overdue: '{count} open task(s) past their end date: {names}.',
+      doneProgress: '{task} is done but shows {progress}%.',
+      plannedProgress: '{task} is planned but shows {progress}%.',
+      missingEffort: '{count} open task(s) without effort: {ids}. Project ETA stays unknown.',
+      bigTask: '{task} is estimated at {effort}. Split it into verifiable steps under 2h.',
+      overload: '{owner} is over capacity on {days} day(s), peak +{peak}h.',
+      stale: 'Active task ETA passed {minutes} min ago and the file has not changed since. Revise the ETA or mark progress.'
+    },
+    es: {
+      duplicateId: 'El ID {id} aparece en {count} filas.',
+      missingDep: '{task} depende de {dep}, que no existe.',
+      depOrder: '{task} empieza antes de que termine su dependencia {dep}.',
+      depCancelled: '{task} depende de {dep}, que está cancelada. Apúntala a la tarea que la reemplazó.',
+      depOpen: '{task} está {status} y su dependencia {dep} sigue abierta.',
+      multipleActive: 'Hay {count} tareas active ({ids}). Mantén una tarea activa por agente.',
+      nowTaskMismatch: 'now_task es {id}, pero esa tarea no está active en la tabla.',
+      activeNoNowTask: '{id} está active pero falta now_task; no se pueden mostrar ETA ni tiempo transcurrido.',
+      noStartedAt: 'now_task no tiene started_at; no hay tiempo transcurrido ni ETA.',
+      noExpected: 'now_task no tiene expected; no hay ETA.',
+      overdue: '{count} tarea(s) abiertas con fecha fin vencida: {names}.',
+      doneProgress: '{task} está done pero marca {progress}%.',
+      plannedProgress: '{task} está planned pero marca {progress}%.',
+      missingEffort: '{count} tarea(s) abiertas sin esfuerzo: {ids}. La ETA del proyecto queda desconocida.',
+      bigTask: '{task} está estimada en {effort}. Divídela en pasos verificables de menos de 2h.',
+      overload: '{owner} supera su capacidad {days} día(s), pico de +{peak}h.',
+      stale: 'La ETA de la tarea activa venció hace {minutes} min y el archivo no ha cambiado. Revisa la ETA o registra avance.'
+    }
+  };
+
+  function formatIssue(issue, lang) {
+    const table = ISSUE_TEXT[lang] || ISSUE_TEXT.en;
+    let s = table[issue.code] || ISSUE_TEXT.en[issue.code] || issue.code;
+    for (const k in issue.vars || {}) s = s.split('{' + k + '}').join(String(issue.vars[k]));
+    return s;
+  }
+
+  function label(it) { return it.taskId ? it.taskId : '"' + it.name + '"'; }
+
   function checkRealism(doc) {
     const out = [];
+    const push = (level, code, vars, refs) => out.push({ level, code, vars: vars || {}, refs: refs || [], kind: code, message: formatIssue({ code, vars }, 'en') });
     const items = (doc.items || []).filter(i => i.status !== 'cancelled');
-    const t = today();
-    const todayStr = fmt(t);
+    const open = items.filter(i => i.status !== 'done');
+    const todayStr = fmt(today());
     const cap = Math.max(1, doc.capacity || 1);
-    const hoursPerDay = 6;                       /* horas efectivas por día de trabajo */
-    const perDay = cap * hoursPerDay;
+    const perDay = cap * 6;                       /* effective hours per work day */
 
-    /* 1. sobre-asignación por owner y día (solo trabajo vivo: lo hecho ya no compete) */
-    const load = new Map();
+    /* 1. duplicate task IDs break every agent command and dependency */
+    const ids = new Map();
+    for (const it of doc.items || []) if (it.taskId) ids.set(it.taskId, (ids.get(it.taskId) || 0) + 1);
+    for (const [id, count] of ids) if (count > 1) push('error', 'duplicateId', { id, count });
+
+    /* 2. dependencies */
     for (const it of items) {
-      if (it.status === 'done') continue;
+      for (const dep of it.depends) {
+        const target = findByName(doc, dep);
+        if (!target) { push('error', 'missingDep', { task: label(it), dep }, [it.id]); continue; }
+        if (target.status === 'cancelled') { push('warn', 'depCancelled', { task: label(it), dep: label(target) }, [it.id, target.id]); continue; }
+        const targetOpen = target.status !== 'done' && target.status !== 'cancelled';
+        if (targetOpen && (it.status === 'active' || it.status === 'done')) {
+          push('warn', 'depOpen', { task: label(it), dep: label(target), status: it.status }, [it.id, target.id]);
+        } else if (targetOpen && it.start && target.end && it.start < target.end) {
+          push('warn', 'depOrder', { task: label(it), dep: label(target) }, [it.id, target.id]);
+        }
+      }
+    }
+
+    /* 3. active task coherence (what the HUD depends on) */
+    const active = items.filter(i => i.status === 'active');
+    if (active.length > cap) push('warn', 'multipleActive', { count: active.length, ids: active.map(label).join(', ') }, active.map(i => i.id));
+    const now = doc.nowTask;
+    if (now && now.id) {
+      const match = active.find(i => i.taskId && i.taskId.toUpperCase() === String(now.id).toUpperCase());
+      if (!match) push('warn', 'nowTaskMismatch', { id: now.id });
+      else {
+        if (!now.startedAt && !now.elapsed) push('info', 'noStartedAt', {}, [match.id]);
+        if (!now.expected && !match.effort) push('info', 'noExpected', {}, [match.id]);
+      }
+    } else if (active.length) {
+      push('warn', 'activeNoNowTask', { id: label(active[0]) }, [active[0].id]);
+    }
+
+    /* 4. overdue */
+    const late = open.filter(i => i.end && i.end.slice(0, 10) < todayStr);
+    if (late.length) push('warn', 'overdue', { count: late.length, names: late.slice(0, 3).map(label).join(', ') + (late.length > 3 ? '…' : '') }, late.map(i => i.id));
+
+    /* 5. effort: missing or too coarse for an agent session */
+    const noEffort = open.filter(i => !i.effort);
+    if (noEffort.length) push('info', 'missingEffort', { count: noEffort.length, ids: noEffort.slice(0, 4).map(label).join(', ') + (noEffort.length > 4 ? '…' : '') }, noEffort.map(i => i.id));
+    for (const it of open) if (it.effort > 4) push('info', 'bigTask', { task: label(it), effort: fmtEffort(it.effort) }, [it.id]);
+
+    /* 6. progress vs status */
+    for (const it of items) {
+      if (it.status === 'done' && it.progress < 100) push('info', 'doneProgress', { task: label(it), progress: it.progress }, [it.id]);
+      if (it.status === 'planned' && it.progress > 0) push('info', 'plannedProgress', { task: label(it), progress: it.progress }, [it.id]);
+    }
+
+    /* 7. over-allocation per owner and day (only live, day-dated work) */
+    const load = new Map();
+    for (const it of open) {
       if (!it.start || !it.end || !it.owner) continue;
-      const hoursPerDayItem = it.effort
-        ? it.effort / Math.max(1, workDays(it.start, it.end))
-        : perDay;
-      for (let d = toDate(it.start); ; d = addDays(d, 1)) {
-        if (isWeekend(d)) { if (fmt(d) > it.end) break; else continue; }
+      const perItem = it.effort ? it.effort / Math.max(1, workDays(it.start, it.end)) : perDay;
+      const last = it.end.slice(0, 10);
+      for (let d = toDate(it.start), n = 0; fmt(d) <= last && n < 400; d = addDays(d, 1), n++) {
+        if (isWeekend(d)) continue;
         const k = it.owner + '|' + fmt(d);
-        load.set(k, (load.get(k) || 0) + hoursPerDayItem);
-        if (fmt(d) >= it.end) break;
-        if (d.getFullYear() > t.getFullYear() + 6) break;
+        load.set(k, (load.get(k) || 0) + perItem);
       }
     }
     const overload = new Map();
     for (const [k, v] of load) {
       if (v <= perDay + 0.51) continue;
-      const [owner, day] = k.split('|');
-      const o = overload.get(owner) || { owner, days: 0, worst: 0, worstDay: null, total: 0 };
-      o.days++; o.total += v - perDay;
-      if (v - perDay > o.worst) { o.worst = v - perDay; o.worstDay = day; }
+      const owner = k.split('|')[0];
+      const o = overload.get(owner) || { days: 0, peak: 0 };
+      o.days++; o.peak = Math.max(o.peak, v - perDay);
       overload.set(owner, o);
     }
-    for (const o of overload.values()) {
-      const who = o.owner.charAt(0) === '@' ? o.owner : '@' + o.owner;
-      out.push({
-        level: 'warn', kind: 'sobreasignacion',
-        message: who + ' sobre-asignado ' + o.days + ' día(s), picos de +' +
-          (Math.round(o.worst * 10) / 10) + 'h (capacidad ' + cap + ').',
-        detail: o.worstDay ? 'Peor día: ' + fmtLong(toDate(o.worstDay)) : '',
-        refs: []
-      });
-    }
-
-    /* 2. fechas vencidas y sin terminar */
-    const late = items.filter(i => i.end && i.end < todayStr && i.status !== 'done');
-    if (late.length) {
-      out.push({
-        level: 'warn', kind: 'vencido',
-        message: late.length + ' ítem(s) con fecha fin pasada y sin completar.',
-        detail: late.slice(0, 3).map(i => i.name).join(', ') + (late.length > 3 ? '…' : ''),
-        refs: late.map(i => i.id)
-      });
-    }
-
-    /* 3. dependencias incumplidas o ausentes */
-    for (const it of items) {
-      for (const dep of it.depends) {
-        const target = findByName(doc, dep);
-        if (!target) {
-          out.push({ level: 'error', kind: 'dependencia', message: '"' + it.name + '" depende de "' + dep + '", que no existe.', detail: '', refs: [it.id] });
-        } else if (it.start && target.end && it.start < target.end && target.status !== 'done') {
-          out.push({
-            level: 'error', kind: 'dependencia',
-            message: '"' + it.name + '" empieza ' + it.start + ' antes de que termine "' + target.name + '" (' + target.end + ').',
-            detail: '', refs: [it.id, target.id]
-          });
-        }
-      }
-    }
-
-    /* 4. ítems sin fecha dentro de un release con fechas */
-    for (const r of doc.releases) {
-      const noDate = r.items.filter(i => !i.start && i.status !== 'done');
-      if (noDate.length && r.start) {
-        out.push({
-          level: 'warn', kind: 'sin-fecha',
-          message: r.items.length + ' ítem(s) sin fecha en ' + r.id + ' (' + noDate.length + ' pendientes).',
-          detail: noDate.slice(0, 3).map(i => i.name).join(', '), refs: noDate.map(i => i.id)
-        });
-      }
-    }
-
-    /* 5. esfuerzo incoherente con la duración */
-    for (const it of items) {
-      if (!it.effort || !it.start || !it.end) continue;
-      const wd = workDays(it.start, it.end);
-      if (wd === 0) continue;
-      const perDayEffort = it.effort / wd;
-      if (it.effort >= 8 && perDayEffort > perDay * 1.6) {
-        out.push({
-          level: 'warn', kind: 'esfuerzo',
-          message: '"' + it.name + '": ' + fmtEffort(it.effort) + ' en ' + wd + ' día(s) = ' +
-            (Math.round(perDayEffort * 10) / 10) + 'h/día, muy por encima de la capacidad.',
-          detail: '', refs: [it.id]
-        });
-      }
-      if (it.effort <= 2 && wd >= 5) {
-        out.push({
-          level: 'info', kind: 'esfuerzo',
-          message: '"' + it.name + '": ' + fmtEffort(it.effort) + ' repartido en ' + wd + ' día(s) — ventana demasiado amplia.',
-          detail: '', refs: [it.id]
-        });
-      }
-    }
-
-    /* 6. progreso incoherente con el estado */
-    for (const it of items) {
-      if (it.status === 'done' && it.progress < 100) {
-        out.push({ level: 'info', kind: 'progreso', message: '"' + it.name + '" está hecho pero marca ' + it.progress + '%.', detail: '', refs: [it.id] });
-      }
-      if (it.status === 'planned' && it.progress > 0) {
-        out.push({ level: 'info', kind: 'progreso', message: '"' + it.name + '" está planeado pero marca ' + it.progress + '%.', detail: '', refs: [it.id] });
-      }
-    }
+    for (const [owner, o] of overload) push('info', 'overload', { owner: owner.charAt(0) === '@' ? owner : '@' + owner, days: o.days, peak: Math.round(o.peak * 10) / 10 });
 
     const order = { error: 0, warn: 1, info: 2 };
     out.sort((a, b) => order[a.level] - order[b.level]);
@@ -881,7 +903,10 @@
   }
 
   function findByName(doc, name) {
-    const k = normKey(name);
+    const raw = String(name).trim();
+    const byTask = (doc.items || []).find(it => it.taskId && it.taskId.toUpperCase() === raw.toUpperCase());
+    if (byTask) return byTask;
+    const k = normKey(raw);
     if (doc.byId.has(k)) return doc.byId.get(k);
     for (const it of doc.items) if (normKey(it.name) === k) return it;
     for (const it of doc.items) if (normKey(it.name).indexOf(k) !== -1) return it;
@@ -892,6 +917,9 @@
 
   global.Roadmap = {
     parse: parse,
+    formatIssue: formatIssue,
+    findTask: findByName,
+    ITEM_FIELDS: ITEM_FIELDS,
     inline: inline,
     escapeHtml: escapeHtml,
     normKey: normKey,
