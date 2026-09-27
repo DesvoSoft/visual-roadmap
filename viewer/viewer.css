@@ -1060,6 +1060,7 @@ html[data-theme="light"] .tracker-bar--slipped { outline-color: #a66100; }
 .timeline-signal { padding: 5px 9px; border: 1px solid rgba(0,180,255,.18); background: #071320; }
 .timeline-signal--alert { color: #ffa347; border-color: rgba(255,122,0,.45); }
 .forecast-note { margin: -6px 24px 14px; color: #7798b4; font-size: 11px; letter-spacing: .02em; }
+.forecast-note { display: none; }
 .awaiting-roadmap .forecast-note { display: none; }
 
 /* Roadmap health: problems the agent should fix in ROADMAP.md */
@@ -1078,6 +1079,91 @@ html[data-theme="light"] .tracker-bar--slipped { outline-color: #a66100; }
 .health__item--info::before { content: 'ℹ'; color: var(--blue-300); }
 .health__item--link { cursor: pointer; }
 .health__item--link:hover, .health__item--link:focus-visible { background: rgba(0,180,255,.07); outline: none; }
+
+/* Compact Tracking workspace */
+.workspace { min-height: 0; overflow: hidden; }
+.hud-header { display: flex; align-items: center; gap: 16px; min-height: 44px; padding: 5px 16px; overflow: hidden; }
+.hud-header__top { display: contents; }
+.hud-header__crumbs { flex: 0 1 auto; min-width: 0; white-space: nowrap; gap: 5px; font-size: 10px; }
+.hud-header__crumb-project { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.hud-header__title { order: 1; flex: none; font: 700 11px 'Exo 2',sans-serif; letter-spacing: .08em; white-space: nowrap; color: var(--text-2); }
+.hud-metrics-bar { order: 2; min-width: 0; flex: 1; flex-wrap: nowrap; gap: 9px; padding: 0; overflow: hidden; white-space: nowrap; font-size: 10px; }
+.m-item { flex: none; }
+.hud-header__meta { order: 3; flex: none; gap: 6px; white-space: nowrap; }
+.hud-header__updated { font-size: 10px; }
+.hud-header__filename { max-width: 105px; overflow: hidden; text-overflow: ellipsis; }
+.hud-panel { grid-template-columns: 1.8fr 1.15fr 1.25fr; min-height: 120px; margin: 8px 16px 8px; flex: none; }
+.hud-card { min-width: 0; padding: 12px 14px; }
+.hud-card__now-title { align-items: center; margin: 7px 0 10px; min-width: 0; }
+.hud-card__now-id { font-size: 14px; }
+.hud-card__now-name { font-size: 13px; flex: 1; min-width: 0; }
+.hud-card__now-warn { flex: none; margin: 0; padding: 2px 6px; border: 1px solid var(--ok); border-radius: 8px; color: var(--ok); font-size: 10px; text-shadow: none; }
+.hud-card__now-warn--late { border-color: var(--neon-orange); color: var(--neon-orange); }
+.hud-card__progress-row { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+.hud-card__now-track { position: relative; flex: 1; overflow: visible; background: rgba(0,212,255,.12); }
+.hud-card__now-fill { background: var(--cyan); box-shadow: 0 0 8px var(--cyan-glow); }
+.hud-card__now-overrun { position: absolute; top: 0; height: 100%; background: var(--neon-orange); border-radius: 2px; }
+.hud-card__now-tick { position: absolute; top: -3px; height: 12px; width: 2px; background: #fff; }
+.hud-card__now-tick[hidden] { display: none; }
+.hud-card__time-label { flex: none; font: 10px 'JetBrains Mono',monospace; color: var(--text-2); }
+.hud-card__context-line { display: flex; align-items: center; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-3); font-size: 10px; }
+.hud-card__context-line #now-context, .hud-card__context-line #now-eta, .hud-card__context-line #now-reason { overflow: hidden; text-overflow: ellipsis; }
+.hud-card__context-line #now-eta { color: var(--text); }
+.hud-card__separator { padding: 0 4px; }
+.hud-card__pct { font-size: 22px; }
+.hud-card__pct-row { margin: 2px 0 5px; }
+.hud-card__phase-track { margin-bottom: 6px; }
+.hud-card__meta-list { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 12px; }
+.hud-card__meta-row { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 0; white-space: nowrap; }
+.hud-card__meta-label { font-size: 9px; letter-spacing: .03em; }
+.hud-card__meta-val { margin: 0; font-size: 11px; }
+.confidence-chip { font-size: 9px; color: var(--cyan); }
+.confidence-chip:empty { display: none; }
+.hud-card__meta-row:has(.confidence-chip:not(:empty)) { display: grid; grid-template-columns: auto auto; column-gap: 6px; align-items: baseline; }
+.hud-card__meta-row:has(.confidence-chip:not(:empty)) .hud-card__meta-label { grid-column: 1 / -1; }
+.hud-card__changes-list { max-height: none; margin-top: 5px; gap: 1px; overflow: hidden; }
+.change-row { padding: 0; line-height: 17px; }
+.changes-more { position: absolute; right: 8px; bottom: 4px; border: 0; background: transparent; color: var(--cyan); cursor: pointer; font-size: 18px; line-height: 14px; }
+.changes-more[hidden] { display: none; }
+.hud-panel__toggle { position: absolute; right: 4px; top: 3px; z-index: 2; border: 0; background: transparent; color: var(--cyan); cursor: pointer; font-size: 15px; }
+.hud-panel--collapsed { display: flex; align-items: center; height: 40px; min-height: 40px; }
+.hud-panel--collapsed .hud-card { padding: 5px 12px; border: 0; }
+.hud-panel--collapsed .hud-card--now { flex: 1; display: flex; align-items: center; gap: 12px; min-width: 0; }
+.hud-panel--collapsed .hud-card--now .hud-card__head-label, .hud-panel--collapsed .hud-card__context-line, .hud-panel--collapsed .hud-card__time-label, .hud-panel--collapsed .hud-card__phase-title, .hud-panel--collapsed .hud-card__tasks-count, .hud-panel--collapsed .hud-card__phase-track, .hud-panel--collapsed .hud-card__meta-list, .hud-panel--collapsed .hud-card--changes { display: none; }
+.hud-panel--collapsed .hud-card__now-title { flex: 1; margin: 0; min-width: 0; }
+.hud-panel--collapsed .hud-card__progress-row { width: 105px; margin: 0; }
+.hud-panel--collapsed .hud-card__pct-row { margin: 0 25px 0 0; }
+.hud-panel--collapsed .hud-card__pct { font-size: 15px; }
+.main-viewport { min-height: 0; overflow: hidden; padding: 0 16px 8px; }
+.subnav-bar { display: flex; align-items: center; gap: 10px; height: 36px; min-height: 36px; margin: 0; padding: 0; }
+.subnav-controls { display: flex; align-items: center; flex: 1; min-width: 0; gap: 5px; flex-wrap: nowrap; }
+.subnav-controls .search-input { width: 135px; min-width: 75px; height: 25px; padding: 0 7px; border: 1px solid var(--border); background: #060e1a; }
+.timeline-signals { display: contents; }
+.timeline-signal { flex: none; height: 24px; padding: 0 8px; font: 500 10px 'Inter',sans-serif; color: #a9c4da; white-space: nowrap; cursor: pointer; }
+.timeline-signal:hover { color: #fff; border-color: rgba(0,212,255,.45); }
+.timeline-signal--active { color: #031018; background: var(--cyan); border-color: var(--cyan); }
+.timeline-signal--alert.timeline-signal--active { color: #1a0b00; background: var(--neon-orange); }
+.app-layout[data-view="timeline"] .hud-header__title { display: none; }
+.tracker-bar { min-width: 6px; }
+.tracker-bar--provisional { color: #d7ecfa; text-shadow: 0 1px 2px rgba(0,0,0,.8); }
+.tracker-bar--now { text-shadow: 0 1px 2px rgba(0,0,0,.55); }
+.tracker-bar__outside { position: absolute; top: 5px; height: 20px; line-height: 20px; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #bcd3e6; cursor: pointer; }
+.tracker-bar__outside--before { text-align: right; }
+.tracker-bar__outside:hover { color: #fff; }
+.btn-icon-toggle { font-size: 15px; }
+.zoom-btn { padding: 0 5px; font-size: 9px; }
+.btn-nav-now { padding: 0 4px; }
+.tracker-container { min-height: 0; }
+.tracker-table { min-height: 0; flex: 1; }
+.tracker-left { width: 235px; min-width: 235px; }
+.task-label-row, .tracker-bar-row, .phase-head-row, .phase-bar-row { height: 30px; min-height: 30px; }
+.tracker-bar { top: 5px; height: 20px; }
+.phase-summary-bar { top: 9px; }
+.task-label-row, .phase-head-row { padding-left: 10px; font-size: 11px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.timeline-legend { height: 24px; min-height: 24px; font-size: 9px; }
+@media (max-width: 1250px) { .hud-header__updated, .hud-header__filename, .m-item:nth-child(n+5) { display: none; } .subnav-bar { height: auto; min-height: 36px; padding: 4px 0; } .subnav-controls { flex-wrap: wrap; row-gap: 5px; } }
+@media (max-width: 1024px) { .workspace { overflow-y: auto; } .hud-header { flex-wrap: wrap; height: auto; } .hud-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hud-card--changes { grid-column: 1 / -1; } .hud-panel--collapsed { display: flex; } .main-viewport { min-height: 420px; overflow: visible; } }
+@media (max-width: 680px) { .hud-panel { grid-template-columns: minmax(0, 1fr); margin: 8px; } .hud-header { padding: 5px 8px; } .main-viewport { padding: 0 8px 8px; } .workspace { min-width: 0; } .hud-card--changes { grid-column: auto; } .hud-metrics-bar { display: none; } .hud-header__meta { margin-left: auto; } .subnav-bar { overflow-x: auto; } .tracker-left { width: 170px; min-width: 170px; } }
 .app-layout[data-view="board"] .health { display: none; }
 html[data-theme="light"] .health { background: rgba(255,255,255,.7); }
 html[data-theme="light"] .health__head, html[data-theme="light"] .health__item { color: #365a73; }
@@ -1217,3 +1303,12 @@ html[data-theme="light"] .timeline-title { color: #1d5a7a; }
 html[data-theme="light"] .btn-nav-now { color: #245f80; }
 html[data-theme="light"] .btn-nav-now:hover { color: var(--neon-orange); }
 html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8; }
+html[data-theme="light"] .tracker-bar__outside { color: #2b4a60; }
+html[data-theme="light"] .tracker-bar--provisional { color: #16364d; text-shadow: none; }
+html[data-theme="light"] .timeline-signal--active { color: #fff; background: #007ea8; border-color: #007ea8; }
+html[data-theme="light"] .hud-card__context-line #now-eta { color: #16364d; }
+html[data-theme="light"] .subnav-controls .search-input { background: #fff; color: #16364d; border-color: #cadce5; }
+html[data-theme="light"] .hud-card__now-tick { background: #16364d; }
+html[data-booting] *, html[data-booting] *::before, html[data-booting] *::after { transition: none !important; }
+.rail__btn-label { font-size: 8px; letter-spacing: .03em; max-width: 100%; overflow: hidden; }
+#now-context:empty + .hud-card__separator, .hud-card__separator:has(+ #now-reason:empty) { display: none; }

@@ -51,8 +51,9 @@ There are no accounts and no services. The roadmap is a Markdown file you own, a
 
 - **Plans in small tasks** — The bundled skill teaches the agent to turn every request into verifiable 15–90 minute tasks grouped into usable releases. `add` and `split` create them without the agent touching Markdown tables.
 - **One command per state change** — `done T004 --next` records the end time, the real duration and the lines changed (from git), then starts the next ready task. Output is a single line with no ANSI colors when piped, so it costs the agent almost no tokens.
-- **Automatic with Claude Code** — A `SessionStart` hook gives the agent a 4-line brief (current task, next tasks, anything to fix). A `Stop` hook warns it once when the roadmap has errors, an ETA has passed, or code changed with no active task.
-- **Live viewer** — Current task with elapsed time and ETA, revisions with their reasons, project forecast with a confidence window, and a timeline. The tab title reads `▶ T004 · 23 min` even when the tab is in the background.
+- **Automatic with Claude Code** — A `SessionStart` hook gives the agent a 4-line brief (current task, next tasks, anything to fix). A `Stop` hook warns it once when the roadmap has errors, an ETA has passed, or code changed with no active task, and the `PostToolUse` / `UserPromptSubmit` hooks start the next ready task when code changes with nothing active.
+- **Timeline first** — A one-line header and a compact overview leave most of the screen to the deliverables timeline. The current task shows elapsed vs. expected time on one bar (orange past the estimate), and the overview collapses to a single strip. Filter chips (pending, blocked, overdue, undated) narrow the timeline in one click.
+- **Live viewer** — Current task with elapsed time and ETA, revisions with their reasons, project forecast with a confidence window, and a timeline whose labels stay readable next to short bars. The tab title reads `▶ T004 · 23 min` even when the tab is in the background.
 - **Roadmap health** — Catches missing or cancelled dependencies, several active tasks, stale ETAs, tasks without an effort estimate and tasks too big to verify. Click a warning to open the task.
 - **Honest forecasts** — Projections respect dependencies, run independent work in parallel lanes (`capacity`) and are calibrated with the real durations of finished tasks.
 - **Git-aware** — The last commit shows in the header, and commits that mention a task ID (`T004: …`) are listed in that task's detail.
@@ -102,6 +103,14 @@ The viewer opens at `http://127.0.0.1:3579` and updates whenever `ROADMAP.md` ch
 
 After that, every new request is split and tracked the same way. You do not have to repeat the instruction.
 
+### Or let your agent set it up
+
+Paste this into Claude Code, Codex, Cursor or any agent with a shell:
+
+> Install visual-roadmap in this project: run `npm install --save-dev git+https://github.com/DesvoSoft/visual-roadmap.git` and `npx visual-roadmap init --project "<name>"`. Then read the generated skill (`.claude/skills/visual-roadmap/SKILL.md` or `SKILL.md`), plan the remaining work with `npx visual-roadmap add`, and follow the protocol from now on.
+
+The agent only needs a shell and Node.js 18+. Every command answers in one line, and `npx visual-roadmap status` tells it where to resume.
+
 > **Working from a local clone?** Run `node path/to/visual-roadmap/bin/visual-roadmap.js init` in your project, then `… live`. The package is not on npm yet.
 
 ---
@@ -146,6 +155,15 @@ $ npx visual-roadmap done T002 --note "6 search tests green" --next
 | `visual-roadmap open` | Open the portable `roadmap.html`. |
 | `visual-roadmap agents [--install]` | Print or install the block for `CLAUDE.md` / `AGENTS.md`. |
 | `visual-roadmap hooks [--install]` | Print or install the Claude Code hooks. |
+
+### Troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| Port 3579 is taken | `npx visual-roadmap live --port 3580` |
+| The agent stopped updating the roadmap | Ask it to run `npx visual-roadmap status`; with Claude Code, check that `.claude/settings.json` has the hooks (`npx visual-roadmap hooks --install`). |
+| The viewer shows warnings after a manual edit | `npx visual-roadmap check` lists each problem with the fix. |
+| Another agent (Codex, Cursor…) ignores the protocol | Make sure `AGENTS.md` / `.cursorrules` has the block: `npx visual-roadmap agents --install`. |
 
 ---
 

@@ -18,6 +18,9 @@
   /* ── Update Header & HUD Mission Control ──────────────── */
   function updateHUD(doc) {
     if (!doc) return;
+    /* First paint lands at final widths; transitions only animate later updates */
+    const root = document.documentElement;
+    if (root.hasAttribute('data-booting')) requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute('data-booting')));
     const s = doc.stats || {};
     const forecast = global.Forecast.calculate(doc);
     const n = forecast.active && String(doc.nowTask?.id || '').toUpperCase() === String(forecast.active.taskId || '').toUpperCase()
@@ -37,8 +40,8 @@
     const commit = head && !doc.lastCommit ? head.hash : doc.lastCommit;
     const commitTime = head && !doc.lastCommit ? t('ago', { time: global.Forecast.duration((Date.now() - head.time) / 60000) }) : doc.lastCommitTime;
     const values = { 'm-version': doc.version, 'm-phase': doc.phase, 'm-phase-total': doc.phase ? s.phasesTotal : null, 'm-tasks-done': s.done, 'm-tasks-total': s.total, 'm-tests': doc.meta.tests, 'm-e2e': doc.meta.e2e, 'm-decisions': doc.meta.decisions, 'm-lines': doc.meta.lines, 'm-commit': commit, 'm-commit-time': commitTime };
-    Object.entries(values).forEach(([id, value]) => { if ($(id)) $(id).textContent = value === '' || value == null ? '—' : value; });
-    qa('.m-item').forEach(el => { el.hidden = [...el.querySelectorAll('[id]')].every(child => child.textContent === '—'); });
+    Object.entries(values).forEach(([id, value]) => { if ($(id)) $(id).textContent = value === '' || value == null ? '' : value; });
+    qa('.m-item').forEach(el => { el.hidden = [...el.querySelectorAll('strong, code')].some(child => !child.textContent.trim()); });
 
     /* ── Card 1: AHORA MISMO · EN CURSO ── */
     const active = forecast.active;
@@ -53,9 +56,12 @@
     if ($('now-elapsed')) $('now-elapsed').textContent = global.Forecast.duration(forecast.elapsed);
     const moved = forecast.initialEta != null && forecast.eta != null
       ? Math.round((forecast.eta - forecast.initialEta) / 60000) : 0;
-    if ($('now-warn')) $('now-warn').textContent = active?.status === 'paused' ? t('paused') : forecast.overdue
-      ? `${t('delayed')}: ${global.Forecast.duration(forecast.delayMinutes)} · ${t('provisional')}`
-      : forecast.latestChange && moved > 0 ? `${t('etaExtended')} ${global.Forecast.duration(moved)}` : n.status || '';
+    const expectedMinutes = active?.effort ? active.effort * 60 : parseFloat(n.expected) || 0;
+    const overrunMinutes = expectedMinutes ? Math.max(0, Math.round(forecast.elapsed - expectedMinutes), moved) : Math.max(0, moved);
+    if ($('now-warn')) {
+      $('now-warn').textContent = active?.status === 'paused' ? t('paused') : overrunMinutes ? `+${global.Forecast.duration(overrunMinutes)}` : t('onTrack');
+      $('now-warn').classList.toggle('hud-card__now-warn--late', overrunMinutes > 0);
+    }
     if ($('now-eta')) $('now-eta').textContent = forecast.eta != null
       ? `${global.Forecast.dateTime(forecast.eta)}${forecast.provisional ? ' · ' + t('provisional') : ''}` : t('noEstimate');
     if ($('now-reason')) $('now-reason').textContent = forecast.latestChange?.reason || n.reason || '';
@@ -63,9 +69,17 @@
 
     if ($('now-fill')) {
       /* Calculate bar width */
-      const pct = active?.progress || 0;
-      $('now-fill').style.width = `${pct}%`;
+      const elapsed = active ? forecast.elapsed || 0 : 0;
+      const scale = Math.max(expectedMinutes, elapsed, 1);
+      const tick = expectedMinutes ? Math.min(100, expectedMinutes / scale * 100) : 100;
+      // Time-based bar: cyan up to the expected mark, orange overrun past it
+      const fill = expectedMinutes ? Math.min(elapsed, expectedMinutes) / scale * 100 : active?.progress || 0;
+      $('now-fill').style.width = `${fill}%`;
       $('now-fill').classList.toggle('now-fill--running', active?.status === 'active');
+      $('now-tick').style.left = `${tick}%`;
+      $('now-tick').hidden = !expectedMinutes;
+      $('now-overrun').style.left = `${tick}%`;
+      $('now-overrun').style.width = `${expectedMinutes ? Math.max(0, Math.min(100, elapsed / scale * 100) - tick) : 0}%`;
     }
 
     /* ── Card 2: PROJECT & CADENCE ── */
@@ -76,7 +90,7 @@
 
     if ($('phase-done-cnt')) $('phase-done-cnt').textContent = `${s.phasesDone} ${t('of')} ${s.phasesTotal}`;
     if ($('phase-eta')) $('phase-eta').textContent = forecast.projectEta != null
-      ? `${global.Forecast.dateTime(forecast.projectEta)} · ${t('calculated')}` : s.estimatedText || t('noEstimate');
+      ? global.Forecast.dateTime(forecast.projectEta) : s.estimatedText || t('noEstimate');
     if ($('phase-pace')) $('phase-pace').textContent = s.cadenceText || (s.cadenceMinutes != null ? `${s.cadenceMinutes} min ${t('perTask')}` : t('noEstimate'));
     if ($('phase-started')) $('phase-started').textContent = global.Forecast.timestamp(doc.meta.started) != null
       ? global.Forecast.dateTime(global.Forecast.timestamp(doc.meta.started)) : s.startedText || t('noDate');
@@ -87,7 +101,9 @@
       : forecast.provisional ? t('reviewEta')
       : forecast.samples
         ? t('calibrated', {count:forecast.samples,capacity:forecast.capacity})
-        : t('basedOnEffort'));
+         : t('basedOnEffort'));
+    if ($('phase-eta')) $('phase-eta').title = `${t('calculated')} · ${$('forecast-note').textContent}`;
+    if ($('forecast-confidence')) $('forecast-confidence').textContent = forecast.projectRange ? `${t(forecast.projectRange.confidence === 'baja' ? 'low' : forecast.projectRange.confidence === 'media' ? 'medium' : 'high')} ${t('confidence')}` : '';
     const history = $('estimate-history');
     if (history) {
       history.replaceChildren();
@@ -101,7 +117,7 @@
     }
 
     /* ── Card 3: ÚLTIMOS CAMBIOS ── */
-    renderRecentChanges(doc);
+    renderRecentChanges(doc, forecast);
     renderHealth(doc, forecast);
 
     /* Tab title: readable from a background tab while the agent works */
@@ -210,13 +226,20 @@
     });
   }
 
-  function renderRecentChanges(doc) {
+  function renderRecentChanges(doc, forecast) {
     const list = $('changes-list');
     if (!list) return;
 
     list.innerHTML = '';
-    if (doc.recentChanges && doc.recentChanges.length > 0) {
-      doc.recentChanges.slice(0, 7).forEach(c => {
+    const events = [...(doc.recentChanges || [])];
+    for (const change of forecast.changes || []) {
+      const text = `${change.taskId} ETA ${change.remaining}`;
+      if (events.some(c => c.text?.includes(change.taskId) && c.text?.includes(change.remaining))) continue;
+      events.push({ time: global.Forecast.dateTime(change.time), icon: '↻', text: change.reason ? `${text} · ${change.reason}` : text, stamp: change.time });
+    }
+    events.sort((a, b) => (b.stamp || Date.parse(b.time) || 0) - (a.stamp || Date.parse(a.time) || 0));
+    if (events.length > 0) {
+      events.slice(0, 4).forEach(c => {
         const row = document.createElement('div');
         row.className = 'change-row';
 
@@ -241,6 +264,7 @@
     } else {
       list.textContent = t('noChanges');
     }
+    if ($('changes-more')) $('changes-more').hidden = events.length <= 4;
   }
 
   function escapeHtml(s) {
@@ -367,6 +391,18 @@
     $('language-select')?.addEventListener('change', e => global.UI.setLanguage(e.target.value));
     $('theme-toggle')?.addEventListener('click', () => global.UI.setTheme(global.UI.theme === 'dark' ? 'light' : 'dark'));
     $('notify-toggle')?.addEventListener('click', toggleNotify);
+    let hudCollapsed = false;
+    try { hudCollapsed = localStorage.getItem('visual-roadmap-hud-collapsed') === 'true'; } catch {}
+    const toggleHud = () => {
+      const panel = q('.hud-panel');
+      panel.classList.toggle('hud-panel--collapsed', hudCollapsed);
+      $('hud-toggle').setAttribute('aria-expanded', String(!hudCollapsed));
+      $('hud-toggle').title = t(hudCollapsed ? 'expandOverview' : 'collapseOverview');
+      $('hud-toggle').textContent = hudCollapsed ? '⌄' : '⌃';
+    };
+    toggleHud();
+    $('hud-toggle')?.addEventListener('click', () => { hudCollapsed = !hudCollapsed; try { localStorage.setItem('visual-roadmap-hud-collapsed', String(hudCollapsed)); } catch {} toggleHud(); });
+    $('changes-more')?.addEventListener('click', () => setView('log'));
     paintNotify();
     setInterval(refreshGit, 60000);
 

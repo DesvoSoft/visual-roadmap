@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="dark" data-booting>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1207,6 +1207,7 @@ html[data-theme="light"] .tracker-bar--slipped { outline-color: #a66100; }
 .timeline-signal { padding: 5px 9px; border: 1px solid rgba(0,180,255,.18); background: #071320; }
 .timeline-signal--alert { color: #ffa347; border-color: rgba(255,122,0,.45); }
 .forecast-note { margin: -6px 24px 14px; color: #7798b4; font-size: 11px; letter-spacing: .02em; }
+.forecast-note { display: none; }
 .awaiting-roadmap .forecast-note { display: none; }
 
 /* Roadmap health: problems the agent should fix in ROADMAP.md */
@@ -1225,6 +1226,91 @@ html[data-theme="light"] .tracker-bar--slipped { outline-color: #a66100; }
 .health__item--info::before { content: 'ℹ'; color: var(--blue-300); }
 .health__item--link { cursor: pointer; }
 .health__item--link:hover, .health__item--link:focus-visible { background: rgba(0,180,255,.07); outline: none; }
+
+/* Compact Tracking workspace */
+.workspace { min-height: 0; overflow: hidden; }
+.hud-header { display: flex; align-items: center; gap: 16px; min-height: 44px; padding: 5px 16px; overflow: hidden; }
+.hud-header__top { display: contents; }
+.hud-header__crumbs { flex: 0 1 auto; min-width: 0; white-space: nowrap; gap: 5px; font-size: 10px; }
+.hud-header__crumb-project { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.hud-header__title { order: 1; flex: none; font: 700 11px 'Exo 2',sans-serif; letter-spacing: .08em; white-space: nowrap; color: var(--text-2); }
+.hud-metrics-bar { order: 2; min-width: 0; flex: 1; flex-wrap: nowrap; gap: 9px; padding: 0; overflow: hidden; white-space: nowrap; font-size: 10px; }
+.m-item { flex: none; }
+.hud-header__meta { order: 3; flex: none; gap: 6px; white-space: nowrap; }
+.hud-header__updated { font-size: 10px; }
+.hud-header__filename { max-width: 105px; overflow: hidden; text-overflow: ellipsis; }
+.hud-panel { grid-template-columns: 1.8fr 1.15fr 1.25fr; min-height: 120px; margin: 8px 16px 8px; flex: none; }
+.hud-card { min-width: 0; padding: 12px 14px; }
+.hud-card__now-title { align-items: center; margin: 7px 0 10px; min-width: 0; }
+.hud-card__now-id { font-size: 14px; }
+.hud-card__now-name { font-size: 13px; flex: 1; min-width: 0; }
+.hud-card__now-warn { flex: none; margin: 0; padding: 2px 6px; border: 1px solid var(--ok); border-radius: 8px; color: var(--ok); font-size: 10px; text-shadow: none; }
+.hud-card__now-warn--late { border-color: var(--neon-orange); color: var(--neon-orange); }
+.hud-card__progress-row { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+.hud-card__now-track { position: relative; flex: 1; overflow: visible; background: rgba(0,212,255,.12); }
+.hud-card__now-fill { background: var(--cyan); box-shadow: 0 0 8px var(--cyan-glow); }
+.hud-card__now-overrun { position: absolute; top: 0; height: 100%; background: var(--neon-orange); border-radius: 2px; }
+.hud-card__now-tick { position: absolute; top: -3px; height: 12px; width: 2px; background: #fff; }
+.hud-card__now-tick[hidden] { display: none; }
+.hud-card__time-label { flex: none; font: 10px 'JetBrains Mono',monospace; color: var(--text-2); }
+.hud-card__context-line { display: flex; align-items: center; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-3); font-size: 10px; }
+.hud-card__context-line #now-context, .hud-card__context-line #now-eta, .hud-card__context-line #now-reason { overflow: hidden; text-overflow: ellipsis; }
+.hud-card__context-line #now-eta { color: var(--text); }
+.hud-card__separator { padding: 0 4px; }
+.hud-card__pct { font-size: 22px; }
+.hud-card__pct-row { margin: 2px 0 5px; }
+.hud-card__phase-track { margin-bottom: 6px; }
+.hud-card__meta-list { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 12px; }
+.hud-card__meta-row { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 0; white-space: nowrap; }
+.hud-card__meta-label { font-size: 9px; letter-spacing: .03em; }
+.hud-card__meta-val { margin: 0; font-size: 11px; }
+.confidence-chip { font-size: 9px; color: var(--cyan); }
+.confidence-chip:empty { display: none; }
+.hud-card__meta-row:has(.confidence-chip:not(:empty)) { display: grid; grid-template-columns: auto auto; column-gap: 6px; align-items: baseline; }
+.hud-card__meta-row:has(.confidence-chip:not(:empty)) .hud-card__meta-label { grid-column: 1 / -1; }
+.hud-card__changes-list { max-height: none; margin-top: 5px; gap: 1px; overflow: hidden; }
+.change-row { padding: 0; line-height: 17px; }
+.changes-more { position: absolute; right: 8px; bottom: 4px; border: 0; background: transparent; color: var(--cyan); cursor: pointer; font-size: 18px; line-height: 14px; }
+.changes-more[hidden] { display: none; }
+.hud-panel__toggle { position: absolute; right: 4px; top: 3px; z-index: 2; border: 0; background: transparent; color: var(--cyan); cursor: pointer; font-size: 15px; }
+.hud-panel--collapsed { display: flex; align-items: center; height: 40px; min-height: 40px; }
+.hud-panel--collapsed .hud-card { padding: 5px 12px; border: 0; }
+.hud-panel--collapsed .hud-card--now { flex: 1; display: flex; align-items: center; gap: 12px; min-width: 0; }
+.hud-panel--collapsed .hud-card--now .hud-card__head-label, .hud-panel--collapsed .hud-card__context-line, .hud-panel--collapsed .hud-card__time-label, .hud-panel--collapsed .hud-card__phase-title, .hud-panel--collapsed .hud-card__tasks-count, .hud-panel--collapsed .hud-card__phase-track, .hud-panel--collapsed .hud-card__meta-list, .hud-panel--collapsed .hud-card--changes { display: none; }
+.hud-panel--collapsed .hud-card__now-title { flex: 1; margin: 0; min-width: 0; }
+.hud-panel--collapsed .hud-card__progress-row { width: 105px; margin: 0; }
+.hud-panel--collapsed .hud-card__pct-row { margin: 0 25px 0 0; }
+.hud-panel--collapsed .hud-card__pct { font-size: 15px; }
+.main-viewport { min-height: 0; overflow: hidden; padding: 0 16px 8px; }
+.subnav-bar { display: flex; align-items: center; gap: 10px; height: 36px; min-height: 36px; margin: 0; padding: 0; }
+.subnav-controls { display: flex; align-items: center; flex: 1; min-width: 0; gap: 5px; flex-wrap: nowrap; }
+.subnav-controls .search-input { width: 135px; min-width: 75px; height: 25px; padding: 0 7px; border: 1px solid var(--border); background: #060e1a; }
+.timeline-signals { display: contents; }
+.timeline-signal { flex: none; height: 24px; padding: 0 8px; font: 500 10px 'Inter',sans-serif; color: #a9c4da; white-space: nowrap; cursor: pointer; }
+.timeline-signal:hover { color: #fff; border-color: rgba(0,212,255,.45); }
+.timeline-signal--active { color: #031018; background: var(--cyan); border-color: var(--cyan); }
+.timeline-signal--alert.timeline-signal--active { color: #1a0b00; background: var(--neon-orange); }
+.app-layout[data-view="timeline"] .hud-header__title { display: none; }
+.tracker-bar { min-width: 6px; }
+.tracker-bar--provisional { color: #d7ecfa; text-shadow: 0 1px 2px rgba(0,0,0,.8); }
+.tracker-bar--now { text-shadow: 0 1px 2px rgba(0,0,0,.55); }
+.tracker-bar__outside { position: absolute; top: 5px; height: 20px; line-height: 20px; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #bcd3e6; cursor: pointer; }
+.tracker-bar__outside--before { text-align: right; }
+.tracker-bar__outside:hover { color: #fff; }
+.btn-icon-toggle { font-size: 15px; }
+.zoom-btn { padding: 0 5px; font-size: 9px; }
+.btn-nav-now { padding: 0 4px; }
+.tracker-container { min-height: 0; }
+.tracker-table { min-height: 0; flex: 1; }
+.tracker-left { width: 235px; min-width: 235px; }
+.task-label-row, .tracker-bar-row, .phase-head-row, .phase-bar-row { height: 30px; min-height: 30px; }
+.tracker-bar { top: 5px; height: 20px; }
+.phase-summary-bar { top: 9px; }
+.task-label-row, .phase-head-row { padding-left: 10px; font-size: 11px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.timeline-legend { height: 24px; min-height: 24px; font-size: 9px; }
+@media (max-width: 1250px) { .hud-header__updated, .hud-header__filename, .m-item:nth-child(n+5) { display: none; } .subnav-bar { height: auto; min-height: 36px; padding: 4px 0; } .subnav-controls { flex-wrap: wrap; row-gap: 5px; } }
+@media (max-width: 1024px) { .workspace { overflow-y: auto; } .hud-header { flex-wrap: wrap; height: auto; } .hud-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hud-card--changes { grid-column: 1 / -1; } .hud-panel--collapsed { display: flex; } .main-viewport { min-height: 420px; overflow: visible; } }
+@media (max-width: 680px) { .hud-panel { grid-template-columns: minmax(0, 1fr); margin: 8px; } .hud-header { padding: 5px 8px; } .main-viewport { padding: 0 8px 8px; } .workspace { min-width: 0; } .hud-card--changes { grid-column: auto; } .hud-metrics-bar { display: none; } .hud-header__meta { margin-left: auto; } .subnav-bar { overflow-x: auto; } .tracker-left { width: 170px; min-width: 170px; } }
 .app-layout[data-view="board"] .health { display: none; }
 html[data-theme="light"] .health { background: rgba(255,255,255,.7); }
 html[data-theme="light"] .health__head, html[data-theme="light"] .health__item { color: #365a73; }
@@ -1364,6 +1450,15 @@ html[data-theme="light"] .timeline-title { color: #1d5a7a; }
 html[data-theme="light"] .btn-nav-now { color: #245f80; }
 html[data-theme="light"] .btn-nav-now:hover { color: var(--neon-orange); }
 html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8; }
+html[data-theme="light"] .tracker-bar__outside { color: #2b4a60; }
+html[data-theme="light"] .tracker-bar--provisional { color: #16364d; text-shadow: none; }
+html[data-theme="light"] .timeline-signal--active { color: #fff; background: #007ea8; border-color: #007ea8; }
+html[data-theme="light"] .hud-card__context-line #now-eta { color: #16364d; }
+html[data-theme="light"] .subnav-controls .search-input { background: #fff; color: #16364d; border-color: #cadce5; }
+html[data-theme="light"] .hud-card__now-tick { background: #16364d; }
+html[data-booting] *, html[data-booting] *::before, html[data-booting] *::after { transition: none !important; }
+.rail__btn-label { font-size: 8px; letter-spacing: .03em; max-width: 100%; overflow: hidden; }
+#now-context:empty + .hud-card__separator, .hud-card__separator:has(+ #now-reason:empty) { display: none; }
 
 
 </style>
@@ -1453,9 +1548,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
         </div>
       </div>
 
-      <div class="hud-header__title-row">
-        <h1 class="hud-header__title" id="page-title" data-i18n="progress">PROGRESS TRACKER</h1>
-      </div>
+      <h1 class="hud-header__title" id="page-title" data-i18n="progress">PROGRESS TRACKER</h1>
 
       <!-- Quick Metrics Bar -->
       <div class="hud-metrics-bar">
@@ -1472,6 +1565,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
 
     <!-- ── 3. Mission Control HUD (3-Column Card) ──────── -->
     <section class="hud-panel" aria-label="Progress overview">
+      <button id="hud-toggle" class="hud-panel__toggle" type="button" aria-expanded="true" data-i18n-title="collapseOverview">⌃</button>
       <div class="hud-panel__corner hud-panel__corner--tl"></div>
       <div class="hud-panel__corner hud-panel__corner--tr"></div>
       <div class="hud-panel__corner hud-panel__corner--bl"></div>
@@ -1483,20 +1577,17 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
         <div class="hud-card__now-title">
           <span class="hud-card__now-id" id="now-id"></span>
           <span class="hud-card__now-name" id="now-name"></span>
-        </div>
-        <div class="hud-card__now-context" id="now-context"></div>
-
-        <div class="hud-card__now-times">
-          <span><span data-i18n="expected">Expected</span>: <strong id="now-expected"></strong></span>
-          <span><span data-i18n="elapsed">Elapsed</span>: <strong id="now-elapsed"></strong></span>
           <span class="hud-card__now-warn" id="now-warn"></span>
         </div>
-        <div class="hud-card__now-times"><span id="now-forecast-label">Agent ETA</span>: <strong id="now-eta"></strong></div>
-        <div class="hud-card__now-context" id="now-reason"></div>
-
-        <div class="hud-card__now-track">
-          <div class="hud-card__now-fill" id="now-fill" style="width: 0;"></div>
+        <div class="hud-card__progress-row">
+          <div class="hud-card__now-track">
+            <div class="hud-card__now-fill" id="now-fill" style="width: 0;"></div>
+            <div class="hud-card__now-overrun" id="now-overrun"></div>
+            <div class="hud-card__now-tick" id="now-tick"></div>
+          </div>
+          <span class="hud-card__time-label"><strong id="now-elapsed"></strong> / <strong id="now-expected"></strong></span>
         </div>
+        <div class="hud-card__context-line"><span id="now-context"></span><span class="hud-card__separator"> · </span><span id="now-forecast-label">Agent ETA</span>: <strong id="now-eta"></strong><span class="hud-card__separator"> · </span><span id="now-reason"></span></div>
       </div>
 
       <!-- Col 2: PROJECT & CADENCE ESTIMATES -->
@@ -1518,7 +1609,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
           </div>
           <div class="hud-card__meta-row">
             <span class="hud-card__meta-label" data-i18n="calculatedDelivery">Projected delivery</span>
-            <strong class="hud-card__meta-val" id="phase-eta"></strong>
+            <strong class="hud-card__meta-val" id="phase-eta"></strong><span id="forecast-confidence" class="confidence-chip"></span>
           </div>
           <div class="hud-card__meta-row">
             <span class="hud-card__meta-label" data-i18n="pace">Observed pace</span>
@@ -1535,8 +1626,8 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       <div class="hud-card hud-card--changes">
         <div class="hud-card__head-label" data-i18n="recentChanges">RECENT CHANGES</div>
         <div class="hud-card__changes-list" id="changes-list"></div>
-        <div class="hud-card__head-label" style="margin-top: 12px;" data-i18n="etaChanges">ETA CHANGES</div>
-        <div class="hud-card__changes-list" id="estimate-history"></div>
+        <div id="estimate-history" hidden></div>
+        <button id="changes-more" class="changes-more" type="button" data-i18n-title="moreChanges">⋯</button>
       </div>
     </section>
 
@@ -2525,7 +2616,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       open:'Open', pick:'Open ROADMAP.md', choose:'Select ROADMAP.md to start tracking',
       connected:'Synced', connecting:'Connecting', disconnected:'Disconnected', snapshot:'Snapshot', updatedAgo:'Updated {time} ago', unknownUpdate:'Update time unknown',
       version:'Version', phase:'Phase', of:'of', tasks:'tasks', decisions:'decisions', lines:'lines', lastCommit:'last commit',
-      now:'CURRENT TASK', noTask:'No active task', markActive:'Waiting for the agent to start a task', expected:'Expected', elapsed:'Elapsed', agentEta:'Agent ETA', revisedEta:'Revised ETA',
+      now:'CURRENT TASK', noTask:'No active task', markActive:'Waiting for the agent to start a task', expected:'Expected', elapsed:'Elapsed', agentEta:'Agent ETA', revisedEta:'Revised ETA', onTrack:'On track', collapseOverview:'Collapse overview', expandOverview:'Expand overview', moreChanges:'View all changes in Notes',
       delayed:'Delayed', provisional:'provisional', etaExtended:'ETA extended by', noEstimate:'No estimate',
       phasesDone:'Phases completed', calculatedDelivery:'Projected delivery', pace:'Observed pace', since:'In development since', perTask:'per task',
       recentChanges:'RECENT CHANGES', etaChanges:'ETA CHANGES', noChanges:'No changes recorded in ROADMAP.md', noRevisions:'No ETA revisions recorded',
@@ -2550,7 +2641,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       open:'Abrir', pick:'Abrir ROADMAP.md', choose:'Selecciona ROADMAP.md para comenzar el seguimiento',
       connected:'Sincronizado', connecting:'Conectando', disconnected:'Sin conexión', snapshot:'Vista puntual', updatedAgo:'Actualizado hace {time}', unknownUpdate:'Fecha de actualización desconocida',
       version:'Versión', phase:'Fase', of:'de', tasks:'tareas', decisions:'decisiones', lines:'líneas', lastCommit:'último commit',
-      now:'TAREA ACTUAL', noTask:'Sin tarea en curso', markActive:'Esperando a que el agente inicie una tarea', expected:'Esperado', elapsed:'Transcurrido', agentEta:'ETA del agente', revisedEta:'ETA revisada',
+      now:'TAREA ACTUAL', noTask:'Sin tarea en curso', markActive:'Esperando a que el agente inicie una tarea', expected:'Esperado', elapsed:'Transcurrido', agentEta:'ETA del agente', revisedEta:'ETA revisada', onTrack:'A tiempo', collapseOverview:'Contraer resumen', expandOverview:'Expandir resumen', moreChanges:'Ver todos los cambios en Notas',
       delayed:'Retraso', provisional:'provisional', etaExtended:'ETA ampliada', noEstimate:'Sin estimación',
       phasesDone:'Fases completadas', calculatedDelivery:'Entrega calculada', pace:'Ritmo observado', since:'En desarrollo desde', perTask:'por tarea',
       recentChanges:'ÚLTIMOS CAMBIOS', etaChanges:'CAMBIOS DE ETA', noChanges:'Sin cambios registrados en ROADMAP.md', noRevisions:'Sin revisiones de ETA registradas',
@@ -2907,7 +2998,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
   'use strict';
   const DAY = 86400000;
   const scales = { '6h': [6*3600000,3600000], '1d': [DAY,2*3600000], '3d': [3*DAY,12*3600000], '1w': [7*DAY,DAY], '1m': [30*DAY,5*DAY] };
-  let zoom = '1d', offset = 0, search = '';
+  let zoom = '1d', offset = 0, search = '', filter = '';
   let liveRange = null;
   const expanded = new Set();
   const t = key => global.UI.t(key);
@@ -2963,11 +3054,22 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     const input = el('input','search-input'); input.placeholder = t('search'); input.value = search;
     input.addEventListener('input', () => { search=input.value.toLowerCase().trim(); render(doc,container); container.querySelector('.search-input').focus(); });
     controls.appendChild(input);
-    const expand=el('button','btn-icon-toggle',t('expand'));
+    const expand=el('button','btn-icon-toggle','⊞'); expand.title=t('expand'); expand.setAttribute('aria-label',t('expand'));
     expand.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.add(group.id));render(doc,container);});
-    const collapse=el('button','btn-icon-toggle',t('collapse'));
+    const collapse=el('button','btn-icon-toggle','⊟'); collapse.title=t('collapse'); collapse.setAttribute('aria-label',t('collapse'));
     collapse.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.delete(group.id));render(doc,container);});
-    controls.append(expand,collapse);
+    const late = doc.items.filter(it => it.status !== 'done' && it.status !== 'cancelled' && time(it.end,true) != null && time(it.end,true) < now).length;
+    const blocked = doc.items.filter(it => it.status === 'blocked').length;
+    const missingDates = doc.items.filter(it => it.status !== 'done' && !it.start && !it.end).length;
+    const signals = el('div','timeline-signals');
+    for (const [key,value] of [['pending',doc.stats.open],['blocked',blocked],['overdue',late],['undated',missingDates]]) {
+      const signal=el('button','timeline-signal'+(filter===key?' timeline-signal--active':''),`${t(key)} ${value}`);
+      signal.type='button'; signal.setAttribute('aria-pressed',String(filter===key));
+      if(value && (key==='blocked'||key==='overdue')) signal.classList.add('timeline-signal--alert');
+      signal.addEventListener('click',()=>{filter=filter===key?'':key;render(doc,container);});
+      signals.appendChild(signal);
+    }
+    controls.append(signals,expand,collapse);
     for (const [key,label] of [['6h','6 H'],['1d',global.UI.language==='es'?'1 DÍA':'1 DAY'],['3d',global.UI.language==='es'?'3 DÍAS':'3 DAYS'],['1w',global.UI.language==='es'?'1 SEMANA':'1 WEEK'],['1m',global.UI.language==='es'?'1 MES':'1 MONTH']]) {
       const b=el('button','zoom-btn'+(zoom===key?' zoom-btn--active':''),label);
       b.addEventListener('click',()=>{zoom=key;offset=0;render(doc,container);}); controls.appendChild(b);
@@ -2977,17 +3079,6 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       b.addEventListener('click',()=>{offset=delta?offset+delta:0;render(doc,container);}); controls.appendChild(b);
     }
     toolbar.appendChild(controls); container.appendChild(toolbar);
-    const late = doc.items.filter(it => it.status !== 'done' && it.status !== 'cancelled' && time(it.end,true) != null && time(it.end,true) < now).length;
-    const blocked = doc.items.filter(it => it.status === 'blocked').length;
-    const missingDates = doc.items.filter(it => it.status !== 'done' && !it.start && !it.end).length;
-    const signals = el('div','timeline-signals');
-    for (const [key,value] of [['pending',doc.stats.open],['blocked',blocked],['overdue',late],['undated',missingDates]]) {
-      const label=t(key);
-      const signal=el('span','timeline-signal',`${label}: ${value}`);
-      if(value && (key==='blocked'||key==='overdue')) signal.classList.add('timeline-signal--alert');
-      signals.appendChild(signal);
-    }
-    container.appendChild(signals);
     const tracker=el('div','tracker-container'), table=el('div','tracker-table');
     const left=el('div','tracker-left'), right=el('div','tracker-right');
     left.appendChild(el('div','tracker-left__head',t('versionDone')));
@@ -3007,8 +3098,8 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     }
     let undated=0;
     doc.releases.forEach((rel,index)=>{
-      const items=(rel.items||[]).filter(it=>!search||`${it.taskId||''} ${it.name}`.toLowerCase().includes(search));
-      if(search&&!items.length)return;
+      const items=(rel.items||[]).filter(it=>(!search||`${it.taskId||''} ${it.name}`.toLowerCase().includes(search)) && (!filter || (filter==='pending' ? it.status!=='done'&&it.status!=='cancelled' : filter==='blocked' ? it.status==='blocked' : filter==='overdue' ? it.status!=='done'&&it.status!=='cancelled'&&time(it.end,true)!=null&&time(it.end,true)<now : it.status!=='done'&&!it.start&&!it.end)));
+      if((search||filter)&&!items.length)return;
       const key=rel.id||String(index), done=rel.items.filter(it=>it.status==='done').length;
       let summary=null;
       const projectedWindows=rel.items.map(it=>forecast.projections.get(it.id)).filter(Boolean);
@@ -3028,7 +3119,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       phase.setAttribute('role','button');phase.tabIndex=0;
       const toggle=()=>{expanded.has(key)?expanded.delete(key):expanded.add(key);render(doc,container);};
       phase.addEventListener('click',toggle);phase.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')toggle();});
-      if(!expanded.has(key)&&!search)return;
+      if(!expanded.has(key)&&!search&&!filter)return;
       items.forEach(it=>{
         const predicted = forecast.projections.get(it.id);
         const window = windowForItem(it,predicted,now);
@@ -3040,9 +3131,10 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
           if(to>=start&&from<=end){
             const left=Math.max(0,pos(from)), right=Math.min(100,pos(to)), width=Math.max(0,right-left);
             bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':it.status==='paused'?'paused':it.status==='blocked'?'blocked':'planned'}${provisional?' tracker-bar--provisional':''}${width<8?' tracker-bar--compact':''}`,width>=8?it.name:'');
+            bar.dataset.label=it.name;
             bar.style.left=`${left}%`;
             bar.style.width=`${width}%`;
-            bar.title=window.coarse ? `${it.name} · ${t('dayPrecision')}` : provisional ? `${it.name} · ${t('projection')}` : `${it.name} · ${it.start||'?'} → ${it.end||'?'} · ${it.status}`;
+            bar.title=window.coarse ? `${it.name} · ${t('dayPrecision')}` : provisional ? `${it.name} · ${t('projection')} · ${global.Forecast.dateTime(from)} → ${global.Forecast.dateTime(to)}` : `${it.name} · ${it.start||'?'} → ${it.end||'?'} · ${it.status}`;
             if(window.slipMinutes > 0) { bar.classList.add('tracker-bar--slipped'); bar.title += ` · ${t('slip')} +${global.Forecast.duration(window.slipMinutes)}`; }
           }
         }
@@ -3066,7 +3158,22 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     left.appendChild(lRows);right.appendChild(rRows);table.append(left,right);tracker.appendChild(table);
     tracker.appendChild(el('div','timeline-legend',`${undated} ${t('fixedDate')} · ${t('declared')} · ${t('projection')}`));
     container.appendChild(tracker);
+    placeBarLabels(rRows);
     right.addEventListener('scroll',()=>{lRows.scrollTop=right.scrollTop;});
+  }
+  /* Labels that do not fit inside their bar move next to it, on the side with room */
+  function placeBarLabels(rows) {
+    rows.querySelectorAll('.tracker-bar[data-label]').forEach(bar=>{
+      if(bar.textContent && bar.scrollWidth<=bar.clientWidth+1)return;
+      bar.textContent='';
+      const label=el('span','tracker-bar__outside',bar.dataset.label);
+      label.title=bar.title;
+      const left=parseFloat(bar.style.left), width=parseFloat(bar.style.width);
+      if(left+width>70){label.style.right=`calc(${100-left}% + 6px)`;label.classList.add('tracker-bar__outside--before');}
+      else label.style.left=`calc(${left+width}% + 6px)`;
+      label.addEventListener('click',()=>bar.click());
+      bar.parentElement.appendChild(label);
+    });
   }
   function showDetail(item, doc, forecast) {
     document.querySelector('.task-detail-overlay')?.remove();
@@ -3375,6 +3482,9 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
   /* ── Update Header & HUD Mission Control ──────────────── */
   function updateHUD(doc) {
     if (!doc) return;
+    /* First paint lands at final widths; transitions only animate later updates */
+    const root = document.documentElement;
+    if (root.hasAttribute('data-booting')) requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute('data-booting')));
     const s = doc.stats || {};
     const forecast = global.Forecast.calculate(doc);
     const n = forecast.active && String(doc.nowTask?.id || '').toUpperCase() === String(forecast.active.taskId || '').toUpperCase()
@@ -3394,8 +3504,8 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     const commit = head && !doc.lastCommit ? head.hash : doc.lastCommit;
     const commitTime = head && !doc.lastCommit ? t('ago', { time: global.Forecast.duration((Date.now() - head.time) / 60000) }) : doc.lastCommitTime;
     const values = { 'm-version': doc.version, 'm-phase': doc.phase, 'm-phase-total': doc.phase ? s.phasesTotal : null, 'm-tasks-done': s.done, 'm-tasks-total': s.total, 'm-tests': doc.meta.tests, 'm-e2e': doc.meta.e2e, 'm-decisions': doc.meta.decisions, 'm-lines': doc.meta.lines, 'm-commit': commit, 'm-commit-time': commitTime };
-    Object.entries(values).forEach(([id, value]) => { if ($(id)) $(id).textContent = value === '' || value == null ? '—' : value; });
-    qa('.m-item').forEach(el => { el.hidden = [...el.querySelectorAll('[id]')].every(child => child.textContent === '—'); });
+    Object.entries(values).forEach(([id, value]) => { if ($(id)) $(id).textContent = value === '' || value == null ? '' : value; });
+    qa('.m-item').forEach(el => { el.hidden = [...el.querySelectorAll('strong, code')].some(child => !child.textContent.trim()); });
 
     /* ── Card 1: AHORA MISMO · EN CURSO ── */
     const active = forecast.active;
@@ -3410,9 +3520,12 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     if ($('now-elapsed')) $('now-elapsed').textContent = global.Forecast.duration(forecast.elapsed);
     const moved = forecast.initialEta != null && forecast.eta != null
       ? Math.round((forecast.eta - forecast.initialEta) / 60000) : 0;
-    if ($('now-warn')) $('now-warn').textContent = active?.status === 'paused' ? t('paused') : forecast.overdue
-      ? `${t('delayed')}: ${global.Forecast.duration(forecast.delayMinutes)} · ${t('provisional')}`
-      : forecast.latestChange && moved > 0 ? `${t('etaExtended')} ${global.Forecast.duration(moved)}` : n.status || '';
+    const expectedMinutes = active?.effort ? active.effort * 60 : parseFloat(n.expected) || 0;
+    const overrunMinutes = expectedMinutes ? Math.max(0, Math.round(forecast.elapsed - expectedMinutes), moved) : Math.max(0, moved);
+    if ($('now-warn')) {
+      $('now-warn').textContent = active?.status === 'paused' ? t('paused') : overrunMinutes ? `+${global.Forecast.duration(overrunMinutes)}` : t('onTrack');
+      $('now-warn').classList.toggle('hud-card__now-warn--late', overrunMinutes > 0);
+    }
     if ($('now-eta')) $('now-eta').textContent = forecast.eta != null
       ? `${global.Forecast.dateTime(forecast.eta)}${forecast.provisional ? ' · ' + t('provisional') : ''}` : t('noEstimate');
     if ($('now-reason')) $('now-reason').textContent = forecast.latestChange?.reason || n.reason || '';
@@ -3420,9 +3533,17 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
 
     if ($('now-fill')) {
       /* Calculate bar width */
-      const pct = active?.progress || 0;
-      $('now-fill').style.width = `${pct}%`;
+      const elapsed = active ? forecast.elapsed || 0 : 0;
+      const scale = Math.max(expectedMinutes, elapsed, 1);
+      const tick = expectedMinutes ? Math.min(100, expectedMinutes / scale * 100) : 100;
+      // Time-based bar: cyan up to the expected mark, orange overrun past it
+      const fill = expectedMinutes ? Math.min(elapsed, expectedMinutes) / scale * 100 : active?.progress || 0;
+      $('now-fill').style.width = `${fill}%`;
       $('now-fill').classList.toggle('now-fill--running', active?.status === 'active');
+      $('now-tick').style.left = `${tick}%`;
+      $('now-tick').hidden = !expectedMinutes;
+      $('now-overrun').style.left = `${tick}%`;
+      $('now-overrun').style.width = `${expectedMinutes ? Math.max(0, Math.min(100, elapsed / scale * 100) - tick) : 0}%`;
     }
 
     /* ── Card 2: PROJECT & CADENCE ── */
@@ -3433,7 +3554,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
 
     if ($('phase-done-cnt')) $('phase-done-cnt').textContent = `${s.phasesDone} ${t('of')} ${s.phasesTotal}`;
     if ($('phase-eta')) $('phase-eta').textContent = forecast.projectEta != null
-      ? `${global.Forecast.dateTime(forecast.projectEta)} · ${t('calculated')}` : s.estimatedText || t('noEstimate');
+      ? global.Forecast.dateTime(forecast.projectEta) : s.estimatedText || t('noEstimate');
     if ($('phase-pace')) $('phase-pace').textContent = s.cadenceText || (s.cadenceMinutes != null ? `${s.cadenceMinutes} min ${t('perTask')}` : t('noEstimate'));
     if ($('phase-started')) $('phase-started').textContent = global.Forecast.timestamp(doc.meta.started) != null
       ? global.Forecast.dateTime(global.Forecast.timestamp(doc.meta.started)) : s.startedText || t('noDate');
@@ -3444,7 +3565,9 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       : forecast.provisional ? t('reviewEta')
       : forecast.samples
         ? t('calibrated', {count:forecast.samples,capacity:forecast.capacity})
-        : t('basedOnEffort'));
+         : t('basedOnEffort'));
+    if ($('phase-eta')) $('phase-eta').title = `${t('calculated')} · ${$('forecast-note').textContent}`;
+    if ($('forecast-confidence')) $('forecast-confidence').textContent = forecast.projectRange ? `${t(forecast.projectRange.confidence === 'baja' ? 'low' : forecast.projectRange.confidence === 'media' ? 'medium' : 'high')} ${t('confidence')}` : '';
     const history = $('estimate-history');
     if (history) {
       history.replaceChildren();
@@ -3458,7 +3581,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     }
 
     /* ── Card 3: ÚLTIMOS CAMBIOS ── */
-    renderRecentChanges(doc);
+    renderRecentChanges(doc, forecast);
     renderHealth(doc, forecast);
 
     /* Tab title: readable from a background tab while the agent works */
@@ -3567,13 +3690,20 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     });
   }
 
-  function renderRecentChanges(doc) {
+  function renderRecentChanges(doc, forecast) {
     const list = $('changes-list');
     if (!list) return;
 
     list.innerHTML = '';
-    if (doc.recentChanges && doc.recentChanges.length > 0) {
-      doc.recentChanges.slice(0, 7).forEach(c => {
+    const events = [...(doc.recentChanges || [])];
+    for (const change of forecast.changes || []) {
+      const text = `${change.taskId} ETA ${change.remaining}`;
+      if (events.some(c => c.text?.includes(change.taskId) && c.text?.includes(change.remaining))) continue;
+      events.push({ time: global.Forecast.dateTime(change.time), icon: '↻', text: change.reason ? `${text} · ${change.reason}` : text, stamp: change.time });
+    }
+    events.sort((a, b) => (b.stamp || Date.parse(b.time) || 0) - (a.stamp || Date.parse(a.time) || 0));
+    if (events.length > 0) {
+      events.slice(0, 4).forEach(c => {
         const row = document.createElement('div');
         row.className = 'change-row';
 
@@ -3598,6 +3728,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     } else {
       list.textContent = t('noChanges');
     }
+    if ($('changes-more')) $('changes-more').hidden = events.length <= 4;
   }
 
   function escapeHtml(s) {
@@ -3724,6 +3855,18 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     $('language-select')?.addEventListener('change', e => global.UI.setLanguage(e.target.value));
     $('theme-toggle')?.addEventListener('click', () => global.UI.setTheme(global.UI.theme === 'dark' ? 'light' : 'dark'));
     $('notify-toggle')?.addEventListener('click', toggleNotify);
+    let hudCollapsed = false;
+    try { hudCollapsed = localStorage.getItem('visual-roadmap-hud-collapsed') === 'true'; } catch {}
+    const toggleHud = () => {
+      const panel = q('.hud-panel');
+      panel.classList.toggle('hud-panel--collapsed', hudCollapsed);
+      $('hud-toggle').setAttribute('aria-expanded', String(!hudCollapsed));
+      $('hud-toggle').title = t(hudCollapsed ? 'expandOverview' : 'collapseOverview');
+      $('hud-toggle').textContent = hudCollapsed ? '⌄' : '⌃';
+    };
+    toggleHud();
+    $('hud-toggle')?.addEventListener('click', () => { hudCollapsed = !hudCollapsed; try { localStorage.setItem('visual-roadmap-hud-collapsed', String(hudCollapsed)); } catch {} toggleHud(); });
+    $('changes-more')?.addEventListener('click', () => setView('log'));
     paintNotify();
     setInterval(refreshGit, 60000);
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="dark" data-booting>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -99,9 +99,7 @@
         </div>
       </div>
 
-      <div class="hud-header__title-row">
-        <h1 class="hud-header__title" id="page-title" data-i18n="progress">PROGRESS TRACKER</h1>
-      </div>
+      <h1 class="hud-header__title" id="page-title" data-i18n="progress">PROGRESS TRACKER</h1>
 
       <!-- Quick Metrics Bar -->
       <div class="hud-metrics-bar">
@@ -118,6 +116,7 @@
 
     <!-- ── 3. Mission Control HUD (3-Column Card) ──────── -->
     <section class="hud-panel" aria-label="Progress overview">
+      <button id="hud-toggle" class="hud-panel__toggle" type="button" aria-expanded="true" data-i18n-title="collapseOverview">⌃</button>
       <div class="hud-panel__corner hud-panel__corner--tl"></div>
       <div class="hud-panel__corner hud-panel__corner--tr"></div>
       <div class="hud-panel__corner hud-panel__corner--bl"></div>
@@ -129,20 +128,17 @@
         <div class="hud-card__now-title">
           <span class="hud-card__now-id" id="now-id"></span>
           <span class="hud-card__now-name" id="now-name"></span>
-        </div>
-        <div class="hud-card__now-context" id="now-context"></div>
-
-        <div class="hud-card__now-times">
-          <span><span data-i18n="expected">Expected</span>: <strong id="now-expected"></strong></span>
-          <span><span data-i18n="elapsed">Elapsed</span>: <strong id="now-elapsed"></strong></span>
           <span class="hud-card__now-warn" id="now-warn"></span>
         </div>
-        <div class="hud-card__now-times"><span id="now-forecast-label">Agent ETA</span>: <strong id="now-eta"></strong></div>
-        <div class="hud-card__now-context" id="now-reason"></div>
-
-        <div class="hud-card__now-track">
-          <div class="hud-card__now-fill" id="now-fill" style="width: 0;"></div>
+        <div class="hud-card__progress-row">
+          <div class="hud-card__now-track">
+            <div class="hud-card__now-fill" id="now-fill" style="width: 0;"></div>
+            <div class="hud-card__now-overrun" id="now-overrun"></div>
+            <div class="hud-card__now-tick" id="now-tick"></div>
+          </div>
+          <span class="hud-card__time-label"><strong id="now-elapsed"></strong> / <strong id="now-expected"></strong></span>
         </div>
+        <div class="hud-card__context-line"><span id="now-context"></span><span class="hud-card__separator"> · </span><span id="now-forecast-label">Agent ETA</span>: <strong id="now-eta"></strong><span class="hud-card__separator"> · </span><span id="now-reason"></span></div>
       </div>
 
       <!-- Col 2: PROJECT & CADENCE ESTIMATES -->
@@ -164,7 +160,7 @@
           </div>
           <div class="hud-card__meta-row">
             <span class="hud-card__meta-label" data-i18n="calculatedDelivery">Projected delivery</span>
-            <strong class="hud-card__meta-val" id="phase-eta"></strong>
+            <strong class="hud-card__meta-val" id="phase-eta"></strong><span id="forecast-confidence" class="confidence-chip"></span>
           </div>
           <div class="hud-card__meta-row">
             <span class="hud-card__meta-label" data-i18n="pace">Observed pace</span>
@@ -181,8 +177,8 @@
       <div class="hud-card hud-card--changes">
         <div class="hud-card__head-label" data-i18n="recentChanges">RECENT CHANGES</div>
         <div class="hud-card__changes-list" id="changes-list"></div>
-        <div class="hud-card__head-label" style="margin-top: 12px;" data-i18n="etaChanges">ETA CHANGES</div>
-        <div class="hud-card__changes-list" id="estimate-history"></div>
+        <div id="estimate-history" hidden></div>
+        <button id="changes-more" class="changes-more" type="button" data-i18n-title="moreChanges">⋯</button>
       </div>
     </section>
 

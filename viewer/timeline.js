@@ -3,7 +3,7 @@
   'use strict';
   const DAY = 86400000;
   const scales = { '6h': [6*3600000,3600000], '1d': [DAY,2*3600000], '3d': [3*DAY,12*3600000], '1w': [7*DAY,DAY], '1m': [30*DAY,5*DAY] };
-  let zoom = '1d', offset = 0, search = '';
+  let zoom = '1d', offset = 0, search = '', filter = '';
   let liveRange = null;
   const expanded = new Set();
   const t = key => global.UI.t(key);
@@ -59,11 +59,22 @@
     const input = el('input','search-input'); input.placeholder = t('search'); input.value = search;
     input.addEventListener('input', () => { search=input.value.toLowerCase().trim(); render(doc,container); container.querySelector('.search-input').focus(); });
     controls.appendChild(input);
-    const expand=el('button','btn-icon-toggle',t('expand'));
+    const expand=el('button','btn-icon-toggle','⊞'); expand.title=t('expand'); expand.setAttribute('aria-label',t('expand'));
     expand.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.add(group.id));render(doc,container);});
-    const collapse=el('button','btn-icon-toggle',t('collapse'));
+    const collapse=el('button','btn-icon-toggle','⊟'); collapse.title=t('collapse'); collapse.setAttribute('aria-label',t('collapse'));
     collapse.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.delete(group.id));render(doc,container);});
-    controls.append(expand,collapse);
+    const late = doc.items.filter(it => it.status !== 'done' && it.status !== 'cancelled' && time(it.end,true) != null && time(it.end,true) < now).length;
+    const blocked = doc.items.filter(it => it.status === 'blocked').length;
+    const missingDates = doc.items.filter(it => it.status !== 'done' && !it.start && !it.end).length;
+    const signals = el('div','timeline-signals');
+    for (const [key,value] of [['pending',doc.stats.open],['blocked',blocked],['overdue',late],['undated',missingDates]]) {
+      const signal=el('button','timeline-signal'+(filter===key?' timeline-signal--active':''),`${t(key)} ${value}`);
+      signal.type='button'; signal.setAttribute('aria-pressed',String(filter===key));
+      if(value && (key==='blocked'||key==='overdue')) signal.classList.add('timeline-signal--alert');
+      signal.addEventListener('click',()=>{filter=filter===key?'':key;render(doc,container);});
+      signals.appendChild(signal);
+    }
+    controls.append(signals,expand,collapse);
     for (const [key,label] of [['6h','6 H'],['1d',global.UI.language==='es'?'1 DÍA':'1 DAY'],['3d',global.UI.language==='es'?'3 DÍAS':'3 DAYS'],['1w',global.UI.language==='es'?'1 SEMANA':'1 WEEK'],['1m',global.UI.language==='es'?'1 MES':'1 MONTH']]) {
       const b=el('button','zoom-btn'+(zoom===key?' zoom-btn--active':''),label);
       b.addEventListener('click',()=>{zoom=key;offset=0;render(doc,container);}); controls.appendChild(b);
@@ -73,17 +84,6 @@
       b.addEventListener('click',()=>{offset=delta?offset+delta:0;render(doc,container);}); controls.appendChild(b);
     }
     toolbar.appendChild(controls); container.appendChild(toolbar);
-    const late = doc.items.filter(it => it.status !== 'done' && it.status !== 'cancelled' && time(it.end,true) != null && time(it.end,true) < now).length;
-    const blocked = doc.items.filter(it => it.status === 'blocked').length;
-    const missingDates = doc.items.filter(it => it.status !== 'done' && !it.start && !it.end).length;
-    const signals = el('div','timeline-signals');
-    for (const [key,value] of [['pending',doc.stats.open],['blocked',blocked],['overdue',late],['undated',missingDates]]) {
-      const label=t(key);
-      const signal=el('span','timeline-signal',`${label}: ${value}`);
-      if(value && (key==='blocked'||key==='overdue')) signal.classList.add('timeline-signal--alert');
-      signals.appendChild(signal);
-    }
-    container.appendChild(signals);
     const tracker=el('div','tracker-container'), table=el('div','tracker-table');
     const left=el('div','tracker-left'), right=el('div','tracker-right');
     left.appendChild(el('div','tracker-left__head',t('versionDone')));
@@ -103,8 +103,8 @@
     }
     let undated=0;
     doc.releases.forEach((rel,index)=>{
-      const items=(rel.items||[]).filter(it=>!search||`${it.taskId||''} ${it.name}`.toLowerCase().includes(search));
-      if(search&&!items.length)return;
+      const items=(rel.items||[]).filter(it=>(!search||`${it.taskId||''} ${it.name}`.toLowerCase().includes(search)) && (!filter || (filter==='pending' ? it.status!=='done'&&it.status!=='cancelled' : filter==='blocked' ? it.status==='blocked' : filter==='overdue' ? it.status!=='done'&&it.status!=='cancelled'&&time(it.end,true)!=null&&time(it.end,true)<now : it.status!=='done'&&!it.start&&!it.end)));
+      if((search||filter)&&!items.length)return;
       const key=rel.id||String(index), done=rel.items.filter(it=>it.status==='done').length;
       let summary=null;
       const projectedWindows=rel.items.map(it=>forecast.projections.get(it.id)).filter(Boolean);
@@ -124,7 +124,7 @@
       phase.setAttribute('role','button');phase.tabIndex=0;
       const toggle=()=>{expanded.has(key)?expanded.delete(key):expanded.add(key);render(doc,container);};
       phase.addEventListener('click',toggle);phase.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')toggle();});
-      if(!expanded.has(key)&&!search)return;
+      if(!expanded.has(key)&&!search&&!filter)return;
       items.forEach(it=>{
         const predicted = forecast.projections.get(it.id);
         const window = windowForItem(it,predicted,now);
@@ -136,9 +136,10 @@
           if(to>=start&&from<=end){
             const left=Math.max(0,pos(from)), right=Math.min(100,pos(to)), width=Math.max(0,right-left);
             bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':it.status==='paused'?'paused':it.status==='blocked'?'blocked':'planned'}${provisional?' tracker-bar--provisional':''}${width<8?' tracker-bar--compact':''}`,width>=8?it.name:'');
+            bar.dataset.label=it.name;
             bar.style.left=`${left}%`;
             bar.style.width=`${width}%`;
-            bar.title=window.coarse ? `${it.name} · ${t('dayPrecision')}` : provisional ? `${it.name} · ${t('projection')}` : `${it.name} · ${it.start||'?'} → ${it.end||'?'} · ${it.status}`;
+            bar.title=window.coarse ? `${it.name} · ${t('dayPrecision')}` : provisional ? `${it.name} · ${t('projection')} · ${global.Forecast.dateTime(from)} → ${global.Forecast.dateTime(to)}` : `${it.name} · ${it.start||'?'} → ${it.end||'?'} · ${it.status}`;
             if(window.slipMinutes > 0) { bar.classList.add('tracker-bar--slipped'); bar.title += ` · ${t('slip')} +${global.Forecast.duration(window.slipMinutes)}`; }
           }
         }
@@ -162,7 +163,22 @@
     left.appendChild(lRows);right.appendChild(rRows);table.append(left,right);tracker.appendChild(table);
     tracker.appendChild(el('div','timeline-legend',`${undated} ${t('fixedDate')} · ${t('declared')} · ${t('projection')}`));
     container.appendChild(tracker);
+    placeBarLabels(rRows);
     right.addEventListener('scroll',()=>{lRows.scrollTop=right.scrollTop;});
+  }
+  /* Labels that do not fit inside their bar move next to it, on the side with room */
+  function placeBarLabels(rows) {
+    rows.querySelectorAll('.tracker-bar[data-label]').forEach(bar=>{
+      if(bar.textContent && bar.scrollWidth<=bar.clientWidth+1)return;
+      bar.textContent='';
+      const label=el('span','tracker-bar__outside',bar.dataset.label);
+      label.title=bar.title;
+      const left=parseFloat(bar.style.left), width=parseFloat(bar.style.width);
+      if(left+width>70){label.style.right=`calc(${100-left}% + 6px)`;label.classList.add('tracker-bar__outside--before');}
+      else label.style.left=`calc(${left+width}% + 6px)`;
+      label.addEventListener('click',()=>bar.click());
+      bar.parentElement.appendChild(label);
+    });
   }
   function showDetail(item, doc, forecast) {
     document.querySelector('.task-detail-overlay')?.remove();
