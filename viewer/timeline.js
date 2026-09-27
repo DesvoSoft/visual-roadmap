@@ -14,6 +14,23 @@
     const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw + (end ? 'T23:59:59' : 'T00:00:00') : raw.replace(' ','T'));
     return isNaN(d.getTime()) ? null : d.getTime();
   }
+  function windowForItem(item, prediction) {
+    const declaredStart = time(item.start, false), declaredEnd = time(item.end, true);
+    const coarse = /^\d{4}-\d{2}-\d{2}$/.test(item.start || '') && /^\d{4}-\d{2}-\d{2}$/.test(item.end || '');
+    const shortHours = item.actual || item.effort;
+    if (coarse && shortHours > 0 && shortHours <= 3) {
+      const midpoint = (declaredStart + declaredEnd) / 2;
+      const half = shortHours * 3600000 / 2;
+      return { start: midpoint - half, end: midpoint + half, coarse: true };
+    }
+    if (declaredStart != null && declaredEnd != null) return { start: declaredStart, end: declaredEnd, coarse: false, estimated: false };
+    if (prediction) return { start: prediction.start, end: prediction.end, coarse: false, estimated: true };
+    const duration = shortHours > 0 ? shortHours * 3600000 : null;
+    if (duration != null && declaredStart != null) return { start: declaredStart, end: declaredStart + duration, coarse: true, estimated: true };
+    if (duration != null && declaredEnd != null) return { start: declaredEnd - duration, end: declaredEnd, coarse: true, estimated: true };
+    return { start: declaredStart, end: declaredEnd, coarse: false, estimated: false };
+  }
+  function clockLabel(now) { return new Intl.DateTimeFormat(global.UI.language,{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(now)); }
   function render(doc, container) {
     container.replaceChildren();
     if (!doc?.releases?.length) { container.appendChild(el('div','empty-state',t('noPhases'))); return; }
@@ -26,6 +43,7 @@
       if (days > 5) zoom = '1m';
       else if (days > 2) zoom = '1w';
       else if (days > .6) zoom = '3d';
+      else if (days <= .17) zoom = '6h';   /* a short agent session: under ~4h of work left */
       initialized = true;
     }
     const now = Date.now(), span = scales[zoom][0], tick = scales[zoom][1], start = now + offset*span - span*.3, end = start+span;
@@ -65,11 +83,12 @@
     const left=el('div','tracker-left'), right=el('div','tracker-right');
     left.appendChild(el('div','tracker-left__head',t('versionDone')));
     const head=el('div','tracker-right__head'); head.style.width='100%';
-    const count=Math.round(span/tick);
-    for(let i=0;i<=count;i++) {
-      const ms=start+i*tick;
-      const label=new Intl.DateTimeFormat(global.UI.language,span<=DAY?{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}:{day:'numeric',month:'short'}).format(new Date(ms));
-      const cell=el('div','time-tick-cell',label); cell.style.width=`${100/(count+1)}%`; head.appendChild(cell);
+    /* Ticks sit on round local hours/days so labels read 09:00, 12:00… */
+    const midnight=new Date(start); midnight.setHours(0,0,0,0);
+    for(let ms=midnight.getTime()+Math.ceil((start-midnight.getTime())/tick)*tick; ms<=end; ms+=tick) {
+      const date=new Intl.DateTimeFormat(global.UI.language,{day:'numeric',month:'short'}).format(new Date(ms));
+      const label=span<=DAY?clockLabel(ms):tick<DAY?`${date} ${clockLabel(ms)}`:date;
+      const cell=el('div','time-tick-cell',label); cell.style.left=`${pos(ms)}%`; head.appendChild(cell);
     }
     right.appendChild(head);
     const lRows=el('div','tracker-left__rows'), rRows=el('div','tracker-right__rows'); rRows.style.width='100%';
@@ -98,29 +117,36 @@
       if(!expanded.has(key)&&!search)return;
       items.forEach(it=>{
         const predicted = forecast.projections.get(it.id);
-        const declaredStart = time(it.start,false), declaredEnd = time(it.end,true);
-        const a=declaredStart ?? predicted?.start ?? null, b=declaredEnd ?? predicted?.end ?? null;
-        const provisional = declaredStart == null && declaredEnd == null && predicted != null;
+        const window = windowForItem(it,predicted);
+        const a=window.start, b=window.end;
+        const provisional = window.estimated;
         let bar=null;
         if(a!=null||b!=null){
           const from=a??b,to=b??a;
           if(to>=start&&from<=end){
-            bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':'planned'}${provisional?' tracker-bar--provisional':''}`,it.name);
-            bar.style.left=`${Math.max(0,pos(from))}%`;
-            bar.style.width=`${Math.max(1.5,Math.min(100,pos(to))-Math.max(0,pos(from)))}%`;
-            bar.title=provisional ? `${it.name} · ${t('projection')}` : `${it.name} · ${it.start||'?'} → ${it.end||'?'} · ${it.status}`;
+            const left=Math.max(0,pos(from)), right=Math.min(100,pos(to)), width=Math.max(0,right-left);
+            bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':'planned'}${provisional?' tracker-bar--provisional':''}${width<8?' tracker-bar--compact':''}`,width>=8?it.name:'');
+            bar.style.left=`${left}%`;
+            bar.style.width=`${width}%`;
+            bar.title=window.coarse ? `${it.name} · ${t('dayPrecision')}` : provisional ? `${it.name} · ${t('projection')}` : `${it.name} · ${it.start||'?'} → ${it.end||'?'} · ${it.status}`;
           }
         }
-        if(declaredStart==null&&declaredEnd==null)undated++;
+        if(!it.start&&!it.end)undated++;
         const l=row(`${it.status==='done'?'■':it.status==='active'?'▰':'□'}  ${it.taskId||''} ${it.name}`,bar,false);
-        if(declaredStart==null&&declaredEnd==null)l.title=provisional?t('projection'):t('undated');
+        if(!it.start&&!it.end)l.title=provisional?t('projection'):t('undated');
         l.setAttribute('role','button'); l.tabIndex=0; l.classList.add('task-label-row--interactive');
+        if(it.status==='cancelled')l.classList.add('task-label-row--cancelled');
+        if(it.status==='blocked')l.classList.add('task-label-row--blocked');
         l.addEventListener('click',()=>showDetail(it,doc,forecast));
         l.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')showDetail(it,doc,forecast);});
         if(bar)bar.addEventListener('click',()=>showDetail(it,doc,forecast));
       });
     });
-    if(start<=now&&now<=end){const line=el('div','vertical-now-line');line.style.left=`${pos(now)}%`;right.appendChild(line);}
+    if(start<=now&&now<=end){
+      const line=el('div','vertical-now-line');line.style.left=`${pos(now)}%`;right.appendChild(line);
+      const label=el('div','vertical-now-label',`${t('nowButton')} ${clockLabel(now)}`);
+      label.style.left=`${Math.max(7,Math.min(93,pos(now)))}%`;head.appendChild(label);
+    }
     left.appendChild(lRows);right.appendChild(rRows);table.append(left,right);tracker.appendChild(table);
     tracker.appendChild(el('div','timeline-legend',`${undated} ${t('fixedDate')} · ${t('declared')} · ${t('projection')}`));
     container.appendChild(tracker);
@@ -159,6 +185,15 @@
       panel.appendChild(el('h3','hud-card__head-label',t('estimateHistory')));
       changes.forEach(change=>panel.appendChild(el('div','estimate-event',`${change.at} · ${change.remaining} ${t('remaining')} · ${change.reason||t('noReason')}`)));
     }
+    const commits=item.taskId?(global.RoadmapGit||[]).filter(c=>c.tasks.includes(item.taskId.toUpperCase())):[];
+    if(commits.length){
+      panel.appendChild(el('h3','hud-card__head-label',t('commits')));
+      commits.slice(0,8).forEach(c=>{
+        const line=el('div','estimate-event commit-event');
+        line.append(el('code','',c.hash),document.createTextNode(` ${c.subject} `),el('span','diff-add',`+${c.add}`),document.createTextNode(' '),el('span','diff-sub',`-${c.del}`));
+        panel.appendChild(line);
+      });
+    }
     overlay.appendChild(panel);document.body.appendChild(overlay);close.focus();
   }
   function tickNow() {
@@ -168,6 +203,8 @@
     if (now > end || now < start) { render(doc, container); return; }
     const line = container.querySelector('.vertical-now-line');
     if (line) line.style.left = `${(now - start) / span * 100}%`;
+    const label = container.querySelector('.vertical-now-label');
+    if (label) { label.style.left = `${Math.max(7,Math.min(93,(now-start)/span*100))}%`; label.textContent = `${t('nowButton')} ${clockLabel(now)}`; }
   }
-  global.Timeline={render, tickNow, openTask:showDetail};
+  global.Timeline={render, tickNow, openTask:showDetail, windowForItem};
 })(typeof window!=='undefined'?window:globalThis);

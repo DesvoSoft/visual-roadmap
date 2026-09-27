@@ -41,6 +41,7 @@
     let eta = latest ? latest.time + latest.remainingMinutes * MINUTE :
       explicitRemaining != null ? remainingAt + explicitRemaining * MINUTE : initialEta;
     const overdue = eta != null && now > eta && active != null;
+    const overdueMinutes = overdue ? Math.floor((now - eta) / MINUTE) : 0;
     const delayMinutes = initialMinutes != null && elapsed != null ? Math.max(0, elapsed - initialMinutes) : 0;
     let provisional = false;
     if (overdue) {
@@ -54,36 +55,47 @@
       .map(it => it.actual / it.effort).sort((a, b) => a - b);
     const paceFactor = ratios.length ? Math.max(.5, Math.min(2, ratios[Math.floor(ratios.length / 2)])) : 1;
     const open = items.filter(it => it.status !== 'done' && it.status !== 'cancelled');
+    const capacity = Math.max(1, Math.round(+doc.capacity || 1));
     let totalRemaining = 0, unknown = 0;
     const projections = new Map();
-    let cursor = now;
-    for (const item of open) {
-      if (active && item === active && activeRemaining != null) {
-        totalRemaining += activeRemaining;
-        projections.set(item.id, { start: start ?? now, end: eta });
-        cursor = Math.max(cursor, eta);
-        continue;
-      }
-      const effort = item.effort ? item.effort * 60 * paceFactor * (1 - (item.progress || 0) / 100) : cadence;
-      if (effort == null) unknown++;
-      else {
-        const duration = Math.max(0, effort);
-        totalRemaining += duration;
-        projections.set(item.id, { start: cursor, end: cursor + duration * MINUTE });
-        cursor += duration * MINUTE;
-      }
+    /* List scheduling: `capacity` parallel lanes; a task starts when a lane is
+       free and every open dependency has a projected end. Row order breaks ties. */
+    const lanes = new Array(capacity).fill(now);
+    const pending = open.slice();
+    if (active && activeRemaining != null) {
+      totalRemaining += activeRemaining;
+      projections.set(active.id, { start: start ?? now, end: eta });
+      lanes[0] = Math.max(now, eta);
+      pending.splice(pending.indexOf(active), 1);
     }
-    const capacity = Math.max(1, +doc.capacity || 1);
-    const projectEta = unknown ? null : now + totalRemaining / capacity * MINUTE;
+    const find = dep => global.Roadmap && global.Roadmap.findTask ? global.Roadmap.findTask(doc, dep) : null;
+    const blockers = item => item.depends.map(find).filter(t => t && t !== item && pending.includes(t));
+    while (pending.length) {
+      let index = pending.findIndex(item => !blockers(item).length);
+      if (index === -1) index = 0;                       /* dependency cycle: keep row order */
+      const item = pending.splice(index, 1)[0];
+      const effort = item.effort ? item.effort * 60 * paceFactor * (1 - (item.progress || 0) / 100) : cadence;
+      if (effort == null) { unknown++; continue; }
+      const duration = Math.max(0, effort);
+      const ready = Math.max(now, ...item.depends.map(dep => projections.get(find(dep)?.id)?.end || now));
+      let lane = 0;
+      for (let i = 1; i < lanes.length; i++) if (Math.max(lanes[i], ready) < Math.max(lanes[lane], ready)) lane = i;
+      const begin = Math.max(lanes[lane], ready);
+      lanes[lane] = begin + duration * MINUTE;
+      projections.set(item.id, { start: begin, end: lanes[lane] });
+      totalRemaining += duration;
+    }
+    const finish = Math.max(now, ...[...projections.values()].map(p => p.end));
+    const projectEta = unknown ? null : finish;
     const uncertainty = ratios.length >= 5 ? .15 : ratios.length >= 2 ? .25 : .4;
     const projectRange = projectEta == null ? null : {
-      early: now + totalRemaining * (1 - uncertainty) / capacity * MINUTE,
-      late: now + totalRemaining * (1 + uncertainty) / capacity * MINUTE,
+      early: now + (finish - now) * (1 - uncertainty),
+      late: now + (finish - now) * (1 + uncertainty),
       confidence: ratios.length >= 5 ? 'alta' : ratios.length >= 2 ? 'media' : 'baja'
     };
     return {
       active, elapsed, initialMinutes, initialEta, eta, activeRemaining,
-      overdue, delayMinutes, provisional, latestChange: latest, changes,
+      overdue, overdueMinutes, delayMinutes, provisional, latestChange: latest, changes,
       projectEta, projectRange, unknown, totalRemaining, capacity, paceFactor, samples: ratios.length, projections,
       ageMinutes: timestamp(doc.meta?.updated) != null ? Math.max(0, Math.floor((now - timestamp(doc.meta.updated)) / MINUTE)) : null
     };
