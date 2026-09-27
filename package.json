@@ -37,7 +37,8 @@
   "scripts": {
     "build": "node build.js",
     "start": "node cli.js serve --file examples/VOIDFRONT.md",
-    "test": "node --test"
+    "test": "node --test",
+    "screenshots": "node tools/screenshots.js"
   },
   "repository": {
     "type": "git",
