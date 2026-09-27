@@ -126,6 +126,7 @@
         connection('live');
       } catch (error) { console.error('[Watcher] invalid SSE content', error); }
     });
+    _sse.addEventListener('shots', () => document.dispatchEvent(new CustomEvent('roadmap:shots')));
     _sse.addEventListener('error', () => {
       connection('connecting');
     });

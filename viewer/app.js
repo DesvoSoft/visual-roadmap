@@ -403,6 +403,8 @@
     toggleHud();
     $('hud-toggle')?.addEventListener('click', () => { hudCollapsed = !hudCollapsed; try { localStorage.setItem('visual-roadmap-hud-collapsed', String(hudCollapsed)); } catch {} toggleHud(); });
     $('changes-more')?.addEventListener('click', () => setView('log'));
+    global.RoadmapShots?.init();
+    document.addEventListener('roadmap:shots-updated', () => { if (_doc) renderCurrentView(); });
     paintNotify();
     setInterval(refreshGit, 60000);
 

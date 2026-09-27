@@ -54,6 +54,7 @@ const VIEWER_FILES = [
   'md.js',
   'ui.js',
   'forecast.js',
+  'shots.js',
   'watcher.js',
   'board.js',
   'timeline.js',
