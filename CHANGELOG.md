@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Task screenshots: `shot` / `shots` commands and a Claude Code PostToolUse capture that keeps the agent's own screenshots on the active task.
+- Screenshots stored in `.roadmap/shots/` (self-ignored by git), deduplicated, pruned per task and by `shots_max_mb`, and compressed to WebP by the viewer.
+- Timeline 📷 badge, cover preview on hover and capture marks; task detail activity log with thumbnails and a lightbox.
+- Server: `GET /shots`, `GET /shots/file/*`, `POST /shots/:id` and an SSE `shots` event.
+
 ## [0.4.0] - 2026-09-27
 
 ### Added

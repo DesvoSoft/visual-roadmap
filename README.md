@@ -54,6 +54,7 @@ There are no accounts and no services. The roadmap is a Markdown file you own, a
 - **Automatic with Claude Code** — A `SessionStart` hook gives the agent a 4-line brief (current task, next tasks, anything to fix). A `Stop` hook warns it once when the roadmap has errors, an ETA has passed, or code changed with no active task, and the `PostToolUse` / `UserPromptSubmit` hooks start the next ready task when code changes with nothing active.
 - **Timeline first** — A one-line header and a compact overview leave most of the screen to the deliverables timeline. The current task shows elapsed vs. expected time on one bar (orange past the estimate), and the overview collapses to a single strip. Filter chips (pending, blocked, overdue, undated) narrow the timeline in one click.
 - **Live viewer** — Current task with elapsed time and ETA, revisions with their reasons, project forecast with a confidence window, and a timeline whose labels stay readable next to short bars. The tab title reads `▶ T004 · 23 min` even when the tab is in the background.
+- **Screenshots as progress** — With Claude Code, screenshots the agent takes to verify its work (Chrome, Playwright, reading an image) are kept on the active task. The timeline shows a 📷 badge, a cover preview on hover and capture marks; the task detail shows an activity log with thumbnails and a lightbox. Images live in `.roadmap/shots/` (ignored by git), are compressed to WebP by the viewer and pruned automatically (`shots_max_mb`, default 150).
 - **Roadmap health** — Catches missing or cancelled dependencies, several active tasks, stale ETAs, tasks without an effort estimate and tasks too big to verify. Click a warning to open the task.
 - **Honest forecasts** — Projections respect dependencies, run independent work in parallel lanes (`capacity`) and are calibrated with the real durations of finished tasks.
 - **Git-aware** — The last commit shows in the header, and commits that mention a task ID (`T004: …`) are listed in that task's detail.
@@ -132,6 +133,8 @@ All commands edit the nearest `ROADMAP.md` up to the repository root (or `--file
 | Pause work | `visual-roadmap pause T004 "reason"` |
 | Resume work | `visual-roadmap resume T004` |
 | Decision or note | `visual-roadmap log "text"` |
+| Screenshot that proves the result (optional) | `visual-roadmap shot [T004] image.png "caption" [--final]` |
+| List or prune screenshots | `visual-roadmap shots [T004] [--json]` · `shots prune` |
 | After editing by hand | `visual-roadmap check [--json] [--strict]` |
 
 A typical session looks like this:
@@ -163,6 +166,7 @@ $ npx visual-roadmap done T002 --note "6 search tests green" --next
 | Port 3579 is taken | `npx visual-roadmap live --port 3580` |
 | The agent stopped updating the roadmap | Ask it to run `npx visual-roadmap status`; with Claude Code, check that `.claude/settings.json` has the hooks (`npx visual-roadmap hooks --install`). |
 | The viewer shows warnings after a manual edit | `npx visual-roadmap check` lists each problem with the fix. |
+| `.roadmap/shots/` grows | Set `shots_max_mb` in the frontmatter or run `npx visual-roadmap shots prune`. |
 | Another agent (Codex, Cursor…) ignores the protocol | Make sure `AGENTS.md` / `.cursorrules` has the block: `npx visual-roadmap agents --install`. |
 
 ---

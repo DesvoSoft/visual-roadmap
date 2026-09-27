@@ -54,11 +54,14 @@ npx visual-roadmap split T003 "Enviar email de reset:30m" "Pantalla de nueva con
 | Bloqueo | `block T004 "causa"` |
 | Pausa temporal | `pause T004 "motivo"` · `resume T004` |
 | Decisión o nota | `log "texto"` |
+| Captura que demuestra el resultado (opcional) | `shot T004 captura.png "qué demuestra" --final` |
 | Tras editar a mano | `check` — corrige todo `✗` |
 
 Todos se ejecutan con `npx visual-roadmap …` y responden en una línea. `status` y `check` aceptan `--json`.
 
 ## Reglas
+
+- Las capturas que tomes con Chrome/Playwright se guardan solas en la tarea activa (Claude Code); no hace falta ejecutar nada.
 
 - Marca `done` solo con evidencia: prueba, build o comprobación descrita en `--note`. Nunca inventes resultados.
 - Una sola tarea `active` por agente. Si la dejas sin terminar, usa `block` con la causa.

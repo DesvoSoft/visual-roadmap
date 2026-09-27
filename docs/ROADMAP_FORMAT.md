@@ -53,3 +53,7 @@ now_task:
 La proyección coloca cada tarea abierta cuando terminan sus dependencias y hay un carril libre (`capacity` carriles en paralelo), en el orden de las filas. Trabaja en tiempo continuo: no aplica horario laboral, fines de semana ni disponibilidad personal. Úsala para comparar el orden y el tamaño del trabajo pendiente, y pide al agente una revisión explícita cuando cambie el alcance o una entrega importante.
 
 El archivo [VOIDFRONT.md](../examples/VOIDFRONT.md) es una demo ficticia de mayor tamaño. No lo copies como plan de otro proyecto.
+
+## Capturas
+
+Clave opcional del frontmatter: `shots_max_mb` (por defecto `150`), tope de espacio de `.roadmap/shots/`. Al superarlo se borran primero las capturas intermedias de las tareas `done` más antiguas.

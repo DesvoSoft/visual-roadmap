@@ -27,7 +27,8 @@
     "dist/",
     "viewer/",
     "templates/",
-    "docs/",
+    "docs/ROADMAP_FORMAT.md",
+    "docs/DEVELOPMENT.md",
     "examples/",
     "SKILL.md"
   ],
