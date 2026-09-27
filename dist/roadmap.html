@@ -1459,6 +1459,14 @@ html[data-theme="light"] .hud-card__now-tick { background: #16364d; }
 html[data-booting] *, html[data-booting] *::before, html[data-booting] *::after { transition: none !important; }
 .rail__btn-label { font-size: 8px; letter-spacing: .03em; max-width: 100%; overflow: hidden; }
 #now-context:empty + .hud-card__separator, .hud-card__separator:has(+ #now-reason:empty) { display: none; }
+/* Task screenshots */
+.shot-badge { margin-left: 6px; padding: 0 5px; border: 1px solid rgba(0,212,255,.35); border-radius: 8px; font-size: 9px; color: var(--cyan); }
+.shot-mark { position: absolute; top: 2px; width: 7px; height: 7px; margin-left: -3px; border-radius: 50%; background: #fff; border: 1px solid var(--cyan); box-shadow: 0 0 6px var(--cyan-glow); cursor: pointer; z-index: 2; }
+.shot-preview { position: fixed; z-index: 50; width: 240px; padding: 4px; background: #07111e; border: 1px solid rgba(0,212,255,.45); box-shadow: 0 8px 28px rgba(0,0,0,.55); pointer-events: none; }
+.shot-preview[hidden] { display: none; }
+.shot-preview img { display: block; width: 100%; height: auto; }
+html[data-theme="light"] .shot-preview { background: #fff; border-color: #9cc8dc; }
+html[data-theme="light"] .shot-mark { background: #007ea8; border-color: #fff; }
 
 
 </style>
@@ -2617,7 +2625,7 @@ html[data-booting] *, html[data-booting] *::before, html[data-booting] *::after 
       open:'Open', pick:'Open ROADMAP.md', choose:'Select ROADMAP.md to start tracking',
       connected:'Synced', connecting:'Connecting', disconnected:'Disconnected', snapshot:'Snapshot', updatedAgo:'Updated {time} ago', unknownUpdate:'Update time unknown',
       version:'Version', phase:'Phase', of:'of', tasks:'tasks', decisions:'decisions', lines:'lines', lastCommit:'last commit',
-      now:'CURRENT TASK', noTask:'No active task', markActive:'Waiting for the agent to start a task', expected:'Expected', elapsed:'Elapsed', agentEta:'Agent ETA', revisedEta:'Revised ETA', onTrack:'On track', collapseOverview:'Collapse overview', expandOverview:'Expand overview', moreChanges:'View all changes in Notes',
+      now:'CURRENT TASK', noTask:'No active task', markActive:'Waiting for the agent to start a task', expected:'Expected', elapsed:'Elapsed', agentEta:'Agent ETA', revisedEta:'Revised ETA', onTrack:'On track', shots:'screenshots', shotsServeOnly:'Screenshots are available with visual-roadmap live', activity:'ACTIVITY', started:'Started', noActivity:'No activity recorded yet', collapseOverview:'Collapse overview', expandOverview:'Expand overview', moreChanges:'View all changes in Notes',
       delayed:'Delayed', provisional:'provisional', etaExtended:'ETA extended by', noEstimate:'No estimate',
       phasesDone:'Phases completed', calculatedDelivery:'Projected delivery', pace:'Observed pace', since:'In development since', perTask:'per task',
       recentChanges:'RECENT CHANGES', etaChanges:'ETA CHANGES', noChanges:'No changes recorded in ROADMAP.md', noRevisions:'No ETA revisions recorded',
@@ -2642,7 +2650,7 @@ html[data-booting] *, html[data-booting] *::before, html[data-booting] *::after 
       open:'Abrir', pick:'Abrir ROADMAP.md', choose:'Selecciona ROADMAP.md para comenzar el seguimiento',
       connected:'Sincronizado', connecting:'Conectando', disconnected:'Sin conexión', snapshot:'Vista puntual', updatedAgo:'Actualizado hace {time}', unknownUpdate:'Fecha de actualización desconocida',
       version:'Versión', phase:'Fase', of:'de', tasks:'tareas', decisions:'decisiones', lines:'líneas', lastCommit:'último commit',
-      now:'TAREA ACTUAL', noTask:'Sin tarea en curso', markActive:'Esperando a que el agente inicie una tarea', expected:'Esperado', elapsed:'Transcurrido', agentEta:'ETA del agente', revisedEta:'ETA revisada', onTrack:'A tiempo', collapseOverview:'Contraer resumen', expandOverview:'Expandir resumen', moreChanges:'Ver todos los cambios en Notas',
+      now:'TAREA ACTUAL', noTask:'Sin tarea en curso', markActive:'Esperando a que el agente inicie una tarea', expected:'Esperado', elapsed:'Transcurrido', agentEta:'ETA del agente', revisedEta:'ETA revisada', onTrack:'A tiempo', shots:'capturas', shotsServeOnly:'Las capturas están disponibles con visual-roadmap live', activity:'ACTIVIDAD', started:'Inicio', noActivity:'Sin actividad registrada', collapseOverview:'Contraer resumen', expandOverview:'Expandir resumen', moreChanges:'Ver todos los cambios en Notas',
       delayed:'Retraso', provisional:'provisional', etaExtended:'ETA ampliada', noEstimate:'Sin estimación',
       phasesDone:'Fases completadas', calculatedDelivery:'Entrega calculada', pace:'Ritmo observado', since:'En desarrollo desde', perTask:'por tarea',
       recentChanges:'ÚLTIMOS CAMBIOS', etaChanges:'CAMBIOS DE ETA', noChanges:'Sin cambios registrados en ROADMAP.md', noRevisions:'Sin revisiones de ETA registradas',
@@ -3095,6 +3103,7 @@ html[data-booting] *, html[data-booting] *::before, html[data-booting] *::after 
   function clockLabel(now) { return new Intl.DateTimeFormat(global.UI.language,{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(now)); }
   function render(doc, container) {
     container.replaceChildren();
+    document.querySelector('.shot-preview')?.remove();
     if (!doc?.releases?.length) { container.appendChild(el('div','empty-state',t('noPhases'))); return; }
     const forecast = global.Forecast.calculate(doc);
     if (!initialized) {
@@ -3158,6 +3167,7 @@ html[data-booting] *, html[data-booting] *::before, html[data-booting] *::after 
       const l=el('div',phase?'phase-head-row':'task-label-row',label), r=el('div',phase?'phase-bar-row':'tracker-bar-row');
       if(bar) r.appendChild(bar); lRows.appendChild(l);rRows.appendChild(r);return l;
     }
+    const preview = el('div', 'shot-preview'); preview.hidden = true; document.body.appendChild(preview);
     let undated=0;
     doc.releases.forEach((rel,index)=>{
       const items=(rel.items||[]).filter(it=>(!search||`${it.taskId||''} ${it.name}`.toLowerCase().includes(search)) && (!filter || (filter==='pending' ? it.status!=='done'&&it.status!=='cancelled' : filter==='blocked' ? it.status==='blocked' : filter==='overdue' ? it.status!=='done'&&it.status!=='cancelled'&&time(it.end,true)!=null&&time(it.end,true)<now : it.status!=='done'&&!it.start&&!it.end)));
@@ -3207,6 +3217,34 @@ html[data-booting] *, html[data-booting] *::before, html[data-booting] *::after 
         if(it.status==='cancelled')l.classList.add('task-label-row--cancelled');
         if(it.status==='blocked')l.classList.add('task-label-row--blocked');
         if(it.status==='paused')l.classList.add('task-label-row--paused');
+        const shots = global.RoadmapShots?.available ? global.RoadmapShots.forTask(it.taskId) : [];
+        if (shots.length) {
+          const badge = el('span', 'shot-badge', `📷 ${shots.length}`);
+          badge.title = `${shots.length} ${t('shots')}`;
+          l.appendChild(badge);
+        }
+        if (bar && shots.length && (zoom === '6h' || zoom === '1d')) {
+          shots.forEach(s => {
+            const at = Date.parse(s.at);
+            if (at < start || at > end) return;
+            const mark = el('span', 'shot-mark');
+            mark.style.left = `${pos(at)}%`;
+            mark.title = `${global.Forecast.dateTime(at)} · ${s.caption || ''}`;
+            mark.addEventListener('click', e => { e.stopPropagation(); showDetail(it, doc, forecast, s.id); });
+            bar.parentElement.appendChild(mark);
+          });
+        }
+        const coverShot = shots.length ? global.RoadmapShots.coverFor(it.taskId) : null;
+        if (bar && coverShot) {
+          bar.addEventListener('mouseenter', () => {
+            preview.replaceChildren(Object.assign(document.createElement('img'), { src: global.RoadmapShots.url(coverShot), alt: coverShot.caption || it.name }));
+            const r = bar.getBoundingClientRect();
+            preview.style.left = `${Math.max(8, Math.min(innerWidth - 260, r.left))}px`;
+            preview.style.top = `${Math.min(innerHeight - 180, r.bottom + 6)}px`;
+            preview.hidden = false;
+          });
+          bar.addEventListener('mouseleave', () => { preview.hidden = true; });
+        }
         l.addEventListener('click',()=>showDetail(it,doc,forecast));
         l.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')showDetail(it,doc,forecast);});
         if(bar)bar.addEventListener('click',()=>showDetail(it,doc,forecast));

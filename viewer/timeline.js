@@ -38,6 +38,7 @@
   function clockLabel(now) { return new Intl.DateTimeFormat(global.UI.language,{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(now)); }
   function render(doc, container) {
     container.replaceChildren();
+    document.querySelector('.shot-preview')?.remove();
     if (!doc?.releases?.length) { container.appendChild(el('div','empty-state',t('noPhases'))); return; }
     const forecast = global.Forecast.calculate(doc);
     if (!initialized) {
@@ -101,6 +102,7 @@
       const l=el('div',phase?'phase-head-row':'task-label-row',label), r=el('div',phase?'phase-bar-row':'tracker-bar-row');
       if(bar) r.appendChild(bar); lRows.appendChild(l);rRows.appendChild(r);return l;
     }
+    const preview = el('div', 'shot-preview'); preview.hidden = true; document.body.appendChild(preview);
     let undated=0;
     doc.releases.forEach((rel,index)=>{
       const items=(rel.items||[]).filter(it=>(!search||`${it.taskId||''} ${it.name}`.toLowerCase().includes(search)) && (!filter || (filter==='pending' ? it.status!=='done'&&it.status!=='cancelled' : filter==='blocked' ? it.status==='blocked' : filter==='overdue' ? it.status!=='done'&&it.status!=='cancelled'&&time(it.end,true)!=null&&time(it.end,true)<now : it.status!=='done'&&!it.start&&!it.end)));
@@ -150,6 +152,34 @@
         if(it.status==='cancelled')l.classList.add('task-label-row--cancelled');
         if(it.status==='blocked')l.classList.add('task-label-row--blocked');
         if(it.status==='paused')l.classList.add('task-label-row--paused');
+        const shots = global.RoadmapShots?.available ? global.RoadmapShots.forTask(it.taskId) : [];
+        if (shots.length) {
+          const badge = el('span', 'shot-badge', `📷 ${shots.length}`);
+          badge.title = `${shots.length} ${t('shots')}`;
+          l.appendChild(badge);
+        }
+        if (bar && shots.length && (zoom === '6h' || zoom === '1d')) {
+          shots.forEach(s => {
+            const at = Date.parse(s.at);
+            if (at < start || at > end) return;
+            const mark = el('span', 'shot-mark');
+            mark.style.left = `${pos(at)}%`;
+            mark.title = `${global.Forecast.dateTime(at)} · ${s.caption || ''}`;
+            mark.addEventListener('click', e => { e.stopPropagation(); showDetail(it, doc, forecast, s.id); });
+            bar.parentElement.appendChild(mark);
+          });
+        }
+        const coverShot = shots.length ? global.RoadmapShots.coverFor(it.taskId) : null;
+        if (bar && coverShot) {
+          bar.addEventListener('mouseenter', () => {
+            preview.replaceChildren(Object.assign(document.createElement('img'), { src: global.RoadmapShots.url(coverShot), alt: coverShot.caption || it.name }));
+            const r = bar.getBoundingClientRect();
+            preview.style.left = `${Math.max(8, Math.min(innerWidth - 260, r.left))}px`;
+            preview.style.top = `${Math.min(innerHeight - 180, r.bottom + 6)}px`;
+            preview.hidden = false;
+          });
+          bar.addEventListener('mouseleave', () => { preview.hidden = true; });
+        }
         l.addEventListener('click',()=>showDetail(it,doc,forecast));
         l.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')showDetail(it,doc,forecast);});
         if(bar)bar.addEventListener('click',()=>showDetail(it,doc,forecast));

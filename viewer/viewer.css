@@ -1312,3 +1312,11 @@ html[data-theme="light"] .hud-card__now-tick { background: #16364d; }
 html[data-booting] *, html[data-booting] *::before, html[data-booting] *::after { transition: none !important; }
 .rail__btn-label { font-size: 8px; letter-spacing: .03em; max-width: 100%; overflow: hidden; }
 #now-context:empty + .hud-card__separator, .hud-card__separator:has(+ #now-reason:empty) { display: none; }
+/* Task screenshots */
+.shot-badge { margin-left: 6px; padding: 0 5px; border: 1px solid rgba(0,212,255,.35); border-radius: 8px; font-size: 9px; color: var(--cyan); }
+.shot-mark { position: absolute; top: 2px; width: 7px; height: 7px; margin-left: -3px; border-radius: 50%; background: #fff; border: 1px solid var(--cyan); box-shadow: 0 0 6px var(--cyan-glow); cursor: pointer; z-index: 2; }
+.shot-preview { position: fixed; z-index: 50; width: 240px; padding: 4px; background: #07111e; border: 1px solid rgba(0,212,255,.45); box-shadow: 0 8px 28px rgba(0,0,0,.55); pointer-events: none; }
+.shot-preview[hidden] { display: none; }
+.shot-preview img { display: block; width: 100%; height: auto; }
+html[data-theme="light"] .shot-preview { background: #fff; border-color: #9cc8dc; }
+html[data-theme="light"] .shot-mark { background: #007ea8; border-color: #fff; }
