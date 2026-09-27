@@ -1473,10 +1473,10 @@ html[data-theme="light"] .shot-mark { background: #007ea8; border-color: #fff; }
 .task-log__time { font: 10px 'JetBrains Mono', monospace; color: #6f8ea8; padding-top: 2px; }
 .task-log__diff { font: 10px 'JetBrains Mono', monospace; color: #7fd89a; }
 .task-log__shot { grid-column: 3 / -1; }
-.task-log__thumb { display: block; width: 100%; max-width: 360px; border: 1px solid rgba(0,212,255,.3); cursor: zoom-in; }
+.task-log__thumb { display: block; width: 100%; max-width: 240px; border: 1px solid rgba(0,212,255,.3); cursor: zoom-in; }
 .task-log__caption { margin-top: 4px; color: #e5f4ff; }
 .task-log__meta, .task-log__hint, .task-log__empty { font-size: 10px; color: #6f8ea8; }
-.lightbox { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(2,6,12,.92); }
+.lightbox { position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(2,6,12,.92); }
 .lightbox img { max-width: 94vw; max-height: 86vh; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
 .lightbox__caption { color: #cfe3f3; font-size: 12px; }
 html[data-theme="light"] .task-log__row { color: #2b4a60; }
@@ -2843,6 +2843,7 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
   'use strict';
   let entries = [];
   const failed = new Set();
+  const pending = new Set();
   let queue = Promise.resolve();
   const api = { available: false };
 
@@ -2863,7 +2864,10 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
       entries = ((await res.json()).shots || []).sort((a, b) => a.at.localeCompare(b.at));
       api.available = true;
       document.dispatchEvent(new CustomEvent('roadmap:shots-updated'));
-      entries.filter(s => !s.compressed && !failed.has(s.id)).forEach(s => { queue = queue.then(() => compress(s)); });
+      entries.filter(s => !s.compressed && !failed.has(s.id) && !pending.has(s.id)).forEach(s => {
+        pending.add(s.id);
+        queue = queue.then(() => compress(s)).finally(() => pending.delete(s.id));
+      });
     } catch {}
   }
 

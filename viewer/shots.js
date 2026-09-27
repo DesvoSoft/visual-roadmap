@@ -5,6 +5,7 @@
   'use strict';
   let entries = [];
   const failed = new Set();
+  const pending = new Set();
   let queue = Promise.resolve();
   const api = { available: false };
 
@@ -25,7 +26,10 @@
       entries = ((await res.json()).shots || []).sort((a, b) => a.at.localeCompare(b.at));
       api.available = true;
       document.dispatchEvent(new CustomEvent('roadmap:shots-updated'));
-      entries.filter(s => !s.compressed && !failed.has(s.id)).forEach(s => { queue = queue.then(() => compress(s)); });
+      entries.filter(s => !s.compressed && !failed.has(s.id) && !pending.has(s.id)).forEach(s => {
+        pending.add(s.id);
+        queue = queue.then(() => compress(s)).finally(() => pending.delete(s.id));
+      });
     } catch {}
   }
 
