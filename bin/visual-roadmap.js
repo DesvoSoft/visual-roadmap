@@ -409,6 +409,23 @@ function cmdCheck() {
 /* SessionStart: print the brief (Claude Code adds stdout to the context).
    Stop: exit 2 with a one-line reason when the roadmap needs attention; Claude
    Code feeds stderr back to the agent. `stop_hook_active` prevents loops. */
+/* PostToolUse: keep screenshots the agent takes while a task is active.
+   Never interrupts the agent: every failure is ignored. */
+function captureShot(input, base, file, text, Agent) {
+  try {
+    if (process.env.VISUAL_ROADMAP_HOOK_DUMP) {
+      const trimmed = JSON.stringify(input, (k, v) => typeof v === 'string' && v.length > 200 ? v.slice(0, 64) + '…' : v, 2);
+      fs.writeFileSync(process.env.VISUAL_ROADMAP_HOOK_DUMP, trimmed);
+    }
+    const found = require('../lib/shot-hook.js').fromPayload(input, { cwd: base });
+    if (!found) return;
+    const active = Agent.status(text).active;
+    if (!active?.id) return;
+    const Shots = require('../lib/shots.js');
+    Shots.add(path.dirname(file), { ...found, task: active.id, throttle: true, ...Shots.optionsFromRoadmap(globalThis.Roadmap.parse(text)) });
+  } catch {}
+}
+
 function cmdHook() {
   let input = {};
   try { if (!process.stdin.isTTY) input = JSON.parse(fs.readFileSync(0, 'utf8') || '{}'); } catch {}
@@ -418,6 +435,7 @@ function cmdHook() {
   const Agent = require('../lib/agent.js');
   const text = fs.readFileSync(file, 'utf8');
   const event = POS[0];
+  if (event === 'post-tool-use') captureShot(input, base, file, text, Agent);
 
   if (event === 'session-start') { log(Agent.brief(text, Date.now(), lang())); return; }
   if (!['stop', 'post-tool-use', 'user-prompt-submit'].includes(event) || (event === 'stop' && input.stop_hook_active)) return;

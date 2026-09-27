@@ -1,0 +1,4 @@
+{ "hook_event_name": "PostToolUse", "tool_name": "mcp__claude-in-chrome__computer",
+  "tool_input": { "action": "screenshot", "tabId": 1 },
+  "tool_response": [ { "type": "text", "text": "Screenshot of http://localhost:5173/planner" },
+                     { "type": "image", "source": { "type": "base64", "media_type": "image/png", "data": "iVBORw0KGgoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" } } ] }

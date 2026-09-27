@@ -1,0 +1,3 @@
+{ "hook_event_name": "PostToolUse", "tool_name": "mcp__playwright__browser_take_screenshot",
+  "tool_input": { "filename": "planner.png" },
+  "tool_response": { "content": [ { "type": "image", "mimeType": "image/png", "data": "iVBORw0KGgoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" } ] } }

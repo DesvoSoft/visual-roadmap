@@ -1,0 +1,2 @@
+{ "hook_event_name": "PostToolUse", "tool_name": "Read",
+  "tool_input": { "file_path": "shots/planner.png" }, "tool_response": {} }
