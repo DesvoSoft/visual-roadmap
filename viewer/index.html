@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual Roadmap</title>
+  <meta name="description" content="Visor de ROADMAP.md en vivo — para sesiones autónomas con IA">
+
+  <!-- Google Fonts: display + UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="viewer.css">
+
+  <style>
+    /* Inline critical: evita FOUC */
+    html { background: #06090f; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── Topbar ───────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="topbar__logo">
+      <div class="topbar__logo-icon">🗺</div>
+      <span class="topbar__wordmark">Visual Roadmap</span>
+    </div>
+
+    <div class="topbar__divider"></div>
+
+    <div class="topbar__project">
+      <div class="topbar__title"   id="project-title">Roadmap</div>
+      <div class="topbar__subtitle" id="project-subtitle"></div>
+    </div>
+
+    <div class="topbar__right">
+      <span class="topbar__updated"  id="project-updated"></span>
+      <span class="topbar__filename" id="file-name" title="Archivo abierto"></span>
+      <div  class="live-dot live-dot--off" id="live-dot" title="Sin actualización en vivo"></div>
+      <button class="btn-pick" id="btn-pick" title="Abrir ROADMAP.md">
+        📂 Abrir
+      </button>
+    </div>
+  </header>
+
+  <!-- ── AI Status bar (hidden por defecto) ─────────── -->
+  <div class="ai-status ai-status--hidden" id="ai-status">
+    <div class="ai-status__pulse"></div>
+    <span class="ai-status__agent"></span>
+    <span class="ai-status__sep">›</span>
+    <span class="ai-status__task"></span>
+    <span class="ai-status__meta"></span>
+  </div>
+
+  <!-- ── Nav ──────────────────────────────────────────── -->
+  <nav class="viewnav" role="navigation" aria-label="Vistas del roadmap">
+    <button class="nav__btn nav__btn--active" data-view="board"    aria-label="Vista Board">
+      ▦ Board
+    </button>
+    <button class="nav__btn" data-view="timeline" aria-label="Vista Timeline / Gantt">
+      ▬ Timeline
+    </button>
+    <button class="nav__btn" data-view="log" aria-label="Log de actividad">
+      ☰ Log
+    </button>
+    <button class="nav__btn" data-view="issues" aria-label="Advertencias de planificación">
+      ⚠ Issues
+      <span class="nav__badge" id="issues-badge" style="display:none"></span>
+    </button>
+  </nav>
+
+  <!-- ── Main view ─────────────────────────────────────── -->
+  <main id="main-view" role="main">
+    <!-- renderizado por app.js -->
+  </main>
+
+  <!-- ── Issues mini-panel (siempre visible abajo) ───── -->
+  <aside id="issues-panel" aria-label="Advertencias de planificación">
+    <div class="issues-empty">Abre un ROADMAP.md para ver el análisis de planificación</div>
+  </aside>
+
+</div><!-- /#app -->
+
+<!-- ── Scripts ─────────────────────────────────────────── -->
+<script src="md.js"></script>
+<script src="watcher.js"></script>
+<script src="board.js"></script>
+<script src="timeline.js"></script>
+<script src="log.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

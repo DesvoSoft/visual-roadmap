@@ -1,0 +1,43 @@
+{
+  "name": "visual-roadmap",
+  "version": "0.1.0",
+  "description": "Live roadmap viewer for autonomous AI sessions. Any AI agent can update ROADMAP.md; the browser viewer renders it in real time.",
+  "author": "DesvoSoft",
+  "license": "MIT",
+  "keywords": [
+    "roadmap",
+    "ai",
+    "autonomous",
+    "progress-tracker",
+    "kanban",
+    "gantt",
+    "markdown",
+    "devtools"
+  ],
+  "bin": {
+    "visual-roadmap": "./cli.js"
+  },
+  "main": "./cli.js",
+  "files": [
+    "cli.js",
+    "server.js",
+    "viewer/",
+    "SKILL.md",
+    "ROADMAP.seed.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node cli.js serve",
+    "test": "node cli.js --version"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DesvoSoft/visual-roadmap.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DesvoSoft/visual-roadmap/issues"
+  },
+  "homepage": "https://desvosoft.github.io/visual-roadmap"
+}

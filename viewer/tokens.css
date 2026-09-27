@@ -1,0 +1,116 @@
+/* tokens.css — RSI Progress Tracker design tokens
+   Extraídos del bundle real + adaptados al sistema Visual Roadmap */
+
+:root {
+
+  /* ── backgrounds ───────────────────────────────────── */
+  --bg:     #06090f;
+  --bg-1:   #090e17;
+  --bg-2:   #0d1520;
+  --bg-3:   #121d2c;
+  --bg-4:   #182538;
+  --bg-5:   #1d2e44;
+  --bg-6:   #233550;
+
+  /* ── borders ────────────────────────────────────────── */
+  --border:   rgba(100,160,230,.10);
+  --border-2: rgba(100,160,230,.18);
+  --border-3: rgba(100,160,230,.30);
+  --border-4: rgba(100,160,230,.50);
+
+  /* ── text ───────────────────────────────────────────── */
+  --text:   #c8d8f0;
+  --text-2: #8ca8c8;
+  --text-3: #567090;
+  --text-4: #3a5070;
+  --text-5: #243848;
+
+  /* ── brand gold ─────────────────────────────────────── */
+  --gold:      #c1a97e;
+  --gold-2:    #dfc090;
+  --gold-3:    #f0d4a0;
+  --gold-dim:  rgba(193,169,126,.14);
+  --gold-glow: rgba(193,169,126,.35);
+
+  /* ── status ─────────────────────────────────────────── */
+  --ok:         #3dba78;
+  --ok-2:       #52d490;
+  --ok-dim:     rgba(61,186,120,.14);
+  --ok-glow:    rgba(61,186,120,.30);
+
+  --warn:       #e8a040;
+  --warn-2:     #f0b858;
+  --warn-dim:   rgba(232,160,64,.14);
+  --warn-glow:  rgba(232,160,64,.30);
+
+  --danger:     #e84040;
+  --danger-2:   #f05858;
+  --danger-dim: rgba(232,64,64,.14);
+  --danger-glow:rgba(232,64,64,.30);
+
+  --idle:       #4a7090;
+  --idle-2:     #5a8aac;
+  --idle-dim:   rgba(74,112,144,.14);
+
+  /* ── blues (active / accents) ───────────────────────── */
+  --blue-100:  #a8d0ff;
+  --blue-200:  #70b0f0;
+  --blue-300:  #4a96e8;
+  --blue-400:  #2a78d0;
+  --blue-500:  #1458a8;
+  --blue-dim:  rgba(74,150,232,.14);
+  --blue-glow: rgba(74,150,232,.32);
+
+  /* ── purple (blocked) ───────────────────────────────── */
+  --purple:     #9060e0;
+  --purple-2:   #a878f0;
+  --purple-dim: rgba(144,96,224,.14);
+
+  /* ── layout ─────────────────────────────────────────── */
+  --topbar-h:  56px;
+  --nav-h:     44px;
+  --ai-bar-h:  40px;
+
+  /* ── spacing ─────────────────────────────────────────── */
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 12px;
+  --sp-lg: 20px;
+  --sp-xl: 32px;
+
+  /* ── radius ─────────────────────────────────────────── */
+  --r-sm: 3px;
+  --r:    5px;
+  --r-lg: 8px;
+  --r-xl: 12px;
+
+  /* ── typography ─────────────────────────────────────── */
+  --font-ui:      'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --font-display: 'Orbitron', 'Exo 2', var(--font-ui);
+
+  --fs-xs:  10px;
+  --fs-sm:  11px;
+  --fs-md:  13px;
+  --fs-lg:  15px;
+  --fs-xl:  18px;
+  --fs-2xl: 24px;
+
+  /* ── motion ─────────────────────────────────────────── */
+  --ease:      cubic-bezier(.25,.46,.45,.94);
+  --ease-out:  cubic-bezier(.0,.0,.2,1);
+  --ease-in:   cubic-bezier(.4,0,1,1);
+  --dur:       160ms;
+  --dur-md:    240ms;
+  --dur-lg:    380ms;
+
+  /* ── shadows ─────────────────────────────────────────── */
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.4);
+  --shadow:    0 2px 12px rgba(0,0,0,.5);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.6);
+  --shadow-xl: 0 16px 64px rgba(0,0,0,.7);
+
+  /* ── progress track ─────────────────────────────────── */
+  --track-bg:     rgba(255,255,255,.06);
+  --track-radius: 2px;
+}
