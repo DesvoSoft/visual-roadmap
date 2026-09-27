@@ -6,39 +6,39 @@
   "license": "MIT",
   "keywords": [
     "roadmap",
-    "ai",
-    "autonomous",
+    "ai-agents",
+    "vibecoding",
+    "claude-code",
+    "codex",
+    "cursor",
     "progress-tracker",
-    "kanban",
     "gantt",
     "markdown",
+    "cli",
     "devtools"
   ],
   "bin": {
-    "visual-roadmap": "./cli.js"
+    "visual-roadmap": "./bin/visual-roadmap.js"
   },
-  "main": "./cli.js",
+  "main": "./lib/agent.js",
   "files": [
-    "cli.js",
-    "agent.js",
-    "git.js",
-    "server.js",
-    "build.js",
+    "bin/",
+    "lib/",
     "dist/",
+    "viewer/",
+    "templates/",
     "docs/",
     "examples/",
-    "viewer/",
-    "SKILL.md",
-    "ROADMAP.seed.md"
+    "SKILL.md"
   ],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "build": "node build.js",
-    "start": "node cli.js serve --file examples/VOIDFRONT.md",
+    "build": "node scripts/build.js",
+    "start": "node bin/visual-roadmap.js serve --file examples/VOIDFRONT.md",
     "test": "node --test",
-    "screenshots": "node tools/screenshots.js"
+    "screenshots": "node scripts/screenshots.js"
   },
   "repository": {
     "type": "git",
@@ -47,5 +47,5 @@
   "bugs": {
     "url": "https://github.com/DesvoSoft/visual-roadmap/issues"
   },
-  "homepage": "https://desvosoft.github.io/visual-roadmap"
+  "homepage": "https://github.com/DesvoSoft/visual-roadmap#readme"
 }
