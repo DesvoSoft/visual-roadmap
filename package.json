@@ -1,6 +1,6 @@
 {
   "name": "visual-roadmap",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Live roadmap for vibecoding: your coding agent keeps ROADMAP.md current with one-line commands and you watch progress, ETAs and problems in the browser.",
   "author": "DesvoSoft",
   "license": "MIT",

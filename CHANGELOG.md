@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-27
+
+### Added
+- Collapsible overview: the tracking HUD folds into a single strip with the current task, its status and the version progress; the choice is remembered.
+- Clickable timeline filters for pending, blocked, overdue and undated deliverables.
+- Timeline labels that do not fit inside a bar are drawn next to it; projected bars show their dates in the tooltip.
+- README: a copy-paste prompt so an agent can install and adopt the protocol, and a troubleshooting table.
+
+### Changed
+- Tracking layout gives the timeline most of the screen: one-line header, compact three-column overview, one-row toolbar and 30px rows.
+- The current task bar is time based: cyan up to the expected time, orange for the overrun, with an `elapsed / expected` label and an on-track or `+N min` chip.
+- ETA revisions merge into the recent-changes feed (four latest, the rest in Notes); the forecast note moves to the projected-delivery tooltip with a confidence chip.
+
+### Fixed
+- Filter chips were unreadable because buttons kept the browser's default text color.
+- Bars no longer render mid-animation on first load, which also fixes the README screenshots.
+- Light theme contrast for the revised ETA, the expected-time tick and the search box; long Spanish labels in the side rail.
+
 ## [0.3.0] - 2026-09-27
 
 ### Added
@@ -41,7 +59,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - Local server with SSE updates and a portable single-file `roadmap.html`.
 - `init`, `live`, `serve`, `open` and `skill` commands.
 
-[Unreleased]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/DesvoSoft/visual-roadmap/compare/a98c45a...v0.2.0
 [0.1.0]: https://github.com/DesvoSoft/visual-roadmap/commit/a98c45a
