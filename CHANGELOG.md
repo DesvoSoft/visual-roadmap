@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-27
+
 ### Added
 - Agent commands: `status`, `check`, `add`, `split`, `start`, `progress`, `eta`, `done [--next]`, `block` and `log`, with one-line output.
 - `done` records the real duration and the lines changed from git; `--next` starts the next ready task.
@@ -28,5 +30,6 @@ All notable changes to this project are documented here. The format follows [Kee
 - Local server with SSE updates and a portable single-file `roadmap.html`.
 - `init`, `live`, `serve`, `open` and `skill` commands.
 
-[Unreleased]: https://github.com/DesvoSoft/visual-roadmap/compare/a98c45a...HEAD
+[Unreleased]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/DesvoSoft/visual-roadmap/compare/a98c45a...v0.2.0
 [0.1.0]: https://github.com/DesvoSoft/visual-roadmap/commit/a98c45a
