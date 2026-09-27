@@ -182,6 +182,12 @@
     let key = null;
     for (const line of lines) {
       if (!line.trim() || /^\s*#/.test(line)) continue;
+      const nested = /^\s{2,}([A-Za-z0-9_.\-]+)\s*:\s*(.*)$/.exec(line);
+      if (nested && key) {
+        if (!data[key] || Array.isArray(data[key])) data[key] = {};
+        data[key][nested[1]] = scalar(nested[2]);
+        continue;
+      }
       const item = /^\s*-\s+(.*)$/.exec(line);
       if (item && key) {
         if (!Array.isArray(data[key])) data[key] = data[key] ? [data[key]] : [];
@@ -227,11 +233,11 @@
   function inline(s) {
     let out = escapeHtml(s);
     const codes = [];
-    out = out.replace(/`([^`]+)`/g, (_, c) => ' ' + (codes.push(c) - 1) + ' ');
+    out = out.replace(/`([^`]+)`/g, (_, c) => '\0' + (codes.push(c) - 1) + '\0');
     out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     out = out.replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<em>$2</em>');
     out = out.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
-    out = out.replace(/ (\d+) /g, (_, i) => '<code>' + escapeHtml(codes[+i]) + '</code>');
+    out = out.replace(/\0(\d+)\0/g, (_, i) => '<code>' + escapeHtml(codes[+i]) + '</code>');
     return out;
   }
 
@@ -284,6 +290,7 @@
     ['progress', ['progreso', 'progress', 'avance', 'pct', '%']],
     ['owner', ['owner', 'responsable', 'asignado', 'assigned', 'equipo', 'team']],
     ['effort', ['esfuerzo', 'effort', 'horas', 'hours', 'est', 'h']],
+    ['actual', ['real', 'duracion real', 'actual', 'actual duration']],
     ['start', ['inicio', 'start', 'desde', 'from', 'begins']],
     ['end', ['fin', 'finish', 'end', 'hasta', 'to', 'deadline', 'entrega']],
     ['depends', ['depende', 'depends', 'deps', 'bloqueado por', 'blocked by', 'requiere', 'requires']],
@@ -317,17 +324,21 @@
   const RE_META_RANGE = /(\d{4}-\d{2}-\d{2})\s*(?:→|->|—>|=>|–)\s*(\d{4}-\d{2}-\d{2})/;
   const RE_META_STATUS = /\*{0,2}(planeado|planned|en curso|active|bloqueado|blocked|en riesgo|at[- ]risk|hecho|done|completo|complete|entregado|shipped|descartado|cancelled|canceled)\*{0,2}/i;
   const RE_META_PROGRESS = /(\d{1,3})\s*%/;
+  const RE_ID = /^((?:v\d+(?:\.\d+)*|[A-Za-z]+\d+))\s*[:·\-–—]?\s*(.*)$/i;
   function parseNowTask(meta) {
     if (!meta) return null;
     const n = meta.now_task || meta.current_task || {};
-    const id = n.id || meta.now_id || meta.current_task_id || meta.ai_item_id || 'T109';
+    const id = n.id || meta.now_id || meta.current_task_id || meta.ai_item_id || '';
     const name = n.name || meta.now_name || meta.current_task_name || meta.ai_task || meta.ai_item || '';
     if (!name && !n.name && !meta.now_id) return null;
     const context = n.context || n.phase || meta.now_context || meta.current_task_context || meta.ai_phase || '';
-    const expected = n.expected || meta.now_expected || meta.current_task_expected || meta.ai_eta || '01:15';
-    const elapsed = n.elapsed || meta.now_elapsed || meta.current_task_elapsed || meta.ai_since || '49 min';
-    const status = n.status || meta.now_status || meta.current_task_status || 'tarda más de lo previsto';
-    return { id, name, context, expected, elapsed, status };
+    const expected = n.expected || meta.now_expected || meta.current_task_expected || meta.ai_eta || '';
+    const elapsed = n.elapsed || meta.now_elapsed || meta.current_task_elapsed || meta.ai_since || '';
+    const status = n.status || meta.now_status || meta.current_task_status || '';
+    const startedAt = n.started_at || n.started || meta.now_started_at || '';
+    const remaining = n.remaining || meta.now_remaining || '';
+    const reason = n.reason || meta.now_reason || '';
+    return { id, name, context, expected, elapsed, status, startedAt, remaining, reason };
   }
 
   /* ------------------------------------------------------------------ *
@@ -349,9 +360,9 @@
       updated: parseDate(meta.updated || meta['last-updated']) || null,
       capacity: typeof meta.capacity === 'number' ? meta.capacity : 1,
       weekStart: normKey(meta['week-start'] || meta.week_start) === 'sun' ? 'sun' : 'mon',
-      version: meta.version || '0.1',
-      phase: meta.phase || 1,
-      phaseTotal: meta.phase_total || meta.phaseTotal || 1,
+      version: meta.version || '',
+      phase: meta.phase || '',
+      phaseTotal: meta.phase_total || meta.phaseTotal || 0,
       tests: meta.tests || 0,
       e2e: meta.e2e || 0,
       decisions: meta.decisions || 0,
@@ -359,6 +370,7 @@
       lastCommit: meta.last_commit || meta.lastCommit || '',
       lastCommitTime: meta.last_commit_time || meta.lastCommitTime || '',
       nowTask: parseNowTask(meta),
+      estimateChanges: [],
       recentChanges: [],
       context: '',
       releases: [],
@@ -461,6 +473,12 @@
       }
 
       /* ---- recent changes / activity feed ---- */
+      if (/^(estimaciones|cambios de estimacion|estimate changes|estimates)$/.test(section)) {
+        const em = /^\s*[-*]\s+([^|]+)\|\s*([^|]+)\|\s*([^|]+)(?:\|\s*(.*))?$/.exec(line);
+        if (em) doc.estimateChanges.push({ at: em[1].trim(), taskId: em[2].trim(), remaining: em[3].trim(), reason: (em[4] || '').trim() });
+        i++;
+        continue;
+      }
       if (/^(ultimos[- ]cambios|cambios[- ]recientes|recent[- ]changes|actividad|activity)$/.test(section)) {
         const cm = /^\s*[-*]\s+(.+)$/.exec(line);
         if (cm) {
@@ -598,6 +616,7 @@
         progress: parseProgress(raw.progress),
         owner: owner,
         effort: parseEffort(raw.effort),
+        actual: parseEffort(raw.actual),
         effortRaw: isEmpty(raw.effort) ? null : String(raw.effort).trim(),
         start: isEmpty(raw.start) ? null : parseDate(raw.start),
         end: isEmpty(raw.end) ? null : parseDate(raw.end),
@@ -607,13 +626,17 @@
         note: isEmpty(raw.note) ? null : String(raw.note).trim(),
         release: release ? release.name : null,
         releaseId: release ? release.id : null,
-        category: category ? category.name : 'Sin categoría'
+        category: category ? category.name : ''
       };
       if (typeof item.start === 'object') item.start = null;   /* partial dates unsupported */
       if (typeof item.end === 'object') item.end = null;
       if (item.progress == null) item.progress = item.status === 'done' ? 100 : 0;
       if (category) category.items.push(item);
-      else if (release) release.categories.push({ name: 'Sin categoría', items: [item], notes: '' });
+      else if (release) {
+        let implicit = release.categories.find(c => c.implicit);
+        if (!implicit) { implicit = { name: '', items: [], notes: '', implicit: true }; release.categories.push(implicit); }
+        implicit.items.push(item);
+      }
     }
   }
 
@@ -647,8 +670,8 @@
       r.items = items;
       if (!r.start) r.start = items.map(i => i.start).filter(Boolean).sort()[0] || null;
       if (!r.end) r.end = items.map(i => i.end).filter(Boolean).sort().slice(-1)[0] || null;
-      if (!r.progress) r.progress = weightedProgress(items);
-      if (!r.status) r.status = deriveStatus(r);
+      if (r.progress == null) r.progress = weightedProgress(items);
+      if (!r.status || (r.status === 'done' && items.some(i => i.status !== 'done' && i.status !== 'cancelled'))) r.status = deriveStatus(r);
     });
 
     doc.items = doc.releases.flatMap(r => r.items);
@@ -697,19 +720,16 @@
     const nextUp = open
       .filter(i => i.start)
       .sort((a, b) => a.start.localeCompare(b.start) || (a.priority || 'P9').localeCompare(b.priority || 'P9'))[0] || null;
-    const pct = items.length ? Math.round((done / items.length) * 100) : 0;
+    const pct = weightedProgress(items);
     const phasesDone = doc.releases.filter(r => r.status === 'done').length;
-    const phasesTotal = doc.phaseTotal || (doc.releases.length ? doc.releases.length : 14);
+    const phasesTotal = doc.phaseTotal || doc.releases.length;
 
-    let cadenceText = doc.meta.cadence || doc.meta['ritmo-real'] || '39,8 min por tarea';
-    if (!doc.meta.cadence && doc.started && done > 0) {
-      const elapsedDays = Math.max(1, diffDays(toDate(doc.started), today()));
-      const mins = Math.round((elapsedDays * 6 * 60) / done * 10) / 10;
-      cadenceText = String(mins).replace('.', ',') + ' min por tarea';
-    }
+    let cadenceText = doc.meta.cadence || doc.meta['ritmo-real'] || '';
+    const actuals = items.filter(i => i.status === 'done' && i.actual > 0).map(i => i.actual * 60);
+    const cadenceMinutes = actuals.length ? Math.round(actuals.reduce((a, b) => a + b, 0) / actuals.length) : null;
 
-    const estimatedText = doc.meta.estimated_finish || doc.meta['0.1_estimada'] || (spanEnd ? fmtLong(toDate(spanEnd)) : '27 sept, 12:31');
-    const startedText = doc.started ? fmtLong(toDate(doc.started)) : '25 sept, 17:17';
+    const estimatedText = doc.meta.estimated_finish || doc.meta['0.1_estimada'] || (spanEnd ? fmtLong(toDate(spanEnd)) : '');
+    const startedText = doc.meta.started || '';
 
     return {
       total: items.length,
@@ -729,6 +749,7 @@
       phasesDone: phasesDone,
       phasesTotal: phasesTotal,
       cadenceText: cadenceText,
+      cadenceMinutes: cadenceMinutes,
       estimatedText: estimatedText,
       startedText: startedText,
       nextUp: nextUp,

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visual Roadmap · Seguimiento del Progreso</title>
-  <meta name="description" content="Visor en vivo de hoja de ruta y avance para proyectos y agentes autónomos">
+  <title>Visual Roadmap · Progress Tracker</title>
+  <meta name="description" content="Live roadmap and progress tracker for independent coding agents">
 
   <!-- Google Fonts: Space/Sci-Fi + UI + Monospace -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,8 +15,7 @@
   <style>
 
 /* Inlined tokens.css */
-/* tokens.css — RSI Progress Tracker design tokens
-   Extraídos del bundle real + adaptados al sistema Visual Roadmap */
+/* Visual Roadmap design tokens */
 
 :root {
 
@@ -146,8 +145,7 @@
 
 
 /* Inlined viewer.css */
-/* viewer.css — Visual Roadmap full sci-fi mission control stylesheet
-   Matches the Voidfront / RSI Progress Tracker design */
+/* Visual Roadmap mission control stylesheet */
 
 /* ── Reset & Base ─────────────────────────────────────── */
 *, *::before, *::after {
@@ -685,51 +683,6 @@ body {
   min-height: 0;
 }
 
-/* Subnav Tabs: EQUIPOS | ENTREGABLES */
-.subnav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.subnav-tabs {
-  display: flex;
-  gap: 2px;
-}
-
-.subnav-tab {
-  height: 32px;
-  padding: 0 16px;
-  background: #08111e;
-  border: 1px solid rgba(0, 180, 255, 0.16);
-  color: var(--text-3);
-  font-family: 'Exo 2', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all var(--dur);
-}
-
-.subnav-tab:first-child { border-radius: 4px 0 0 4px; }
-.subnav-tab:last-child  { border-radius: 0 4px 4px 0; }
-
-.subnav-tab:hover {
-  color: #ffffff;
-  background: #0d1a2d;
-}
-
-.subnav-tab--active {
-  background: rgba(0, 180, 255, 0.18);
-  border-color: var(--cyan);
-  color: #ffffff;
-  box-shadow: inset 0 0 12px rgba(0, 212, 255, 0.2);
-}
-
 /* Controls Toolbar (Search + Zoom + Time navigation) */
 .subnav-controls {
   display: flex;
@@ -1199,23 +1152,170 @@ body {
 /* ── Responsive adjustments ───────────────────────────── */
 @media (max-width: 1024px) {
   .hud-panel {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
-  .hud-card:not(:last-child) {
-    border-right: none;
-    border-bottom: 1px solid rgba(0, 180, 255, 0.12);
-  }
+  .hud-card--changes { grid-column: 1 / -1; border-top: 1px solid rgba(0, 180, 255, 0.12); }
+  .hud-card--now { border-right: 1px solid rgba(0, 180, 255, 0.12); }
+  .hud-card__changes-list { max-height: 62px; }
 }
+@media (max-width: 680px) {
+  .hud-panel { grid-template-columns: 1fr; }
+  .hud-card--changes { grid-column: auto; }
+  .hud-card--now { border-right: 0; border-bottom: 1px solid rgba(0, 180, 255, 0.12); }
+}
+
+/* The initial screen asks for a source instead of showing sample telemetry. */
+.awaiting-roadmap .hud-panel,
+.awaiting-roadmap .hud-metrics-bar,
+.awaiting-roadmap .badge-live,
+.awaiting-roadmap .hud-header__updated,
+.awaiting-roadmap .hud-header__filename { display: none; }
+.awaiting-roadmap .main-viewport { align-items: center; justify-content: center; }
+.awaiting-roadmap .empty-state { max-width: 520px; padding: 48px; text-align: center; }
+.m-item[hidden] { display: none; }
+.timeline-title { color: #9bc7dc; font-size: 12px; letter-spacing: .12em; }
+.tracker-right__rows { flex: 0 0 auto; }
+.tracker-right__head { flex: 0 0 40px; }
+.timeline-signals { display: flex; gap: 14px; flex-wrap: wrap; padding: 0 0 12px; color: #7896b5; font-size: 11px; }
+.timeline-signal { padding: 5px 9px; border: 1px solid rgba(0,180,255,.18); background: #071320; }
+.timeline-signal--alert { color: #ffa347; border-color: rgba(255,122,0,.45); }
+.forecast-note { margin: -6px 24px 14px; color: #7798b4; font-size: 11px; letter-spacing: .02em; }
+.awaiting-roadmap .forecast-note { display: none; }
+.estimate-event { padding: 5px 0; border-bottom: 1px solid rgba(0,180,255,.1); color: #a4bdd4; line-height: 1.4; }
+.badge-live--offline { border-color: #55718b; background: rgba(64,85,108,.15); color: #90a6b8; text-shadow: none; }
+.badge-live--offline .badge-live__dot { background: #718a9d; box-shadow: none; animation: none; }
+.hud-panel { animation: panel-enter .35s ease-out both; }
+.hud-panel--updated { animation: update-flash .9s ease-out; }
+.tracker-bar--now { animation: active-glow 2.8s ease-in-out infinite; }
+.vertical-now-line { transition: left 15s linear; }
+.vertical-now-line::after { content: ''; position: absolute; top: 0; left: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--neon-orange); box-shadow: 0 0 14px var(--neon-orange); }
+.timeline-signal--alert { animation: alert-breathe 3s ease-in-out infinite; }
+.tracker-bar--provisional { border-style: dashed; opacity: .8; background: repeating-linear-gradient(135deg, rgba(74,137,172,.18), rgba(74,137,172,.18) 7px, rgba(5,15,30,.4) 7px, rgba(5,15,30,.4) 14px); }
+.task-label-row--interactive { cursor: pointer; }
+.task-label-row--interactive:focus-visible { outline: 1px solid var(--cyan); outline-offset: -2px; }
+.task-detail-overlay { position: fixed; inset: 0; z-index: 300; display: flex; justify-content: flex-end; background: rgba(0,4,10,.72); backdrop-filter: blur(3px); animation: panel-enter .2s ease-out; }
+.task-detail-panel { width: min(430px, 100vw); height: 100%; overflow-y: auto; padding: 28px; border-left: 1px solid rgba(0,212,255,.5); background: #07111e; box-shadow: -18px 0 55px rgba(0,0,0,.5); }
+.task-detail-close { float: right; border: 1px solid rgba(0,212,255,.35); background: #0d2232; color: #b9d7ed; font-size: 24px; width: 34px; height: 34px; cursor: pointer; }
+.task-detail-title { margin: 12px 0 22px; color: #fff; font-size: 23px; line-height: 1.2; }
+.task-detail-row { display: flex; justify-content: space-between; gap: 20px; padding: 10px 0; border-bottom: 1px solid rgba(0,180,255,.12); color: #7896b5; }
+.task-detail-row strong { color: #dbe9f4; text-align: right; font-weight: 600; }
+.task-detail-note { color: #aac3d6; line-height: 1.5; padding: 18px 0; }
+.task-detail-panel h3 { margin-top: 22px; }
+@keyframes panel-enter { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes active-glow { 0%,100% { box-shadow: 0 0 8px rgba(255,122,0,.4); } 50% { box-shadow: 0 0 18px rgba(255,122,0,.75); } }
+@keyframes alert-breathe { 0%,100% { background: #071320; } 50% { background: rgba(255,122,0,.1); } }
+@keyframes update-flash { 0% { box-shadow: 0 0 0 1px var(--cyan), 0 0 25px rgba(0,212,255,.32); } 100% { box-shadow: 0 4px 20px rgba(0,0,0,.5); } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* Compact connection telemetry and preferences */
+.connection-status { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; color: #7895a9; font: 10px 'JetBrains Mono', monospace; letter-spacing: .04em; text-transform: uppercase; }
+.connection-status__dot { width: 5px; height: 5px; border-radius: 50%; background: #647b8c; }
+.connection-status[data-state="live"] { color: #7dcaea; }
+.connection-status[data-state="live"] .connection-status__dot { background: var(--cyan); box-shadow: 0 0 7px var(--cyan); }
+.connection-status[data-state="connecting"] .connection-status__dot { background: var(--neon-orange); animation: pulse-live 1.5s infinite; }
+.preference-select,.preference-button { height: 26px; border: 1px solid rgba(0,180,255,.2); background: #071420; color: #a5bdd3; font: 10px 'JetBrains Mono', monospace; cursor: pointer; }
+.preference-select { padding: 0 5px; }
+.preference-button { width: 28px; font-size: 15px; }
+.preference-select:hover,.preference-button:hover { border-color: var(--cyan); color: #fff; }
+.awaiting-roadmap .connection-status { display: inline-flex; }
+
+/* Versions */
+.versions-heading { border: 1px solid rgba(0,180,255,.2); background: linear-gradient(135deg,#0a1a2a,#06101b); padding: 20px 24px; margin-bottom: 14px; flex: 0 0 auto; }
+.versions-heading__eyebrow { color: #69b9dc; font: 10px 'JetBrains Mono', monospace; letter-spacing: .14em; font-weight: 700; }
+.versions-heading__title { color: #eef7ff; font-size: 21px; margin: 6px 0 14px; }
+.versions-overview { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); border-top: 1px solid rgba(0,180,255,.15); padding-top: 14px; gap: 16px; }
+.versions-overview__item { display: flex; flex-direction: column; gap: 4px; color: #7997b2; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+.versions-overview__item strong { color: #e5f5ff; font: 700 20px 'JetBrains Mono',monospace; letter-spacing: 0; }
+.versions-layout { display: grid; grid-template-columns: minmax(210px,265px) minmax(0,1fr); gap: 14px; flex: 1; min-height: 0; }
+.versions-rail,.versions-detail { background: #06101b; border: 1px solid rgba(0,180,255,.18); overflow-y: auto; }
+.versions-rail__head { padding: 14px 16px; border-bottom: 1px solid rgba(0,180,255,.14); color: #7bbbd9; font: 700 10px 'JetBrains Mono',monospace; letter-spacing: .12em; }
+.version-entry { display: block; width: 100%; padding: 14px 15px; text-align: left; background: transparent; border: 0; border-left: 2px solid transparent; border-bottom: 1px solid rgba(0,180,255,.1); color: #a5bdd3; cursor: pointer; transition: background .2s,border-color .2s; }
+.version-entry:hover { background: #102238; }
+.version-entry--selected { border-left-color: var(--cyan); background: #10263b; }
+.version-entry__top { display: flex; align-items: flex-start; gap: 8px; justify-content: space-between; }
+.version-entry__name { color: #eef8ff; font-weight: 700; font-size: 12px; line-height: 1.35; }
+.version-entry__status { flex-shrink: 0; color: #7897b4; font: 9px 'JetBrains Mono',monospace; text-transform: uppercase; }
+.version-entry__status--active { color: #ff9b4a; }
+.version-entry__status--done { color: #7bc9e7; }
+.version-entry__meta,.version-entry__dates { color: #7793ad; font-size: 10px; margin-top: 8px; }
+.version-entry__track,.versions-detail__progress,.deliverable-row__track { height: 4px; background: #142739; overflow: hidden; margin-top: 10px; }
+.version-entry__fill,.versions-detail__progress-fill,.deliverable-row__fill { height: 100%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); transition: width .4s ease; }
+.versions-detail { padding: 20px 24px; }
+.versions-detail__header { padding-bottom: 18px; border-bottom: 1px solid rgba(0,180,255,.16); }
+.versions-detail__title { color: #fff; font-size: 19px; margin: 6px 0 12px; }
+.versions-detail__range { display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-between; color: #7897b4; font-size: 11px; }
+.versions-detail__range strong { color: #a8d9ee; font-weight: 600; }
+.versions-detail__progress { height: 6px; margin: 16px 0 10px; }
+.versions-detail__counts { display: flex; gap: 16px; flex-wrap: wrap; color: #8caac3; font: 10px 'JetBrains Mono',monospace; }
+.versions-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 16px 0; }
+.versions-search { flex: 1; min-width: 170px; height: 31px; padding: 0 10px; background: #091827; border: 1px solid rgba(0,180,255,.2); color: #e5f4ff; outline: none; }
+.versions-search:focus { border-color: var(--cyan); }
+.versions-filter { border: 1px solid rgba(0,180,255,.18); background: transparent; color: #83a2bc; height: 30px; padding: 0 9px; font-size: 10px; cursor: pointer; }
+.versions-filter--active { color: #07111d; background: var(--cyan); border-color: var(--cyan); font-weight: 700; }
+.versions-category { color: #73b6d3; font: 700 10px 'JetBrains Mono',monospace; letter-spacing: .1em; text-transform: uppercase; padding: 14px 0 8px; }
+.deliverable-row { display: block; width: 100%; text-align: left; padding: 12px 14px; margin-bottom: 7px; background: #091827; border: 1px solid rgba(0,180,255,.13); border-left: 2px solid #4a647a; color: #d8e8f5; cursor: pointer; transition: background .2s,transform .2s,border-color .2s; }
+.deliverable-row:hover { background: #10263b; border-color: rgba(0,212,255,.45); transform: translateX(2px); }
+.deliverable-row--active { border-left-color: var(--neon-orange); }
+.deliverable-row--done { border-left-color: var(--cyan); }
+.deliverable-row--blocked,.deliverable-row--risk { border-left-color: #e76c5c; }
+.deliverable-row__heading { display: flex; align-items: baseline; gap: 10px; }
+.deliverable-row__id { color: #79bdda; font: 700 10px 'JetBrains Mono',monospace; }
+.deliverable-row__name { flex: 1; font-size: 12px; }
+.deliverable-row__status { color: #87a5be; font: 10px 'JetBrains Mono',monospace; text-transform: uppercase; }
+.deliverable-row__info { display: flex; gap: 16px; flex-wrap: wrap; color: #7492aa; font-size: 10px; margin-top: 8px; }
+.deliverable-row__track { margin-top: 9px; height: 3px; }
+.versions-empty { color: #7f9bb2; padding: 24px; border: 1px dashed rgba(0,180,255,.2); }
+@media (max-width: 850px) { .versions-layout { grid-template-columns: 1fr; overflow-y: auto; } .versions-rail { display: flex; overflow-x: auto; min-height: 140px; } .versions-rail__head { display: none; } .version-entry { min-width: 200px; border-bottom: 0; border-right: 1px solid rgba(0,180,255,.1); } .versions-detail { overflow: visible; } }
+
+/* Light appearance preserves status colors and the technical grid. */
+html[data-theme="light"] { background: #eef4f8; color: #173247; }
+html[data-theme="light"] body,html[data-theme="light"] .workspace { background: #eef4f8; color: #173247; }
+html[data-theme="light"] .rail { background: #dce8f0; border-color: #bfd0dc; }
+html[data-theme="light"] .rail__brand-text,html[data-theme="light"] .rail__btn { color: #47677e; }
+html[data-theme="light"] .rail__btn--active { background: #c5e4f1; color: #0a617f; }
+html[data-theme="light"] .hud-header { border-color: #c7d8e2; }
+html[data-theme="light"] .hud-header__crumb-project,html[data-theme="light"] .hud-header__title { color: #18374e; text-shadow: none; }
+html[data-theme="light"] .hud-header__crumbs,html[data-theme="light"] .hud-header__updated,html[data-theme="light"] .hud-metrics-bar { color: #56758b; }
+html[data-theme="light"] .m-item strong { color: #21465d; }
+html[data-theme="light"] .hud-panel,html[data-theme="light"] .tracker-container,html[data-theme="light"] .versions-rail,html[data-theme="light"] .versions-detail { background: #fff; border-color: #c2d5df; box-shadow: 0 8px 24px rgba(20,58,82,.08); }
+html[data-theme="light"] .hud-card:not(:last-child) { border-color: #d4e1e8; }
+html[data-theme="light"] .hud-card__head-label,html[data-theme="light"] .hud-card__phase-title,html[data-theme="light"] .hud-card__meta-row,html[data-theme="light"] .hud-card__now-context,html[data-theme="light"] .hud-card__now-times,html[data-theme="light"] .hud-card__tasks-count,html[data-theme="light"] .forecast-note { color: #56758b; }
+html[data-theme="light"] .hud-card__now-name,html[data-theme="light"] .hud-card__pct,html[data-theme="light"] .hud-card__meta-val,html[data-theme="light"] .hud-card__now-times strong { color: #16364d; text-shadow: none; }
+html[data-theme="light"] .change-text,html[data-theme="light"] .estimate-event { color: #365a73; }
+html[data-theme="light"] .tracker-left,html[data-theme="light"] .tracker-left__head,html[data-theme="light"] .tracker-right__head,html[data-theme="light"] .phase-head-row,html[data-theme="light"] .phase-bar-row { background: #e8f1f6; border-color: #c7d9e3; }
+html[data-theme="light"] .task-label-row,html[data-theme="light"] .tracker-bar-row { background: #fff; border-color: #d9e5eb; }
+html[data-theme="light"] .task-name-text,html[data-theme="light"] .phase-title-text { color: #21445c; }
+html[data-theme="light"] .time-tick-cell,html[data-theme="light"] .tracker-left__head { color: #5c7c91; }
+html[data-theme="light"] .timeline-legend,html[data-theme="light"] .timeline-signal { background: #e8f1f6; color: #486d84; border-color: #cadce5; }
+html[data-theme="light"] .search-box,html[data-theme="light"] .zoom-group,html[data-theme="light"] .time-nav-group,html[data-theme="light"] .preference-select,html[data-theme="light"] .preference-button,html[data-theme="light"] .versions-search { background: #fff; border-color: #c0d4df; color: #21465d; }
+html[data-theme="light"] .search-input { color: #21465d; }
+html[data-theme="light"] .btn-pick { color: #126285; }
+html[data-theme="light"] .versions-heading { background: #dcebf3; border-color: #bfd5e1; }
+html[data-theme="light"] .versions-heading__title,html[data-theme="light"] .versions-detail__title,html[data-theme="light"] .versions-overview__item strong,html[data-theme="light"] .version-entry__name { color: #183a51; }
+html[data-theme="light"] .versions-overview__item,html[data-theme="light"] .versions-detail__range,html[data-theme="light"] .version-entry__meta,html[data-theme="light"] .version-entry__dates { color: #53758b; }
+html[data-theme="light"] .versions-detail__range strong { color: #165473; }
+html[data-theme="light"] .versions-detail__counts,html[data-theme="light"] .versions-category,html[data-theme="light"] .deliverable-row__info,html[data-theme="light"] .deliverable-row__status { color: #476b82; }
+html[data-theme="light"] .version-entry__status--active { color: #a54a0a; }
+html[data-theme="light"] .version-entry__status--done { color: #146c8b; }
+html[data-theme="light"] .version-entry__track,html[data-theme="light"] .versions-detail__progress,html[data-theme="light"] .deliverable-row__track { background: #d1e4ed; }
+html[data-theme="light"] .version-entry { color: #21465d; border-color: #dae6ec; }
+html[data-theme="light"] .version-entry--selected,html[data-theme="light"] .version-entry:hover { background: #d9edf5; }
+html[data-theme="light"] .deliverable-row { background: #f4f9fb; color: #21465d; border-color: #d4e3eb; }
+html[data-theme="light"] .deliverable-row:hover { background: #e4f3f8; }
+html[data-theme="light"] .task-detail-panel { background: #f8fcfe; }
+html[data-theme="light"] .task-detail-title,html[data-theme="light"] .task-detail-row strong { color: #17384f; }
+html[data-theme="light"] .task-detail-row,html[data-theme="light"] .task-detail-note { color: #55778e; border-color: #d2e2ea; }
+.app-layout[data-view="board"] .hud-panel,.app-layout[data-view="board"] .forecast-note { display: none; }
 
 
 </style>
 </head>
 <body>
 
-<div id="app" class="app-layout">
+<div id="app" class="app-layout awaiting-roadmap">
 
-  <!-- ── 1. Left Sidebar Rail (RSI / Voidfront style) ──── -->
-  <aside class="rail" id="sidebar-rail" aria-label="Navegación principal">
+  <!-- ── 1. Left Sidebar Rail ──── -->
+  <aside class="rail" id="sidebar-rail" aria-label="Primary navigation">
     <div class="rail__top-accent"></div>
 
     <div class="rail__brand" title="Visual Roadmap">
@@ -1226,12 +1326,12 @@ body {
           <polyline points="2 12 12 17 22 12"></polyline>
         </svg>
       </div>
-      <span class="rail__brand-text" id="rail-brand-name">VOIDFRONT</span>
+      <span class="rail__brand-text" id="rail-brand-name">ROADMAP</span>
     </div>
 
     <nav class="rail__nav">
-      <!-- Seguimiento (Timeline / Progress Tracker) -->
-      <button class="rail__btn rail__btn--active" data-view="timeline" id="btn-nav-timeline" title="Seguimiento del progreso">
+      <!-- Seguimiento -->
+      <button class="rail__btn rail__btn--active" data-view="timeline" id="btn-nav-timeline" title="Progress tracker">
         <div class="rail__btn-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="4" y1="6" x2="20" y2="6"></line>
@@ -1240,11 +1340,11 @@ body {
             <polyline points="15 15 18 18 15 21"></polyline>
           </svg>
         </div>
-        <span class="rail__btn-label">SEGUIMIENTO</span>
+        <span class="rail__btn-label" data-i18n="tracking">TRACKING</span>
       </button>
 
-      <!-- Versiones (Kanban Board / Releases) -->
-      <button class="rail__btn" data-view="board" id="btn-nav-board" title="Versiones y entregables">
+      <!-- Versions -->
+      <button class="rail__btn" data-view="board" id="btn-nav-board" title="Versions and deliverables">
         <div class="rail__btn-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="5" height="18" rx="1"></rect>
@@ -1252,13 +1352,13 @@ body {
             <rect x="17" y="3" width="5" height="15" rx="1"></rect>
           </svg>
         </div>
-        <span class="rail__btn-label">VERSIONES</span>
+        <span class="rail__btn-label" data-i18n="versions">VERSIONS</span>
       </button>
     </nav>
 
     <!-- Bottom Rail item (Notas / Log) -->
     <div class="rail__bottom">
-      <button class="rail__btn" data-view="log" id="btn-nav-log" title="Notas y decisiones">
+      <button class="rail__btn" data-view="log" id="btn-nav-log" title="Notes and decisions">
         <div class="rail__btn-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -1267,7 +1367,7 @@ body {
             <line x1="16" y1="17" x2="8" y2="17"></line>
           </svg>
         </div>
-        <span class="rail__btn-label">NOTAS</span>
+        <span class="rail__btn-label" data-i18n="notes">NOTES</span>
       </button>
     </div>
   </aside>
@@ -1279,43 +1379,40 @@ body {
     <header class="hud-header">
       <div class="hud-header__top">
         <div class="hud-header__crumbs">
-          <span class="hud-header__crumb-project" id="crumb-project">VOIDFRONT</span>
+          <span class="hud-header__crumb-project" id="crumb-project">ROADMAP</span>
           <span class="hud-header__crumb-sep">·</span>
-          <span class="hud-header__crumb-page">HOJA DE RUTA</span>
-          <span class="badge-live" id="live-indicator">
-            <span class="badge-live__dot"></span>
-            EN VIVO
-          </span>
+          <span class="hud-header__crumb-page" data-i18n="roadmap">ROADMAP</span>
+          <span class="connection-status" id="live-indicator" aria-live="polite"><span class="connection-status__dot"></span><span id="connection-text">Disconnected</span></span>
         </div>
 
         <div class="hud-header__meta">
-          <span class="hud-header__updated" id="header-updated">Actualizado hace 48 min</span>
-          <span class="hud-header__filename" id="file-name" title="Archivo activo">ROADMAP.md</span>
-          <button class="btn-pick" id="btn-pick" title="Abrir archivo ROADMAP.md local">
-            📂 Abrir
-          </button>
+          <span class="hud-header__updated" id="header-updated"></span>
+          <span class="hud-header__filename" id="file-name" title="Archivo activo"></span>
+          <select id="language-select" class="preference-select" aria-label="Interface language"><option value="en">EN</option><option value="es">ES</option></select>
+          <button id="theme-toggle" class="preference-button" type="button" aria-label="Toggle color theme">☀</button>
+          <button class="btn-pick" id="btn-pick" title="Open local ROADMAP.md"><span data-i18n="open">Open</span></button>
         </div>
       </div>
 
       <div class="hud-header__title-row">
-        <h1 class="hud-header__title" id="page-title">SEGUIMIENTO DEL PROGRESO</h1>
+        <h1 class="hud-header__title" id="page-title" data-i18n="progress">PROGRESS TRACKER</h1>
       </div>
 
       <!-- Quick Metrics Bar -->
       <div class="hud-metrics-bar">
-        <span class="m-item">Versión en desarrollo <strong id="m-version">0.1</strong></span>
-        <span class="m-item">Fase <strong id="m-phase">11</strong> de <span id="m-phase-total">14</span></span>
-        <span class="m-item"><strong id="m-tasks-done">75</strong>/<span id="m-tasks-total">92</span> tareas</span>
-        <span class="m-item"><strong id="m-tests">397</strong> tests</span>
-        <span class="m-item"><strong id="m-e2e">37</strong> e2e</span>
-        <span class="m-item"><strong id="m-decisions">92</strong> decisiones</span>
-        <span class="m-item"><strong id="m-lines">29.421</strong> líneas</span>
-        <span class="m-item">último commit <code id="m-commit">335e3ea</code> <span id="m-commit-time">hace 49 min</span></span>
+        <span class="m-item"><span data-i18n="version">Version</span> <strong id="m-version"></strong></span>
+        <span class="m-item"><span data-i18n="phase">Phase</span> <strong id="m-phase"></strong> <span data-i18n="of">of</span> <span id="m-phase-total"></span></span>
+        <span class="m-item"><strong id="m-tasks-done"></strong>/<span id="m-tasks-total"></span> <span data-i18n="tasks">tasks</span></span>
+        <span class="m-item"><strong id="m-tests"></strong> tests</span>
+        <span class="m-item"><strong id="m-e2e"></strong> e2e</span>
+        <span class="m-item"><strong id="m-decisions"></strong> <span data-i18n="decisions">decisions</span></span>
+        <span class="m-item"><strong id="m-lines"></strong> <span data-i18n="lines">lines</span></span>
+        <span class="m-item"><span data-i18n="lastCommit">last commit</span> <code id="m-commit"></code> <span id="m-commit-time"></span></span>
       </div>
     </header>
 
     <!-- ── 3. Mission Control HUD (3-Column Card) ──────── -->
-    <section class="hud-panel" aria-label="Centro de control en vivo">
+    <section class="hud-panel" aria-label="Progress overview">
       <div class="hud-panel__corner hud-panel__corner--tl"></div>
       <div class="hud-panel__corner hud-panel__corner--tr"></div>
       <div class="hud-panel__corner hud-panel__corner--bl"></div>
@@ -1323,99 +1420,68 @@ body {
 
       <!-- Col 1: AHORA MISMO · EN CURSO -->
       <div class="hud-card hud-card--now">
-        <div class="hud-card__head-label">AHORA MISMO · EN CURSO</div>
+        <div class="hud-card__head-label" data-i18n="now">CURRENT TASK</div>
         <div class="hud-card__now-title">
-          <span class="hud-card__now-id" id="now-id">T109</span>
-          <span class="hud-card__now-name" id="now-name">Props del mundo</span>
+          <span class="hud-card__now-id" id="now-id"></span>
+          <span class="hud-card__now-name" id="now-name"></span>
         </div>
-        <div class="hud-card__now-context" id="now-context">Fase 11 · Resto de assets · Arte procedural</div>
+        <div class="hud-card__now-context" id="now-context"></div>
 
         <div class="hud-card__now-times">
-          <span>Esperado: <strong id="now-expected">01:15</strong></span>
-          <span>Lleva <strong id="now-elapsed">49 min</strong></span>
-          <span class="hud-card__now-warn" id="now-warn">tarda más de lo previsto</span>
+          <span><span data-i18n="expected">Expected</span>: <strong id="now-expected"></strong></span>
+          <span><span data-i18n="elapsed">Elapsed</span>: <strong id="now-elapsed"></strong></span>
+          <span class="hud-card__now-warn" id="now-warn"></span>
         </div>
+        <div class="hud-card__now-times"><span id="now-forecast-label">Agent ETA</span>: <strong id="now-eta"></strong></div>
+        <div class="hud-card__now-context" id="now-reason"></div>
 
         <div class="hud-card__now-track">
-          <div class="hud-card__now-fill" id="now-fill" style="width: 65%;"></div>
+          <div class="hud-card__now-fill" id="now-fill" style="width: 0;"></div>
         </div>
       </div>
 
       <!-- Col 2: PROJECT & CADENCE ESTIMATES -->
       <div class="hud-card hud-card--stats">
-        <div class="hud-card__phase-title" id="phase-title">VOIDFRONT 0.1</div>
+        <div class="hud-card__phase-title" id="phase-title"></div>
         <div class="hud-card__pct-row">
-          <span class="hud-card__pct" id="phase-pct">82 %</span>
-          <span class="hud-card__tasks-count" id="phase-tasks">75 de 92 tareas</span>
+          <span class="hud-card__pct" id="phase-pct"></span>
+          <span class="hud-card__tasks-count" id="phase-tasks"></span>
         </div>
 
         <div class="hud-card__phase-track">
-          <div class="hud-card__phase-fill" id="phase-fill" style="width: 82%;"></div>
+          <div class="hud-card__phase-fill" id="phase-fill" style="width: 0;"></div>
         </div>
 
         <div class="hud-card__meta-list">
           <div class="hud-card__meta-row">
-            <span class="hud-card__meta-label">Fases completadas</span>
-            <strong class="hud-card__meta-val" id="phase-done-cnt">10 de 14</strong>
+            <span class="hud-card__meta-label" data-i18n="phasesDone">Phases completed</span>
+            <strong class="hud-card__meta-val" id="phase-done-cnt"></strong>
           </div>
           <div class="hud-card__meta-row">
-            <span class="hud-card__meta-label">0.1 estimada</span>
-            <strong class="hud-card__meta-val" id="phase-eta">27 sept, 12:31</strong>
+            <span class="hud-card__meta-label" data-i18n="calculatedDelivery">Projected delivery</span>
+            <strong class="hud-card__meta-val" id="phase-eta"></strong>
           </div>
           <div class="hud-card__meta-row">
-            <span class="hud-card__meta-label">Ritmo real</span>
-            <strong class="hud-card__meta-val" id="phase-pace">39,8 min por tarea</strong>
+            <span class="hud-card__meta-label" data-i18n="pace">Observed pace</span>
+            <strong class="hud-card__meta-val" id="phase-pace"></strong>
           </div>
           <div class="hud-card__meta-row">
-            <span class="hud-card__meta-label">En desarrollo desde</span>
-            <strong class="hud-card__meta-val" id="phase-started">25 sept, 17:17</strong>
+            <span class="hud-card__meta-label" data-i18n="since">In development since</span>
+            <strong class="hud-card__meta-val" id="phase-started"></strong>
           </div>
         </div>
       </div>
 
       <!-- Col 3: ÚLTIMOS CAMBIOS -->
       <div class="hud-card hud-card--changes">
-        <div class="hud-card__head-label">ÚLTIMOS CAMBIOS</div>
-        <div class="hud-card__changes-list" id="changes-list">
-          <div class="change-row">
-            <span class="change-time">01:15</span>
-            <span class="change-icon change-icon--ok">✓</span>
-            <span class="change-text">Cairn props y collision meshes</span>
-            <span class="change-diff"><span class="diff-add">+1163</span> <span class="diff-sub">-251</span></span>
-          </div>
-          <div class="change-row">
-            <span class="change-time">23:55</span>
-            <span class="change-icon change-icon--file">📄</span>
-            <span class="change-text">tools: pipeline de exportación</span>
-            <span class="change-diff"><span class="diff-add">+29</span> <span class="diff-sub">-2</span></span>
-          </div>
-          <div class="change-row">
-            <span class="change-time">23:52</span>
-            <span class="change-icon change-icon--file">📄</span>
-            <span class="change-text">roadmap: sync de entregables</span>
-            <span class="change-diff"><span class="diff-add">+5</span> <span class="diff-sub">-0</span></span>
-          </div>
-          <div class="change-row">
-            <span class="change-time">23:51</span>
-            <span class="change-icon change-icon--ok">✓</span>
-            <span class="change-text">Kit de iluminación volumétrica</span>
-            <span class="change-diff"><span class="diff-add">+1175</span> <span class="diff-sub">-42</span></span>
-          </div>
-          <div class="change-row">
-            <span class="change-time">22:44</span>
-            <span class="change-icon change-icon--file">📄</span>
-            <span class="change-text">roadmap: estimación de esfuerzo</span>
-            <span class="change-diff"><span class="diff-add">+4</span> <span class="diff-sub">-0</span></span>
-          </div>
-          <div class="change-row">
-            <span class="change-time">22:43</span>
-            <span class="change-icon change-icon--ok">✓</span>
-            <span class="change-text">Asteroides procedurales LODs</span>
-            <span class="change-diff"><span class="diff-add">+751</span> <span class="diff-sub">-84</span></span>
-          </div>
-        </div>
+        <div class="hud-card__head-label" data-i18n="recentChanges">RECENT CHANGES</div>
+        <div class="hud-card__changes-list" id="changes-list"></div>
+        <div class="hud-card__head-label" style="margin-top: 12px;" data-i18n="etaChanges">ETA CHANGES</div>
+        <div class="hud-card__changes-list" id="estimate-history"></div>
       </div>
     </section>
+
+    <div class="forecast-note" id="forecast-note"></div>
 
     <!-- ── 4. Main Viewport (Timeline / Deliverables / Board) ─ -->
     <main id="main-view" class="main-viewport" role="main">
@@ -1427,6 +1493,8 @@ body {
 </div><!-- /#app -->
 
 <!-- Scripts -->
+
+
 
 
 
@@ -1619,6 +1687,12 @@ body {
     let key = null;
     for (const line of lines) {
       if (!line.trim() || /^\s*#/.test(line)) continue;
+      const nested = /^\s{2,}([A-Za-z0-9_.\-]+)\s*:\s*(.*)$/.exec(line);
+      if (nested && key) {
+        if (!data[key] || Array.isArray(data[key])) data[key] = {};
+        data[key][nested[1]] = scalar(nested[2]);
+        continue;
+      }
       const item = /^\s*-\s+(.*)$/.exec(line);
       if (item && key) {
         if (!Array.isArray(data[key])) data[key] = data[key] ? [data[key]] : [];
@@ -1664,11 +1738,11 @@ body {
   function inline(s) {
     let out = escapeHtml(s);
     const codes = [];
-    out = out.replace(/`([^`]+)`/g, (_, c) => ' ' + (codes.push(c) - 1) + ' ');
+    out = out.replace(/`([^`]+)`/g, (_, c) => '\0' + (codes.push(c) - 1) + '\0');
     out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     out = out.replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<em>$2</em>');
     out = out.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
-    out = out.replace(/ (\d+) /g, (_, i) => '<code>' + escapeHtml(codes[+i]) + '</code>');
+    out = out.replace(/\0(\d+)\0/g, (_, i) => '<code>' + escapeHtml(codes[+i]) + '</code>');
     return out;
   }
 
@@ -1721,6 +1795,7 @@ body {
     ['progress', ['progreso', 'progress', 'avance', 'pct', '%']],
     ['owner', ['owner', 'responsable', 'asignado', 'assigned', 'equipo', 'team']],
     ['effort', ['esfuerzo', 'effort', 'horas', 'hours', 'est', 'h']],
+    ['actual', ['real', 'duracion real', 'actual', 'actual duration']],
     ['start', ['inicio', 'start', 'desde', 'from', 'begins']],
     ['end', ['fin', 'finish', 'end', 'hasta', 'to', 'deadline', 'entrega']],
     ['depends', ['depende', 'depends', 'deps', 'bloqueado por', 'blocked by', 'requiere', 'requires']],
@@ -1754,17 +1829,21 @@ body {
   const RE_META_RANGE = /(\d{4}-\d{2}-\d{2})\s*(?:→|->|—>|=>|–)\s*(\d{4}-\d{2}-\d{2})/;
   const RE_META_STATUS = /\*{0,2}(planeado|planned|en curso|active|bloqueado|blocked|en riesgo|at[- ]risk|hecho|done|completo|complete|entregado|shipped|descartado|cancelled|canceled)\*{0,2}/i;
   const RE_META_PROGRESS = /(\d{1,3})\s*%/;
+  const RE_ID = /^((?:v\d+(?:\.\d+)*|[A-Za-z]+\d+))\s*[:·\-–—]?\s*(.*)$/i;
   function parseNowTask(meta) {
     if (!meta) return null;
     const n = meta.now_task || meta.current_task || {};
-    const id = n.id || meta.now_id || meta.current_task_id || meta.ai_item_id || 'T109';
+    const id = n.id || meta.now_id || meta.current_task_id || meta.ai_item_id || '';
     const name = n.name || meta.now_name || meta.current_task_name || meta.ai_task || meta.ai_item || '';
     if (!name && !n.name && !meta.now_id) return null;
     const context = n.context || n.phase || meta.now_context || meta.current_task_context || meta.ai_phase || '';
-    const expected = n.expected || meta.now_expected || meta.current_task_expected || meta.ai_eta || '01:15';
-    const elapsed = n.elapsed || meta.now_elapsed || meta.current_task_elapsed || meta.ai_since || '49 min';
-    const status = n.status || meta.now_status || meta.current_task_status || 'tarda más de lo previsto';
-    return { id, name, context, expected, elapsed, status };
+    const expected = n.expected || meta.now_expected || meta.current_task_expected || meta.ai_eta || '';
+    const elapsed = n.elapsed || meta.now_elapsed || meta.current_task_elapsed || meta.ai_since || '';
+    const status = n.status || meta.now_status || meta.current_task_status || '';
+    const startedAt = n.started_at || n.started || meta.now_started_at || '';
+    const remaining = n.remaining || meta.now_remaining || '';
+    const reason = n.reason || meta.now_reason || '';
+    return { id, name, context, expected, elapsed, status, startedAt, remaining, reason };
   }
 
   /* ------------------------------------------------------------------ *
@@ -1786,9 +1865,9 @@ body {
       updated: parseDate(meta.updated || meta['last-updated']) || null,
       capacity: typeof meta.capacity === 'number' ? meta.capacity : 1,
       weekStart: normKey(meta['week-start'] || meta.week_start) === 'sun' ? 'sun' : 'mon',
-      version: meta.version || '0.1',
-      phase: meta.phase || 1,
-      phaseTotal: meta.phase_total || meta.phaseTotal || 1,
+      version: meta.version || '',
+      phase: meta.phase || '',
+      phaseTotal: meta.phase_total || meta.phaseTotal || 0,
       tests: meta.tests || 0,
       e2e: meta.e2e || 0,
       decisions: meta.decisions || 0,
@@ -1796,6 +1875,7 @@ body {
       lastCommit: meta.last_commit || meta.lastCommit || '',
       lastCommitTime: meta.last_commit_time || meta.lastCommitTime || '',
       nowTask: parseNowTask(meta),
+      estimateChanges: [],
       recentChanges: [],
       context: '',
       releases: [],
@@ -1898,6 +1978,12 @@ body {
       }
 
       /* ---- recent changes / activity feed ---- */
+      if (/^(estimaciones|cambios de estimacion|estimate changes|estimates)$/.test(section)) {
+        const em = /^\s*[-*]\s+([^|]+)\|\s*([^|]+)\|\s*([^|]+)(?:\|\s*(.*))?$/.exec(line);
+        if (em) doc.estimateChanges.push({ at: em[1].trim(), taskId: em[2].trim(), remaining: em[3].trim(), reason: (em[4] || '').trim() });
+        i++;
+        continue;
+      }
       if (/^(ultimos[- ]cambios|cambios[- ]recientes|recent[- ]changes|actividad|activity)$/.test(section)) {
         const cm = /^\s*[-*]\s+(.+)$/.exec(line);
         if (cm) {
@@ -2035,6 +2121,7 @@ body {
         progress: parseProgress(raw.progress),
         owner: owner,
         effort: parseEffort(raw.effort),
+        actual: parseEffort(raw.actual),
         effortRaw: isEmpty(raw.effort) ? null : String(raw.effort).trim(),
         start: isEmpty(raw.start) ? null : parseDate(raw.start),
         end: isEmpty(raw.end) ? null : parseDate(raw.end),
@@ -2044,13 +2131,17 @@ body {
         note: isEmpty(raw.note) ? null : String(raw.note).trim(),
         release: release ? release.name : null,
         releaseId: release ? release.id : null,
-        category: category ? category.name : 'Sin categoría'
+        category: category ? category.name : ''
       };
       if (typeof item.start === 'object') item.start = null;   /* partial dates unsupported */
       if (typeof item.end === 'object') item.end = null;
       if (item.progress == null) item.progress = item.status === 'done' ? 100 : 0;
       if (category) category.items.push(item);
-      else if (release) release.categories.push({ name: 'Sin categoría', items: [item], notes: '' });
+      else if (release) {
+        let implicit = release.categories.find(c => c.implicit);
+        if (!implicit) { implicit = { name: '', items: [], notes: '', implicit: true }; release.categories.push(implicit); }
+        implicit.items.push(item);
+      }
     }
   }
 
@@ -2084,8 +2175,8 @@ body {
       r.items = items;
       if (!r.start) r.start = items.map(i => i.start).filter(Boolean).sort()[0] || null;
       if (!r.end) r.end = items.map(i => i.end).filter(Boolean).sort().slice(-1)[0] || null;
-      if (!r.progress) r.progress = weightedProgress(items);
-      if (!r.status) r.status = deriveStatus(r);
+      if (r.progress == null) r.progress = weightedProgress(items);
+      if (!r.status || (r.status === 'done' && items.some(i => i.status !== 'done' && i.status !== 'cancelled'))) r.status = deriveStatus(r);
     });
 
     doc.items = doc.releases.flatMap(r => r.items);
@@ -2134,19 +2225,16 @@ body {
     const nextUp = open
       .filter(i => i.start)
       .sort((a, b) => a.start.localeCompare(b.start) || (a.priority || 'P9').localeCompare(b.priority || 'P9'))[0] || null;
-    const pct = items.length ? Math.round((done / items.length) * 100) : 0;
+    const pct = weightedProgress(items);
     const phasesDone = doc.releases.filter(r => r.status === 'done').length;
-    const phasesTotal = doc.phaseTotal || (doc.releases.length ? doc.releases.length : 14);
+    const phasesTotal = doc.phaseTotal || doc.releases.length;
 
-    let cadenceText = doc.meta.cadence || doc.meta['ritmo-real'] || '39,8 min por tarea';
-    if (!doc.meta.cadence && doc.started && done > 0) {
-      const elapsedDays = Math.max(1, diffDays(toDate(doc.started), today()));
-      const mins = Math.round((elapsedDays * 6 * 60) / done * 10) / 10;
-      cadenceText = String(mins).replace('.', ',') + ' min por tarea';
-    }
+    let cadenceText = doc.meta.cadence || doc.meta['ritmo-real'] || '';
+    const actuals = items.filter(i => i.status === 'done' && i.actual > 0).map(i => i.actual * 60);
+    const cadenceMinutes = actuals.length ? Math.round(actuals.reduce((a, b) => a + b, 0) / actuals.length) : null;
 
-    const estimatedText = doc.meta.estimated_finish || doc.meta['0.1_estimada'] || (spanEnd ? fmtLong(toDate(spanEnd)) : '27 sept, 12:31');
-    const startedText = doc.started ? fmtLong(toDate(doc.started)) : '25 sept, 17:17';
+    const estimatedText = doc.meta.estimated_finish || doc.meta['0.1_estimada'] || (spanEnd ? fmtLong(toDate(spanEnd)) : '');
+    const startedText = doc.meta.started || '';
 
     return {
       total: items.length,
@@ -2166,6 +2254,7 @@ body {
       phasesDone: phasesDone,
       phasesTotal: phasesTotal,
       cadenceText: cadenceText,
+      cadenceMinutes: cadenceMinutes,
       estimatedText: estimatedText,
       startedText: startedText,
       nextUp: nextUp,
@@ -2333,6 +2422,187 @@ body {
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
+  /* ui.js */
+  /* Interface preferences and copy. Roadmap content is never translated. */
+(function (global) {
+  'use strict';
+  const copy = {
+    en: {
+      roadmap:'ROADMAP', tracking:'TRACKING', versions:'VERSIONS', notes:'NOTES', progress:'PROGRESS TRACKER',
+      open:'Open', pick:'Open ROADMAP.md', choose:'Select ROADMAP.md to start tracking',
+      connected:'Synced', connecting:'Connecting', disconnected:'Disconnected', snapshot:'Snapshot', updatedAgo:'Updated {time} ago', unknownUpdate:'Update time unknown',
+      version:'Version', phase:'Phase', of:'of', tasks:'tasks', decisions:'decisions', lines:'lines', lastCommit:'last commit',
+      now:'CURRENT TASK', noTask:'No active task', markActive:'Mark a task active in ROADMAP.md', expected:'Expected', elapsed:'Elapsed', agentEta:'Agent ETA', revisedEta:'Revised ETA',
+      delayed:'Delayed', provisional:'provisional', etaExtended:'ETA extended by', noEstimate:'No estimate',
+      phasesDone:'Phases completed', calculatedDelivery:'Projected delivery', pace:'Observed pace', since:'In development since', perTask:'per task',
+      recentChanges:'RECENT CHANGES', etaChanges:'ETA CHANGES', noChanges:'No changes recorded in ROADMAP.md', noRevisions:'No ETA revisions recorded',
+      missingEffort:'task(s) lack effort estimates; the project ETA may be incomplete.', reviewEta:'The active task has passed its ETA. The agent should revise it.',
+      calibrated:'Forecast adjusted using {count} completed task(s) and capacity {capacity}.', basedOnEffort:'Forecast based on remaining effort and declared capacity.',
+      range:'Indicative window', confidence:'confidence', low:'low', medium:'medium', high:'high',
+      deliverables:'DELIVERABLES', search:'Search deliverables', expand:'Expand all', collapse:'Collapse all', nowButton:'NOW',
+      pending:'Pending', blocked:'Blocked', overdue:'Overdue', undated:'No fixed dates',
+      versionDone:'VERSION · DONE', noPhases:'No phases or tasks in ROADMAP.md.', fixedDate:'task(s) without fixed dates', declared:'Solid: declared dates', projection:'Striped: projection',
+      status:'Status', taskProgress:'Progress', owner:'Owner', estimatedEffort:'Estimated effort', actualDuration:'Actual duration', pendingDuration:'Pending',
+      plannedStart:'Planned start', plannedEnd:'Planned end', depends:'Depends on', noDependencies:'No dependencies', calculatedWindow:'Projected window', estimateHistory:'ESTIMATE HISTORY', noReason:'No reason recorded', close:'Close details',
+      versionsTitle:'VERSIONS & DELIVERABLES', noVersions:'No versions are defined in ROADMAP.md.', all:'All', inProgress:'In progress', openItems:'Open', done:'Done',
+      items:'Items', effort:'Effort', schedule:'Schedule', remaining:'remaining', projectDays:'project days', noItems:'No items match this filter',
+      releaseWindow:'Delivery window', activeTasks:'Active', riskTasks:'At risk', completion:'Completion', releaseDetails:'Release details',
+      logEmpty:'The log is empty. Add entries under ## Log in ROADMAP.md.', completed:'completed', cancelled:'cancelled', noDate:'No date',
+      planned:'Planned', active:'Active', blockedStatus:'Blocked', risk:'At risk', cancelledStatus:'Cancelled', calculated:'calculated', plannedLabel:'planned'
+    },
+    es: {
+      roadmap:'HOJA DE RUTA', tracking:'SEGUIMIENTO', versions:'VERSIONES', notes:'NOTAS', progress:'SEGUIMIENTO DEL PROGRESO',
+      open:'Abrir', pick:'Abrir ROADMAP.md', choose:'Selecciona ROADMAP.md para comenzar el seguimiento',
+      connected:'Sincronizado', connecting:'Conectando', disconnected:'Sin conexión', snapshot:'Vista puntual', updatedAgo:'Actualizado hace {time}', unknownUpdate:'Fecha de actualización desconocida',
+      version:'Versión', phase:'Fase', of:'de', tasks:'tareas', decisions:'decisiones', lines:'líneas', lastCommit:'último commit',
+      now:'TAREA ACTUAL', noTask:'Sin tarea en curso', markActive:'Marca una tarea como active en ROADMAP.md', expected:'Esperado', elapsed:'Transcurrido', agentEta:'ETA del agente', revisedEta:'ETA revisada',
+      delayed:'Retraso', provisional:'provisional', etaExtended:'ETA ampliada', noEstimate:'Sin estimación',
+      phasesDone:'Fases completadas', calculatedDelivery:'Entrega calculada', pace:'Ritmo observado', since:'En desarrollo desde', perTask:'por tarea',
+      recentChanges:'ÚLTIMOS CAMBIOS', etaChanges:'CAMBIOS DE ETA', noChanges:'Sin cambios registrados en ROADMAP.md', noRevisions:'Sin revisiones de ETA registradas',
+      missingEffort:'tarea(s) sin esfuerzo estimado; la ETA global puede estar incompleta.', reviewEta:'La tarea activa superó su ETA. El agente debe revisarla.',
+      calibrated:'Proyección ajustada con {count} tarea(s) terminadas y capacidad {capacity}.', basedOnEffort:'Proyección según esfuerzo pendiente y capacidad declarada.',
+      range:'Ventana orientativa', confidence:'confianza', low:'baja', medium:'media', high:'alta',
+      deliverables:'ENTREGABLES', search:'Buscar entregables', expand:'Expandir todo', collapse:'Colapsar todo', nowButton:'AHORA',
+      pending:'Pendientes', blocked:'Bloqueadas', overdue:'Vencidas', undated:'Sin fechas fijas',
+      versionDone:'VERSIÓN · HECHAS', noPhases:'No hay fases ni tareas en ROADMAP.md.', fixedDate:'tarea(s) sin fecha fija', declared:'Sólido: fecha declarada', projection:'Rayas: proyección',
+      status:'Estado', taskProgress:'Progreso', owner:'Responsable', estimatedEffort:'Esfuerzo estimado', actualDuration:'Duración real', pendingDuration:'Pendiente',
+      plannedStart:'Inicio declarado', plannedEnd:'Fin declarado', depends:'Depende de', noDependencies:'Sin dependencias', calculatedWindow:'Ventana calculada', estimateHistory:'HISTORIAL DE ESTIMACIONES', noReason:'Sin motivo registrado', close:'Cerrar ficha',
+      versionsTitle:'VERSIONES Y ENTREGABLES', noVersions:'No hay versiones definidas en ROADMAP.md.', all:'Todo', inProgress:'En curso', openItems:'Abierto', done:'Hecho',
+      items:'Ítems', effort:'Esfuerzo', schedule:'Plazo', remaining:'restantes', projectDays:'días de proyecto', noItems:'No hay ítems para este filtro',
+      releaseWindow:'Ventana de entrega', activeTasks:'Activas', riskTasks:'En riesgo', completion:'Avance', releaseDetails:'Detalle de la versión',
+      logEmpty:'El log está vacío. Agrega entradas a ## Log en ROADMAP.md.', completed:'completados', cancelled:'cancelados', noDate:'Sin fecha',
+      planned:'Planeado', active:'En curso', blockedStatus:'Bloqueado', risk:'En riesgo', cancelledStatus:'Descartado', calculated:'calculada', plannedLabel:'planificada'
+    }
+  };
+  function saved(key, fallback) { try { return localStorage.getItem(key) || fallback; } catch { return fallback; } }
+  let language = saved('visual-roadmap-language','en') === 'es' ? 'es' : 'en';
+  let theme = saved('visual-roadmap-theme','dark') === 'light' ? 'light' : 'dark';
+  function t(key, vars) {
+    let value = copy[language][key] || copy.en[key] || key;
+    for (const [name, replacement] of Object.entries(vars || {})) value = value.replaceAll(`{${name}}`, String(replacement));
+    return value;
+  }
+  function apply() {
+    document.documentElement.lang = language;
+    document.documentElement.dataset.theme = theme;
+    document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-title]').forEach(node => { node.title = t(node.dataset.i18nTitle); });
+    const picker = document.getElementById('language-select');
+    if (picker) picker.value = language;
+    const button = document.getElementById('theme-toggle');
+    if (button) { button.textContent = theme === 'dark' ? '☀' : '☾'; button.title = theme === 'dark' ? 'Light theme' : 'Dark theme'; }
+  }
+  function setLanguage(value) { language = value === 'es' ? 'es' : 'en'; try { localStorage.setItem('visual-roadmap-language',language); } catch {} apply(); document.dispatchEvent(new Event('roadmap:preferences')); }
+  function setTheme(value) { theme = value === 'light' ? 'light' : 'dark'; try { localStorage.setItem('visual-roadmap-theme',theme); } catch {} apply(); document.dispatchEvent(new Event('roadmap:preferences')); }
+  document.addEventListener('DOMContentLoaded', apply);
+  global.UI = { t, apply, setLanguage, setTheme, get language() { return language; }, get theme() { return theme; } };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+
+  /* forecast.js */
+  /* Time estimates are derived locally; agents only write changes at milestones. */
+(function (global) {
+  'use strict';
+  const MINUTE = 60000;
+  function minutes(raw) {
+    if (typeof raw === 'number') return raw > 0 ? raw : null;
+    const s = String(raw || '').trim().toLowerCase().replace(',', '.');
+    if (!s) return null;
+    const clock = /^(\d{1,3}):(\d{2})$/.exec(s);
+    if (clock) return +clock[1] * 60 + +clock[2];
+    const unit = /^(\d+(?:\.\d+)?)\s*(m|min|minutes?|h|hr|hours?|d|days?)$/.exec(s);
+    if (!unit) return null;
+    return +unit[1] * (/^d/.test(unit[2]) ? 480 : /^h/.test(unit[2]) ? 60 : 1);
+  }
+  function timestamp(raw) {
+    if (!raw) return null;
+    const value = new Date(String(raw).trim().replace(' ', 'T')).getTime();
+    return Number.isFinite(value) ? value : null;
+  }
+  function taskId(item) { return String(item?.taskId || '').toUpperCase(); }
+  function calculate(doc, clock) {
+    const now = clock instanceof Date ? clock.getTime() : typeof clock === 'number' ? clock : Date.now();
+    const items = doc.items || [];
+    const active = items.find(it => it.status === 'active' && taskId(it) === String(doc.nowTask?.id || '').toUpperCase())
+      || items.find(it => it.status === 'active') || null;
+    const n = active && String(doc.nowTask?.id || '').toUpperCase() === taskId(active) ? doc.nowTask : {};
+    const legacyElapsed = minutes(n.elapsed);
+    const start = timestamp(n.startedAt) ?? (legacyElapsed != null && timestamp(doc.meta?.updated) != null
+      ? timestamp(doc.meta.updated) - legacyElapsed * MINUTE : null);
+    const initialMinutes = minutes(n.expected) || (active?.effort ? active.effort * 60 : null);
+    const elapsed = start != null ? Math.max(0, Math.floor((now - start) / MINUTE)) : minutes(n.elapsed);
+    const changes = (doc.estimateChanges || [])
+      .filter(e => taskId(active) && e.taskId.toUpperCase() === taskId(active))
+      .map(e => ({ ...e, time: timestamp(e.at), remainingMinutes: minutes(e.remaining) }))
+      .filter(e => e.time != null && e.time <= now && e.remainingMinutes != null)
+      .sort((a, b) => a.time - b.time);
+    const latest = changes.at(-1) || null;
+    const explicitRemaining = minutes(n.remaining);
+    const remainingAt = timestamp(doc.meta?.updated) ?? now;
+    const initialEta = start != null && initialMinutes != null ? start + initialMinutes * MINUTE : null;
+    let eta = latest ? latest.time + latest.remainingMinutes * MINUTE :
+      explicitRemaining != null ? remainingAt + explicitRemaining * MINUTE : initialEta;
+    const overdue = eta != null && now > eta && active != null;
+    const delayMinutes = initialMinutes != null && elapsed != null ? Math.max(0, elapsed - initialMinutes) : 0;
+    let provisional = false;
+    if (overdue) {
+      const extension = Math.max(15, Math.ceil((initialMinutes || 60) * .25));
+      eta = now + extension * MINUTE;
+      provisional = true;
+    }
+    const activeRemaining = active && eta != null ? Math.max(0, Math.ceil((eta - now) / MINUTE)) : null;
+    const cadence = minutes(doc.meta?.cadence);
+    const ratios = items.filter(it => it.status === 'done' && it.effort > 0 && it.actual > 0)
+      .map(it => it.actual / it.effort).sort((a, b) => a - b);
+    const paceFactor = ratios.length ? Math.max(.5, Math.min(2, ratios[Math.floor(ratios.length / 2)])) : 1;
+    const open = items.filter(it => it.status !== 'done' && it.status !== 'cancelled');
+    let totalRemaining = 0, unknown = 0;
+    const projections = new Map();
+    let cursor = now;
+    for (const item of open) {
+      if (active && item === active && activeRemaining != null) {
+        totalRemaining += activeRemaining;
+        projections.set(item.id, { start: start ?? now, end: eta });
+        cursor = Math.max(cursor, eta);
+        continue;
+      }
+      const effort = item.effort ? item.effort * 60 * paceFactor * (1 - (item.progress || 0) / 100) : cadence;
+      if (effort == null) unknown++;
+      else {
+        const duration = Math.max(0, effort);
+        totalRemaining += duration;
+        projections.set(item.id, { start: cursor, end: cursor + duration * MINUTE });
+        cursor += duration * MINUTE;
+      }
+    }
+    const capacity = Math.max(1, +doc.capacity || 1);
+    const projectEta = unknown ? null : now + totalRemaining / capacity * MINUTE;
+    const uncertainty = ratios.length >= 5 ? .15 : ratios.length >= 2 ? .25 : .4;
+    const projectRange = projectEta == null ? null : {
+      early: now + totalRemaining * (1 - uncertainty) / capacity * MINUTE,
+      late: now + totalRemaining * (1 + uncertainty) / capacity * MINUTE,
+      confidence: ratios.length >= 5 ? 'alta' : ratios.length >= 2 ? 'media' : 'baja'
+    };
+    return {
+      active, elapsed, initialMinutes, initialEta, eta, activeRemaining,
+      overdue, delayMinutes, provisional, latestChange: latest, changes,
+      projectEta, projectRange, unknown, totalRemaining, capacity, paceFactor, samples: ratios.length, projections,
+      ageMinutes: timestamp(doc.meta?.updated) != null ? Math.max(0, Math.floor((now - timestamp(doc.meta.updated)) / MINUTE)) : null
+    };
+  }
+  function duration(value) {
+    if (value == null) return '—';
+    const m = Math.max(0, Math.round(value));
+    return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`;
+  }
+  function dateTime(value) {
+    if (value == null) return '—';
+    return new Intl.DateTimeFormat(global.UI?.language || 'en', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+  }
+  global.Forecast = { calculate, minutes, timestamp, duration, dateTime };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+
   /* watcher.js */
   /* watcher.js — Live file watcher for ROADMAP.md
    Estrategia de acceso (en orden):
@@ -2368,6 +2638,9 @@ body {
       detail: { name }
     }));
   }
+  function connection(state) {
+    document.dispatchEvent(new CustomEvent('roadmap:connection', { detail: { state } }));
+  }
 
   /* ── File System Access API ─────────────────────────── */
 
@@ -2382,6 +2655,7 @@ body {
       }
     } catch (e) {
       console.warn('[Watcher] poll error', e);
+      connection('offline');
     }
   }
 
@@ -2412,6 +2686,7 @@ body {
       const text = await file.text();
       dispatchFileOpen(handle.name);
       dispatch(text, 'fsa');
+      connection('live');
       _startPoll();
       return true;
     } catch (e) {
@@ -2446,14 +2721,19 @@ body {
 
   function setupSSE(url) {
     if (_sse) { _sse.close(); _sse = null; }
+    connection('connecting');
     _sse = new EventSource(url);
+    _sse.addEventListener('open', () => connection('live'));
     _sse.addEventListener('roadmap', e => {
-      dispatchFileOpen('roadmap (sse)');
-      dispatch(e.data, 'sse');
+      try {
+        const content = JSON.parse(e.data);
+        dispatchFileOpen('ROADMAP.md');
+        dispatch(content, 'sse');
+        connection('live');
+      } catch (error) { console.error('[Watcher] invalid SSE content', error); }
     });
     _sse.addEventListener('error', () => {
-      console.warn('[Watcher] SSE error, closing');
-      _sse.close(); _sse = null;
+      connection('connecting');
     });
     return _sse;
   }
@@ -2504,705 +2784,273 @@ body {
 
 
   /* timeline.js */
-  /* timeline.js — Deliverables Timeline / Progress Tracker view
-   Faithfully reproduces the Voidfront / RSI Progress Tracker style:
-   - Collapsible Phase rows with progress count (e.g. ⌵ FASE 11 · RESTO DE ASSETS  9/12)
-   - Composite phase summary bar (cyan done + orange striped active + outlined planned)
-   - Done tasks: solid cyan bar with real duration (e.g. Asteroides procedurales · 48 min)
-   - In-progress task: diagonal striped orange bar (e.g. Props del mundo · desde 01:15)
-   - Planned tasks: dark outlined box with projected start time (e.g. est. 02:35)
-   - Vertical glowing orange "AHORA" guideline
-   - Bottom legend: Hecho, En curso, Comprometido (estimado), Provisional (estimado), Ahora
-*/
-
+  /* Chronogram from declared dates and provisional effort projections. */
 (function (global) {
   'use strict';
-
-  const R = global.Roadmap;
-
-  let currentZoom = '1d';   /* '6h' | '1d' | '3d' | '1w' | '1m' */
-  let searchQuery = '';
-
-  function h(tag, attrs, ...children) {
-    const el = document.createElement(tag);
-    for (const [k, v] of Object.entries(attrs || {})) {
-      if (k === 'class') el.className = v;
-      else if (k === 'style') el.style.cssText = v;
-      else if (k.startsWith('data-')) el.dataset[k.slice(5)] = v;
-      else el.setAttribute(k, v);
-    }
-    for (const c of children.flat()) {
-      if (c == null) continue;
-      el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
-    }
-    return el;
+  const DAY = 86400000;
+  const scales = { '6h': [6*3600000,3600000], '1d': [DAY,2*3600000], '3d': [3*DAY,12*3600000], '1w': [7*DAY,DAY], '1m': [30*DAY,5*DAY] };
+  let zoom = '1d', offset = 0, search = '';
+  let liveRange = null;
+  const expanded = new Set();
+  const t = key => global.UI.t(key);
+  let initialized = false;
+  function el(tag, cls, label) { const n = document.createElement(tag); n.className = cls; if (label != null) n.textContent = label; return n; }
+  function time(raw, end) {
+    if (!raw || typeof raw !== 'string') return null;
+    const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw + (end ? 'T23:59:59' : 'T00:00:00') : raw.replace(' ','T'));
+    return isNaN(d.getTime()) ? null : d.getTime();
   }
-
   function render(doc, container) {
-    container.innerHTML = '';
-
-    if (!doc || !doc.releases || !doc.releases.length) {
-      container.appendChild(h('div', { class: 'empty-state' },
-        h('div', { class: 'empty-state__icon' }, '📅'),
-        h('p', {}, 'No hay fases ni tareas en el ROADMAP.md.')
-      ));
-      return;
+    container.replaceChildren();
+    if (!doc?.releases?.length) { container.appendChild(el('div','empty-state',t('noPhases'))); return; }
+    const forecast = global.Forecast.calculate(doc);
+    if (!initialized) {
+      const current = doc.releases.find(r => r.items.some(it => it.status === 'active'));
+      if (current) expanded.add(current.id);
+      else doc.releases.slice(0, 2).forEach(r => expanded.add(r.id));
+      const days = forecast.totalRemaining / (24 * 60);
+      if (days > 5) zoom = '1m';
+      else if (days > 2) zoom = '1w';
+      else if (days > .6) zoom = '3d';
+      initialized = true;
     }
-
-    /* ── 1. Top Subnav & Controls Toolbar ────────────────── */
-    const subnavBar = h('div', { class: 'subnav-bar' },
-      h('div', { class: 'subnav-tabs' },
-        h('button', { class: 'subnav-tab' }, 'EQUIPOS'),
-        h('button', { class: 'subnav-tab subnav-tab--active' }, 'ENTREGABLES')
-      ),
-      h('div', { class: 'subnav-controls' },
-        h('div', { class: 'search-box' },
-          h('input', {
-            type: 'text',
-            class: 'search-input',
-            placeholder: 'Buscar entregables',
-            value: searchQuery
-          }),
-          h('button', { class: 'btn-icon-toggle btn-expand-all', title: 'Expandir todo' }, '⌵'),
-          h('button', { class: 'btn-icon-toggle btn-collapse-all', title: 'Colapsar todo' }, '⌃')
-        ),
-        h('div', { class: 'zoom-group' },
-          ...['6 H', '1 DÍA', '3 DÍAS', '1 SEMANA', '1 MES'].map(label => {
-            const key = label.toLowerCase().replace(/\s+/g, '');
-            const isActive = (key === '1día' && currentZoom === '1d') ||
-                             (key === '6h' && currentZoom === '6h') ||
-                             (key === '3días' && currentZoom === '3d') ||
-                             (key === '1semana' && currentZoom === '1w') ||
-                             (key === '1mes' && currentZoom === '1m');
-            const btn = h('button', {
-              class: `zoom-btn ${isActive ? 'zoom-btn--active' : ''}`
-            }, label);
-            btn.addEventListener('click', () => {
-              if (key === '6h') currentZoom = '6h';
-              else if (key === '1día') currentZoom = '1d';
-              else if (key === '3días') currentZoom = '3d';
-              else if (key === '1semana') currentZoom = '1w';
-              else if (key === '1mes') currentZoom = '1m';
-              render(doc, container);
-            });
-            return btn;
-          })
-        ),
-        h('div', { class: 'time-nav-group' },
-          h('button', { class: 'btn-nav-arrow btn-nav-prev', title: 'Anterior' }, '‹'),
-          h('button', { class: 'btn-nav-now', title: 'Ir al presente' }, 'AHORA'),
-          h('button', { class: 'btn-nav-arrow btn-nav-next', title: 'Siguiente' }, '›')
-        )
-      )
-    );
-
-    /* Search event listener */
-    const searchInput = subnavBar.querySelector('.search-input');
-    searchInput.addEventListener('input', e => {
-      searchQuery = e.target.value.toLowerCase().trim();
-      filterRows();
-    });
-
-    container.appendChild(subnavBar);
-
-    /* ── 2. Deliverables Table Container ─────────────────── */
-    const trackerContainer = h('div', { class: 'tracker-container' });
-    const trackerTable = h('div', { class: 'tracker-table' });
-
-    /* Left Panel: VERSIÓN · HECHAS */
-    const leftPanel = h('div', { class: 'tracker-left' },
-      h('div', { class: 'tracker-left__head' }, 'VERSIÓN · HECHAS'),
-      h('div', { class: 'tracker-left__rows' })
-    );
-
-    /* Right Panel: Time Header + Timeline Grid */
-    const rightPanel = h('div', { class: 'tracker-right' },
-      h('div', { class: 'tracker-right__head' }),
-      h('div', { class: 'tracker-right__rows' })
-    );
-
-    /* Time column dimensions */
-    const timeCols = generateTimeColumns(currentZoom);
-    const tickW = currentZoom === '6h' ? 70 : currentZoom === '1d' ? 88 : 100;
-    const totalW = timeCols.ticks.length * tickW;
-
-    const rightHead = rightPanel.querySelector('.tracker-right__head');
-    rightHead.style.width = `${totalW}px`;
-
-    let nowIndex = timeCols.nowIndex;
-    let nowLeftPx = nowIndex >= 0 ? nowIndex * tickW + (tickW / 2) : -1;
-
-    /* Build header cells */
-    for (let i = 0; i < timeCols.ticks.length; i++) {
-      const tick = timeCols.ticks[i];
-      const isNow = i === nowIndex;
-      const cell = h('div', {
-        class: `time-tick-cell ${isNow ? 'time-tick-cell--now' : ''}`,
-        style: `width: ${tickW}px;`
-      });
-
-      if (isNow) {
-        cell.appendChild(h('span', { class: 'time-tick-date' }, tick.dayLabel || 'DOM, 27 SEPT'));
-        cell.appendChild(h('span', { class: 'badge-ahora-pill' }, 'AHORA'));
-      } else {
-        cell.textContent = tick.label;
+    const now = Date.now(), span = scales[zoom][0], tick = scales[zoom][1], start = now + offset*span - span*.3, end = start+span;
+    liveRange = { start, end, span, container, doc };
+    const pos = ms => (ms-start)/span*100;
+    const toolbar = el('div','subnav-bar'), controls = el('div','subnav-controls');
+    toolbar.appendChild(el('strong','timeline-title',t('deliverables')));
+    const input = el('input','search-input'); input.placeholder = t('search'); input.value = search;
+    input.addEventListener('input', () => { search=input.value.toLowerCase().trim(); render(doc,container); container.querySelector('.search-input').focus(); });
+    controls.appendChild(input);
+    const expand=el('button','btn-icon-toggle',t('expand'));
+    expand.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.add(group.id));render(doc,container);});
+    const collapse=el('button','btn-icon-toggle',t('collapse'));
+    collapse.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.delete(group.id));render(doc,container);});
+    controls.append(expand,collapse);
+    for (const [key,label] of [['6h','6 H'],['1d',global.UI.language==='es'?'1 DÍA':'1 DAY'],['3d',global.UI.language==='es'?'3 DÍAS':'3 DAYS'],['1w',global.UI.language==='es'?'1 SEMANA':'1 WEEK'],['1m',global.UI.language==='es'?'1 MES':'1 MONTH']]) {
+      const b=el('button','zoom-btn'+(zoom===key?' zoom-btn--active':''),label);
+      b.addEventListener('click',()=>{zoom=key;offset=0;render(doc,container);}); controls.appendChild(b);
+    }
+    for (const [label,delta] of [['‹',-1],[t('nowButton'),0],['›',1]]) {
+      const b=el('button','btn-nav-now',label);
+      b.addEventListener('click',()=>{offset=delta?offset+delta:0;render(doc,container);}); controls.appendChild(b);
+    }
+    toolbar.appendChild(controls); container.appendChild(toolbar);
+    const late = doc.items.filter(it => it.status !== 'done' && it.status !== 'cancelled' && time(it.end,true) != null && time(it.end,true) < now).length;
+    const blocked = doc.items.filter(it => it.status === 'blocked').length;
+    const missingDates = doc.items.filter(it => it.status !== 'done' && !it.start && !it.end).length;
+    const signals = el('div','timeline-signals');
+    for (const [key,value] of [['pending',doc.stats.open],['blocked',blocked],['overdue',late],['undated',missingDates]]) {
+      const label=t(key);
+      const signal=el('span','timeline-signal',`${label}: ${value}`);
+      if(value && (key==='blocked'||key==='overdue')) signal.classList.add('timeline-signal--alert');
+      signals.appendChild(signal);
+    }
+    container.appendChild(signals);
+    const tracker=el('div','tracker-container'), table=el('div','tracker-table');
+    const left=el('div','tracker-left'), right=el('div','tracker-right');
+    left.appendChild(el('div','tracker-left__head',t('versionDone')));
+    const head=el('div','tracker-right__head'); head.style.width='100%';
+    const count=Math.round(span/tick);
+    for(let i=0;i<=count;i++) {
+      const ms=start+i*tick;
+      const label=new Intl.DateTimeFormat(global.UI.language,span<=DAY?{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}:{day:'numeric',month:'short'}).format(new Date(ms));
+      const cell=el('div','time-tick-cell',label); cell.style.width=`${100/(count+1)}%`; head.appendChild(cell);
+    }
+    right.appendChild(head);
+    const lRows=el('div','tracker-left__rows'), rRows=el('div','tracker-right__rows'); rRows.style.width='100%';
+    function row(label,bar,phase) {
+      const l=el('div',phase?'phase-head-row':'task-label-row',label), r=el('div',phase?'phase-bar-row':'tracker-bar-row');
+      if(bar) r.appendChild(bar); lRows.appendChild(l);rRows.appendChild(r);return l;
+    }
+    let undated=0;
+    doc.releases.forEach((rel,index)=>{
+      const items=(rel.items||[]).filter(it=>!search||`${it.taskId||''} ${it.name}`.toLowerCase().includes(search));
+      if(search&&!items.length)return;
+      const key=rel.id||String(index), done=rel.items.filter(it=>it.status==='done').length;
+      let summary=null;
+      const phaseStart=time(rel.start,false), phaseEnd=time(rel.end,true);
+      if(phaseStart!=null&&phaseEnd!=null&&phaseEnd>=start&&phaseStart<=end){
+        summary=el('div','phase-summary-bar');
+        summary.style.left=`${Math.max(0,pos(phaseStart))}%`;
+        summary.style.width=`${Math.max(1.5,Math.min(100,pos(phaseEnd))-Math.max(0,pos(phaseStart)))}%`;
+        summary.appendChild(el('div','phase-seg-done'));
+        summary.firstChild.style.width=`${rel.progress||0}%`;
       }
-      rightHead.appendChild(cell);
-    }
-
-    /* Vertical line guide dropping down from AHORA */
-    if (nowLeftPx >= 0) {
-      const vLine = h('div', {
-        class: 'vertical-now-line',
-        style: `left: ${nowLeftPx}px;`
-      });
-      rightPanel.appendChild(vLine);
-    }
-
-    const leftRows = leftPanel.querySelector('.tracker-left__rows');
-    const rightRows = rightPanel.querySelector('.tracker-right__rows');
-    rightRows.style.width = `${totalW}px`;
-
-    /* Render by Releases / Phases */
-    doc.releases.forEach((rel, rIdx) => {
-      const relItems = rel.items || [];
-      const doneCnt = relItems.filter(i => i.status === 'done').length;
-      const totalCnt = relItems.length;
-
-      /* Phase Header Row (Collapsible) */
-      const phaseId = `phase-${rel.id || rIdx}`;
-      const phaseLeft = h('div', {
-        class: 'phase-head-row',
-        'data-phase': phaseId
-      },
-        h('span', { class: 'phase-chevron' }, '⌵'),
-        h('span', { class: 'phase-title-text' }, `${rel.name || rel.id}`),
-        h('span', { class: 'phase-count-badge' }, `${doneCnt}/${totalCnt}`)
-      );
-      leftRows.appendChild(phaseLeft);
-
-      /* Phase Summary Bar on Timeline */
-      const phaseBarRow = h('div', { class: 'phase-bar-row', 'data-phase': phaseId });
-      const phaseBar = buildPhaseSummaryBar(relItems, timeCols, tickW);
-      if (phaseBar) phaseBarRow.appendChild(phaseBar);
-      rightRows.appendChild(phaseBarRow);
-
-      /* Items inside this Phase */
-      relItems.forEach((it, idx) => {
-        const taskId = it.taskId || `T${String(idx + 1).padStart(3, '0')}`;
-        const isNow = it.status === 'active';
-        const isDone = it.status === 'done';
-        const isPlanned = it.status === 'planned' || it.status === 'risk' || it.status === 'blocked';
-
-        /* Left row */
-        const bulletCls = isDone ? 'bullet-done' : isNow ? 'bullet-now' : 'bullet-planned';
-        const leftItemRow = h('div', {
-          class: `task-label-row ${isNow ? 'task-label-row--now' : ''}`,
-          'data-phase-item': phaseId,
-          'data-name': it.name.toLowerCase()
-        },
-          h('span', { class: `task-bullet ${bulletCls}` }, isPlanned ? '□' : '■'),
-          h('span', { class: `task-id-badge ${isNow ? 'task-id-badge--now' : ''}` }, taskId),
-          h('span', { class: `task-name-text ${isNow ? 'task-name-text--now' : ''}`, title: it.name }, it.name)
-        );
-        leftRows.appendChild(leftItemRow);
-
-        /* Right timeline row */
-        const rightItemRow = h('div', {
-          class: 'tracker-bar-row',
-          'data-phase-item': phaseId,
-          'data-name': it.name.toLowerCase()
-        });
-
-        const barEl = buildTaskBar(it, taskId, idx, timeCols, tickW);
-        if (barEl) rightItemRow.appendChild(barEl);
-        rightRows.appendChild(rightItemRow);
-      });
-
-      /* Toggle phase collapse */
-      phaseLeft.addEventListener('click', () => {
-        const isOpen = !phaseLeft.classList.contains('phase-head-row--closed');
-        phaseLeft.classList.toggle('phase-head-row--closed', isOpen);
-        phaseLeft.querySelector('.phase-chevron').textContent = isOpen ? '›' : '⌵';
-
-        leftRows.querySelectorAll(`[data-phase-item="${phaseId}"]`).forEach(el => {
-          el.style.display = isOpen ? 'none' : '';
-        });
-        rightRows.querySelectorAll(`[data-phase-item="${phaseId}"]`).forEach(el => {
-          el.style.display = isOpen ? 'none' : '';
-        });
+      const phase=row(`${expanded.has(key)?'⌄':'›'}  ${rel.id} · ${rel.name}   ${done}/${rel.items.length}`,summary,true);
+      phase.setAttribute('role','button');phase.tabIndex=0;
+      const toggle=()=>{expanded.has(key)?expanded.delete(key):expanded.add(key);render(doc,container);};
+      phase.addEventListener('click',toggle);phase.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')toggle();});
+      if(!expanded.has(key)&&!search)return;
+      items.forEach(it=>{
+        const predicted = forecast.projections.get(it.id);
+        const declaredStart = time(it.start,false), declaredEnd = time(it.end,true);
+        const a=declaredStart ?? predicted?.start ?? null, b=declaredEnd ?? predicted?.end ?? null;
+        const provisional = declaredStart == null && declaredEnd == null && predicted != null;
+        let bar=null;
+        if(a!=null||b!=null){
+          const from=a??b,to=b??a;
+          if(to>=start&&from<=end){
+            bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':'planned'}${provisional?' tracker-bar--provisional':''}`,it.name);
+            bar.style.left=`${Math.max(0,pos(from))}%`;
+            bar.style.width=`${Math.max(1.5,Math.min(100,pos(to))-Math.max(0,pos(from)))}%`;
+            bar.title=provisional ? `${it.name} · ${t('projection')}` : `${it.name} · ${it.start||'?'} → ${it.end||'?'} · ${it.status}`;
+          }
+        }
+        if(declaredStart==null&&declaredEnd==null)undated++;
+        const l=row(`${it.status==='done'?'■':it.status==='active'?'▰':'□'}  ${it.taskId||''} ${it.name}`,bar,false);
+        if(declaredStart==null&&declaredEnd==null)l.title=provisional?t('projection'):t('undated');
+        l.setAttribute('role','button'); l.tabIndex=0; l.classList.add('task-label-row--interactive');
+        l.addEventListener('click',()=>showDetail(it,doc,forecast));
+        l.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')showDetail(it,doc,forecast);});
+        if(bar)bar.addEventListener('click',()=>showDetail(it,doc,forecast));
       });
     });
-
-    /* Synchronize vertical scrolling */
-    rightPanel.addEventListener('scroll', () => {
-      leftRows.scrollTop = rightPanel.scrollTop;
+    if(start<=now&&now<=end){const line=el('div','vertical-now-line');line.style.left=`${pos(now)}%`;right.appendChild(line);}
+    left.appendChild(lRows);right.appendChild(rRows);table.append(left,right);tracker.appendChild(table);
+    tracker.appendChild(el('div','timeline-legend',`${undated} ${t('fixedDate')} · ${t('declared')} · ${t('projection')}`));
+    container.appendChild(tracker);
+    right.addEventListener('scroll',()=>{lRows.scrollTop=right.scrollTop;});
+  }
+  function showDetail(item, doc, forecast) {
+    document.querySelector('.task-detail-overlay')?.remove();
+    const overlay=el('div','task-detail-overlay');
+    const panel=el('section','task-detail-panel');
+    panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label',item.name);
+    const close=el('button','task-detail-close','×');close.setAttribute('aria-label',t('close'));
+    const dismiss=()=>{document.removeEventListener('keydown',onKey);overlay.remove();};
+    const onKey=e=>{if(e.key==='Escape')dismiss();};
+    close.addEventListener('click',dismiss);
+    overlay.addEventListener('click',e=>{if(e.target===overlay)dismiss();});
+    document.addEventListener('keydown',onKey);
+    panel.append(close,el('div','hud-card__head-label',item.taskId||t('deliverables')),el('h2','task-detail-title',item.name));
+    const fields=[
+      [t('status'),t(item.status==='done'?'done':item.status==='blocked'?'blockedStatus':item.status==='cancelled'?'cancelledStatus':item.status)],
+      [t('taskProgress'),`${item.progress||0} %`],
+      [t('owner'),item.owner||'—'],
+      [t('estimatedEffort'),item.effortRaw||t('noEstimate')],
+      [t('actualDuration'),item.actual?global.Roadmap.fmtEffort(item.actual):t('pendingDuration')],
+      [t('plannedStart'),item.start||t('noDate')],
+      [t('plannedEnd'),item.end||t('noDate')],
+      [t('depends'),item.depends.length?item.depends.join(', '):t('noDependencies')]
+    ];
+    const prediction=forecast.projections.get(item.id);
+    if(prediction)fields.push([t('calculatedWindow'),`${global.Forecast.dateTime(prediction.start)} → ${global.Forecast.dateTime(prediction.end)}`]);
+    fields.forEach(([label,value])=>{
+      const line=el('div','task-detail-row');line.append(el('span','',label),el('strong','',value));panel.appendChild(line);
     });
-
-    trackerTable.appendChild(leftPanel);
-    trackerTable.appendChild(rightPanel);
-    trackerContainer.appendChild(trackerTable);
-
-    /* ── 3. Bottom Legend Strip ──────────────────────────── */
-    const legendBar = h('div', { class: 'timeline-legend' },
-      h('div', { class: 'legend-item' },
-        h('span', { class: 'legend-swatch legend-swatch--done' }),
-        h('span', {}, 'Hecho')
-      ),
-      h('div', { class: 'legend-item' },
-        h('span', { class: 'legend-swatch legend-swatch--now' }),
-        h('span', {}, 'En curso')
-      ),
-      h('div', { class: 'legend-item' },
-        h('span', { class: 'legend-swatch legend-swatch--committed' }),
-        h('span', {}, 'Comprometido (estimado)')
-      ),
-      h('div', { class: 'legend-item' },
-        h('span', { class: 'legend-swatch legend-swatch--provisional' }),
-        h('span', {}, 'Provisional (estimado)')
-      ),
-      h('div', { class: 'legend-item' },
-        h('span', { class: 'legend-line--now' }),
-        h('span', {}, 'Ahora')
-      )
-    );
-    trackerContainer.appendChild(legendBar);
-
-    container.appendChild(trackerContainer);
-
-    /* Scroll to AHORA */
-    if (nowLeftPx > 300) {
-      setTimeout(() => {
-        rightPanel.scrollLeft = nowLeftPx - 260;
-      }, 50);
+    if(item.note)panel.appendChild(el('p','task-detail-note',item.note));
+    const changes=(doc.estimateChanges||[]).filter(change=>change.taskId.toUpperCase()===(item.taskId||'').toUpperCase());
+    if(changes.length){
+      panel.appendChild(el('h3','hud-card__head-label',t('estimateHistory')));
+      changes.forEach(change=>panel.appendChild(el('div','estimate-event',`${change.at} · ${change.remaining} ${t('remaining')} · ${change.reason||t('noReason')}`)));
     }
-
-    /* Expand / Collapse all button listeners */
-    subnavBar.querySelector('.btn-expand-all').addEventListener('click', () => {
-      leftRows.querySelectorAll('.phase-head-row').forEach(p => {
-        p.classList.remove('phase-head-row--closed');
-        p.querySelector('.phase-chevron').textContent = '⌵';
-      });
-      leftRows.querySelectorAll('[data-phase-item]').forEach(el => el.style.display = '');
-      rightRows.querySelectorAll('[data-phase-item]').forEach(el => el.style.display = '');
-    });
-
-    subnavBar.querySelector('.btn-collapse-all').addEventListener('click', () => {
-      leftRows.querySelectorAll('.phase-head-row').forEach(p => {
-        p.classList.add('phase-head-row--closed');
-        p.querySelector('.phase-chevron').textContent = '›';
-      });
-      leftRows.querySelectorAll('[data-phase-item]').forEach(el => el.style.display = 'none');
-      rightRows.querySelectorAll('[data-phase-item]').forEach(el => el.style.display = 'none');
-    });
-
-    function filterRows() {
-      const q = searchQuery;
-      leftRows.querySelectorAll('.task-label-row').forEach(row => {
-        const name = row.dataset.name || '';
-        row.style.display = (!q || name.includes(q)) ? '' : 'none';
-      });
-      rightRows.querySelectorAll('.tracker-bar-row').forEach(row => {
-        const name = row.dataset.name || '';
-        row.style.display = (!q || name.includes(q)) ? '' : 'none';
-      });
-    }
+    overlay.appendChild(panel);document.body.appendChild(overlay);close.focus();
   }
-
-  /* ── Helper: Multi-segment Phase Summary Bar ─────────── */
-  function buildPhaseSummaryBar(items, timeCols, tickW) {
-    if (!items.length) return null;
-    const nowPos = timeCols.nowIndex * tickW;
-    const startX = Math.max(10, nowPos - (tickW * 3.5));
-    const totalW = tickW * 5.5;
-
-    const doneCount = items.filter(i => i.status === 'done').length;
-    const activeCount = items.filter(i => i.status === 'active').length;
-    const doneRatio = doneCount / items.length;
-    const activeRatio = activeCount / items.length;
-
-    const doneW = totalW * doneRatio;
-    const activeW = Math.max(16, totalW * activeRatio);
-    const plannedW = Math.max(0, totalW - doneW - activeW);
-
-    const bar = h('div', {
-      class: 'phase-summary-bar',
-      style: `left: ${startX}px; width: ${totalW}px;`
-    },
-      h('div', { class: 'phase-seg-done', style: `width: ${doneW}px;` }),
-      activeCount > 0 ? h('div', { class: 'phase-seg-now', style: `width: ${activeW}px;` }) : null,
-      h('div', { class: 'phase-seg-planned', style: `width: ${plannedW}px;` })
-    );
-
-    return bar;
+  function tickNow() {
+    if (!liveRange) return;
+    const { start, end, span, container, doc } = liveRange;
+    const now = Date.now();
+    if (now > end || now < start) { render(doc, container); return; }
+    const line = container.querySelector('.vertical-now-line');
+    if (line) line.style.left = `${(now - start) / span * 100}%`;
   }
-
-  /* ── Helper: Task Bar with Duration / Start Times ─────── */
-  function buildTaskBar(it, taskId, idx, timeCols, tickW) {
-    const nowPos = timeCols.nowIndex * tickW;
-    const isDone = it.status === 'done';
-    const isNow = it.status === 'active';
-    const effortHrs = it.effort || 4;
-    const barW = Math.max(tickW * 1.1, (effortHrs / 4) * tickW * 1.2);
-
-    let left = nowPos;
-    let label = it.name;
-
-    if (isDone) {
-      /* Placed to the left of AHORA */
-      const backOffset = (itemsBeforeCount(idx) + 1) * (tickW * 0.9);
-      left = Math.max(10, nowPos - backOffset);
-      const durationText = it.effort ? formatDuration(it.effort) : '48 min';
-      label = `${it.name} · ${durationText}`;
-
-      return h('div', {
-        class: 'tracker-bar tracker-bar--done',
-        style: `left: ${left}px; width: ${barW}px;`,
-        title: `${taskId}: ${it.name} (Completado)`
-      }, label);
-
-    } else if (isNow) {
-      /* Crosses the AHORA line */
-      left = nowPos - (tickW * 0.4);
-      const width = tickW * 1.5;
-      const sinceText = it.start ? `desde ${it.start}` : 'desde 01:15';
-      label = `${it.name} · ${sinceText}`;
-
-      return h('div', {
-        class: 'tracker-bar tracker-bar--now',
-        style: `left: ${left}px; width: ${width}px;`,
-        title: `${taskId}: ${it.name} (En curso)`
-      }, label);
-
-    } else {
-      /* Planned / Future task: translucent outlined box */
-      const forwardOffset = (idx % 3 + 1) * (tickW * 0.9);
-      left = nowPos + forwardOffset;
-      const estTime = `est. 0${2 + (idx % 3)}:35`;
-      label = `${it.name} · ${estTime}`;
-
-      return h('div', {
-        class: 'tracker-bar tracker-bar--planned',
-        style: `left: ${left}px; width: ${barW}px;`,
-        title: `${taskId}: ${it.name} (${estTime})`
-      }, label);
-    }
-  }
-
-  function itemsBeforeCount(idx) {
-    return (idx * 7) % 6;
-  }
-
-  function formatDuration(effortHrs) {
-    const h = Math.floor(effortHrs);
-    const m = Math.round((effortHrs - h) * 60);
-    if (h === 0) return `${m} min`;
-    if (m === 0) return `${h} h`;
-    return `${h} h ${m} min`;
-  }
-
-  function generateTimeColumns(zoom) {
-    const ticks = [];
-    let nowIndex = 7;
-
-    if (zoom === '6h' || zoom === '1d') {
-      const hours = ['10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00', 'AHORA', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00'];
-      nowIndex = 7;
-      hours.forEach((h, i) => {
-        ticks.push({ label: h, dayLabel: 'DOM, 27 SEPT', index: i });
-      });
-    } else if (zoom === '3d') {
-      const days = ['Jue 24', 'Vie 25', 'Sáb 26', 'AHORA', 'Lun 28', 'Mar 29', 'Mié 30', 'Jue 01'];
-      nowIndex = 3;
-      days.forEach((d, i) => {
-        ticks.push({ label: d, dayLabel: 'DOM, 27 SEPT', index: i });
-      });
-    } else {
-      const weeks = ['Sem 38', 'Sem 39', 'AHORA', 'Sem 41', 'Sem 42', 'Sem 43', 'Sem 44'];
-      nowIndex = 2;
-      weeks.forEach((w, i) => {
-        ticks.push({ label: w, dayLabel: 'SEPT / OCT', index: i });
-      });
-    }
-
-    return { ticks, nowIndex };
-  }
-
-  global.Timeline = { render };
-
-})(typeof window !== 'undefined' ? window : globalThis);
+  global.Timeline={render, tickNow, openTask:showDetail};
+})(typeof window!=='undefined'?window:globalThis);
 
 
   /* board.js */
-  /* board.js — Kanban board view
-   Columnas por release · Cards con progreso, owner, prioridad
-   window.Board = { render(doc, container) } */
-
+  /* Version overview and detailed deliverable list. */
 (function (global) {
   'use strict';
-
-  const R = global.Roadmap;
-
-  /* ── helpers ─────────────────────────────────────────── */
-
-  function h(tag, attrs, ...children) {
-    const el = document.createElement(tag);
-    for (const [k, v] of Object.entries(attrs || {})) {
-      if (k === 'class') el.className = v;
-      else if (k.startsWith('data-')) el.dataset[k.slice(5)] = v;
-      else el.setAttribute(k, v);
-    }
-    for (const c of children.flat()) {
-      if (c == null) continue;
-      el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
-    }
-    return el;
+  let selectedId = null, filter = 'all', query = '';
+  const t = key => global.UI.t(key);
+  function node(tag, cls, value) { const el=document.createElement(tag); if(cls)el.className=cls; if(value!=null)el.textContent=value; return el; }
+  function statusName(status) { return t(status==='blocked'?'blockedStatus':status==='cancelled'?'cancelledStatus':status||'planned'); }
+  function date(raw) { if(!raw)return '—'; const d=global.Roadmap.toDate(raw); return d ? new Intl.DateTimeFormat(global.UI.language,{day:'numeric',month:'short',year:'numeric'}).format(d) : raw; }
+  function projectEnd(release, forecast) {
+    const ends=release.items.map(item=>forecast.projections.get(item.id)?.end).filter(Boolean);
+    return ends.length ? Math.max(...ends) : null;
   }
-
-  function statusMeta(id) {
-    return R.STATUS[id] || R.STATUS.planned;
-  }
-
-  function fmtDateShort(s) {
-    if (!s) return '';
-    const d = R.toDate(s);
-    return d ? R.fmtShort(d) : s;
-  }
-
-  function ownerInitials(owner) {
-    if (!owner) return '?';
-    const s = owner.replace(/^@/, '');
-    return s.slice(0, 2).toUpperCase();
-  }
-
-  const PRIO_COLOR = { P0: 'var(--danger)', P1: 'var(--warn)', P2: 'var(--blue-300)', P3: 'var(--text-4)' };
-
-  /* ── Card ─────────────────────────────────────────────── */
-
-  function buildCard(item) {
-    const sm = statusMeta(item.status);
-    const pct = item.progress || 0;
-    const prioColor = PRIO_COLOR[item.priority] || 'transparent';
-
-    const dateRange = (item.start || item.end)
-      ? (item.start === item.end ? fmtDateShort(item.start) : `${fmtDateShort(item.start)} → ${fmtDateShort(item.end)}`)
-      : '';
-
-    const effortLabel = item.effort ? R.fmtEffort(item.effort) : '';
-
-    const card = h('div', { class: `card card--${item.status}`, 'data-id': item.id, 'data-item': item.name },
-      /* priority stripe */
-      h('div', { class: 'card__stripe', style: `background:${prioColor}` }),
-      /* body */
-      h('div', { class: 'card__body' },
-        /* title row */
-        h('div', { class: 'card__title' },
-          h('span', { class: 'card__name', title: item.name }, item.name)
-        ),
-        /* progress bar */
-        h('div', { class: 'card__progress' },
-          h('div', { class: 'card__track' },
-            h('div', { class: 'card__fill', style: `width:${pct}%;background:${sm.color}` })
-          ),
-          h('span', { class: 'card__pct' }, `${pct}%`)
-        ),
-        /* meta row */
-        h('div', { class: 'card__meta' },
-          item.owner
-            ? h('div', { class: 'card__owner', title: item.owner }, ownerInitials(item.owner))
-            : null,
-          item.priority
-            ? h('span', { class: 'card__prio', style: `color:${prioColor};border-color:${prioColor}` }, item.priority)
-            : null,
-          effortLabel
-            ? h('span', { class: 'card__effort' }, effortLabel)
-            : null,
-          dateRange
-            ? h('span', { class: 'card__dates' }, dateRange)
-            : null
-        ),
-        item.note
-          ? h('div', { class: 'card__note' }, item.note)
-          : null
-      )
-    );
-
-    return card;
-  }
-
-  /* ── Category section ────────────────────────────────── */
-
-  function buildCategory(cat, filter) {
-    const items = cat.items.filter(i => {
-      if (filter === 'all') return true;
-      if (filter === 'active') return i.status === 'active' || i.status === 'blocked' || i.status === 'risk';
-      if (filter === 'open') return i.status !== 'done' && i.status !== 'cancelled';
-      return i.status === filter;
-    });
-    if (!items.length) return null;
-
-    const section = h('div', { class: 'cat' },
-      h('div', { class: 'cat__header' },
-        h('span', { class: 'cat__name' }, cat.name),
-        h('span', { class: 'cat__count' }, `${items.length}`)
-      ),
-      h('div', { class: 'cat__cards' }, ...items.map(buildCard))
-    );
-
-    /* collapse toggle */
-    const header = section.querySelector('.cat__header');
-    const cards  = section.querySelector('.cat__cards');
-    let open = true;
-    header.addEventListener('click', () => {
-      open = !open;
-      cards.style.display = open ? '' : 'none';
-      header.classList.toggle('cat__header--closed', !open);
-    });
-
-    return section;
-  }
-
-  /* ── Release column ──────────────────────────────────── */
-
-  function buildColumn(release, filter) {
-    const sm = statusMeta(release.status);
-    const pct = release.progress || 0;
-    const allItems = release.categories.flatMap(c => c.items);
-    const total = allItems.length;
-    const done  = allItems.filter(i => i.status === 'done').length;
-
-    const dateStr = (release.start && release.end)
-      ? `${fmtDateShort(release.start)} → ${fmtDateShort(release.end)}`
-      : '';
-
-    const cats = release.categories
-      .map(c => buildCategory(c, filter))
-      .filter(Boolean);
-
-    const col = h('div', { class: `col col--${release.status}` },
-      /* column header */
-      h('div', { class: 'col__head' },
-        h('div', { class: 'col__title-row' },
-          h('span', { class: `col__id` }, release.id || ''),
-          h('span', { class: 'col__name' }, release.name),
-          h('span', { class: `col__badge badge--${release.status}` }, sm.label)
-        ),
-        dateStr ? h('div', { class: 'col__dates' }, dateStr) : null,
-        /* release progress */
-        h('div', { class: 'col__progress' },
-          h('div', { class: 'col__track' },
-            h('div', { class: 'col__fill', style: `width:${pct}%;background:${sm.color}` })
-          ),
-          h('span', { class: 'col__pct' }, `${done}/${total} · ${pct}%`)
-        )
-      ),
-      /* categories */
-      h('div', { class: 'col__body' },
-        cats.length ? cats : h('div', { class: 'col__empty' }, 'Sin ítems')
-      )
-    );
-
-    return col;
-  }
-
-  /* ── Filter bar ──────────────────────────────────────── */
-
-  function buildFilterBar(doc, onFilter) {
-    const stats = doc.stats || {};
-    const filters = [
-      { id: 'all',     label: 'Todo',      count: stats.total },
-      { id: 'active',  label: 'En curso',  count: stats.active + stats.blocked + stats.atRisk },
-      { id: 'open',    label: 'Abierto',   count: stats.open },
-      { id: 'done',    label: 'Hecho',     count: stats.done }
-    ];
-
-    let current = 'all';
-
-    const bar = h('div', { class: 'board-filter' },
-      ...filters.map(f => {
-        const btn = h('button', { class: `board-filter__btn${f.id === current ? ' board-filter__btn--active' : ''}`, 'data-filter': f.id },
-          f.label,
-          f.count != null ? h('span', { class: 'board-filter__count' }, String(f.count)) : null
-        );
-        btn.addEventListener('click', () => {
-          bar.querySelectorAll('.board-filter__btn').forEach(b => b.classList.remove('board-filter__btn--active'));
-          btn.classList.add('board-filter__btn--active');
-          current = f.id;
-          onFilter(f.id);
-        });
-        return btn;
-      })
-    );
-
-    return { el: bar, getCurrent: () => current };
-  }
-
-  /* ── Stats bar ───────────────────────────────────────── */
-
-  function buildStatsBar(doc) {
-    const s = doc.stats || {};
-
-    function stat(label, value, cls) {
-      return h('div', { class: `bstat ${cls || ''}` },
-        h('span', { class: 'bstat__val' }, String(value)),
-        h('span', { class: 'bstat__lbl' }, label)
-      );
-    }
-
-    const effortStr = s.effortLeft > 0 ? `${s.effortLeft}h restantes` : '—';
-    const spanStr   = s.spanDays  > 0  ? `${s.spanDays}d de proyecto`  : '—';
-
-    return h('div', { class: 'board-stats' },
-      stat('Progreso',  `${s.progress || 0}%`,  'bstat--progress'),
-      stat('Ítems',     `${s.done||0}/${s.total||0}`, 'bstat--items'),
-      stat('En curso',  s.active || 0,           'bstat--active'),
-      s.blocked > 0 ? stat('Bloqueado', s.blocked, 'bstat--blocked') : null,
-      s.atRisk   > 0 ? stat('En riesgo', s.atRisk,  'bstat--risk')    : null,
-      stat('Esfuerzo',  effortStr,               'bstat--effort'),
-      stat('Plazo',     spanStr,                 'bstat--span')
-    );
-  }
-
-  /* ── Main render ─────────────────────────────────────── */
-
   function render(doc, container) {
-    container.innerHTML = '';
-
-    if (!doc || !doc.releases || !doc.releases.length) {
-      container.appendChild(h('div', { class: 'empty-state' },
-        h('div', { class: 'empty-state__icon' }, '📋'),
-        h('p', {}, 'No hay releases en el ROADMAP.')
-      ));
-      return;
-    }
-
-    /* stats bar */
-    container.appendChild(buildStatsBar(doc));
-
-    /* filter bar */
-    let currentFilter = 'all';
-    const columns = h('div', { class: 'board-cols' });
-
-    const rebuildCols = (filter) => {
-      columns.innerHTML = '';
-      for (const rel of doc.releases) {
-        columns.appendChild(buildColumn(rel, filter));
-      }
-    };
-
-    const { el: filterBar } = buildFilterBar(doc, f => {
-      currentFilter = f;
-      rebuildCols(f);
+    container.replaceChildren();
+    if(!doc?.releases?.length){container.appendChild(node('div','empty-state',t('noVersions')));return;}
+    const forecast=global.Forecast.calculate(doc);
+    const available=doc.releases;
+    const selected=available.find(release=>release.id===selectedId) || available.find(release=>release.status==='active') || available[0];
+    selectedId=selected.id;
+    const header=node('div','versions-heading');
+    header.append(node('div','versions-heading__eyebrow',t('versionsTitle')),node('h2','versions-heading__title',`${doc.title}${doc.version ? ' · ' + doc.version : ''}`));
+    const summary=node('div','versions-overview');
+    const values=[
+      [t('completion'),`${doc.stats.pct}%`],
+      [t('phasesDone'),`${doc.stats.phasesDone}/${doc.stats.phasesTotal}`],
+      [t('activeTasks'),String(doc.stats.active)],
+      [t('riskTasks'),String(doc.stats.blocked+doc.stats.atRisk)]
+    ];
+    values.forEach(([label,value])=>{const item=node('div','versions-overview__item');item.append(node('span','',label),node('strong','',value));summary.appendChild(item);});
+    header.appendChild(summary);container.appendChild(header);
+    const layout=node('div','versions-layout'), rail=node('div','versions-rail'), detail=node('div','versions-detail');
+    const railHead=node('div','versions-rail__head',`${t('versions')} · ${available.length}`);rail.appendChild(railHead);
+    available.forEach(release=>{
+      const done=release.items.filter(item=>item.status==='done').length;
+      const btn=node('button',`version-entry${selected.id===release.id?' version-entry--selected':''}`);
+      btn.type='button';btn.setAttribute('aria-pressed',String(selected.id===release.id));
+      const top=node('div','version-entry__top');top.append(node('span','version-entry__name',`${release.id} · ${release.name}`),node('span',`version-entry__status version-entry__status--${release.status}`,statusName(release.status)));
+      btn.append(top,node('div','version-entry__meta',`${done}/${release.items.length} ${t('tasks')} · ${release.progress||0}%`));
+      const track=node('div','version-entry__track'), fill=node('div','version-entry__fill');fill.style.width=`${release.progress||0}%`;track.appendChild(fill);btn.appendChild(track);
+      if(release.start||release.end)btn.appendChild(node('div','version-entry__dates',`${date(release.start)} → ${date(release.end)}`));
+      btn.addEventListener('click',()=>{selectedId=release.id;render(doc,container);});rail.appendChild(btn);
     });
-
-    container.appendChild(filterBar);
-    rebuildCols(currentFilter);
-    container.appendChild(columns);
+    const title=node('div','versions-detail__header');
+    title.append(node('div','versions-heading__eyebrow',t('releaseDetails')),node('h3','versions-detail__title',`${selected.id} · ${selected.name}`));
+    const range=node('div','versions-detail__range');
+    range.append(node('span','',`${t('releaseWindow')}: ${date(selected.start)} → ${date(selected.end)}`));
+    const projected=projectEnd(selected,forecast);
+    if(projected)range.append(node('strong','',`${t('calculatedDelivery')}: ${global.Forecast.dateTime(projected)}`));
+    title.appendChild(range);
+    const progress=node('div','versions-detail__progress'), fill=node('div','versions-detail__progress-fill');fill.style.width=`${selected.progress||0}%`;progress.appendChild(fill);title.appendChild(progress);
+    const counts=node('div','versions-detail__counts');
+    for(const [label,value] of [[t('done'),selected.items.filter(i=>i.status==='done').length],[t('inProgress'),selected.items.filter(i=>i.status==='active').length],[t('blocked'),selected.items.filter(i=>i.status==='blocked').length],[t('pending'),selected.items.filter(i=>i.status==='planned').length]]) counts.appendChild(node('span','',`${label} ${value}`));
+    title.appendChild(counts);detail.appendChild(title);
+    const tools=node('div','versions-tools');
+    const search=node('input','versions-search');search.type='search';search.placeholder=t('search');search.value=query;search.setAttribute('aria-label',t('search'));
+    search.addEventListener('input',()=>{query=search.value.toLowerCase().trim();drawItems();});tools.appendChild(search);
+    for(const [key,label] of [['all',t('all')],['open',t('openItems')],['done',t('done')]]){
+      const btn=node('button',`versions-filter${filter===key?' versions-filter--active':''}`,label);btn.type='button';
+      btn.addEventListener('click',()=>{filter=key;render(doc,container);});tools.appendChild(btn);
+    }
+    detail.appendChild(tools);
+    const content=node('div','versions-deliverables');detail.appendChild(content);
+    function drawItems(){
+      content.replaceChildren();
+      const groups=selected.categories.length ? selected.categories : [{name:t('deliverables'),items:selected.items}];
+      let visible=0;
+      groups.forEach(group=>{
+        const items=group.items.filter(item=>(!query||`${item.taskId||''} ${item.name} ${item.note||''}`.toLowerCase().includes(query)) && (filter==='all'||(filter==='done'?item.status==='done':item.status!=='done'&&item.status!=='cancelled')));
+        if(!items.length)return;
+        visible+=items.length;
+        content.appendChild(node('h4','versions-category',`${group.name||t('deliverables')} · ${items.length}`));
+        items.forEach(item=>{
+          const row=node('button',`deliverable-row deliverable-row--${item.status}`);row.type='button';
+          const heading=node('div','deliverable-row__heading');heading.append(node('span','deliverable-row__id',item.taskId||'—'),node('strong','deliverable-row__name',item.name),node('span','deliverable-row__status',statusName(item.status)));
+          const info=node('div','deliverable-row__info');
+          info.append(node('span','',`${t('taskProgress')} ${item.progress||0}%`));
+          if(item.effortRaw)info.append(node('span','',`${t('effort')} ${item.effortRaw}`));
+          if(item.end)info.append(node('span','',`${t('plannedEnd')} ${date(item.end)}`));
+          if(item.depends.length)info.append(node('span','',`${t('depends')} ${item.depends.join(', ')}`));
+          const track=node('div','deliverable-row__track'), bar=node('div','deliverable-row__fill');bar.style.width=`${item.progress||0}%`;track.appendChild(bar);
+          row.append(heading,info,track);
+          row.addEventListener('click',()=>global.Timeline.openTask(item,doc,forecast));
+          content.appendChild(row);
+        });
+      });
+      if(!visible)content.appendChild(node('div','versions-empty',t('noItems')));
+    }
+    drawItems();layout.append(rail,detail);container.appendChild(layout);
   }
-
-  global.Board = { render };
-
-})(typeof window !== 'undefined' ? window : globalThis);
+  global.Board={render};
+})(typeof window!=='undefined'?window:globalThis);
 
 
   /* log.js */
@@ -3246,7 +3094,7 @@ body {
       container.appendChild(
         h('div', { class: 'empty-state' },
           h('div', { class: 'empty-state__icon' }, '📓'),
-          h('p', {}, 'El log está vacío. Agrega entradas al ## Log del ROADMAP.md.')
+          h('p', {}, global.UI.t('logEmpty'))
         )
       );
       return;
@@ -3255,7 +3103,7 @@ body {
     /* Agrupar por fecha */
     const groups = new Map();
     for (const entry of log) {
-      const date = extractDate(entry.text) || 'Sin fecha';
+      const date = extractDate(entry.text) || global.UI.t('noDate');
       if (!groups.has(date)) groups.set(date, []);
       groups.get(date).push(entry);
     }
@@ -3268,9 +3116,9 @@ body {
 
     container.appendChild(
       h('div', { class: 'log-stats' },
-        h('span', { class: 'log-stat log-stat--done' }, `✓ ${done} completados`),
-        pending    ? h('span', { class: 'log-stat log-stat--pending' },   `◯ ${pending} pendientes`)   : null,
-        cancelled  ? h('span', { class: 'log-stat log-stat--cancelled' }, `✗ ${cancelled} cancelados`) : null
+        h('span', { class: 'log-stat log-stat--done' }, `✓ ${done} ${global.UI.t('completed')}`),
+        pending    ? h('span', { class: 'log-stat log-stat--pending' },   `◯ ${pending} ${global.UI.t('pending')}`)   : null,
+        cancelled  ? h('span', { class: 'log-stat log-stat--cancelled' }, `✗ ${cancelled} ${global.UI.t('cancelled')}`) : null
       )
     );
 
@@ -3281,9 +3129,9 @@ body {
       const entries = groups.get(date);
 
       let label = date;
-      if (date !== 'Sin fecha') {
+      if (date !== global.UI.t('noDate')) {
         const d = R.toDate(date);
-        if (d) label = R.fmtLong(d);
+        if (d) label = new Intl.DateTimeFormat(global.UI.language,{day:'numeric',month:'short',year:'numeric'}).format(d);
       }
 
       const group = h('div', { class: 'log-group' },
@@ -3341,77 +3189,97 @@ body {
   /* app.js */
   /* app.js — Main Controller for Visual Roadmap
    Orchestrates: Watcher → md.js → HUD Mission Control & Views
-   Matches the Voidfront / RSI Progress Tracker style */
+   Derives live clocks and forecasts from agent updates. */
 
 (function (global) {
   'use strict';
 
   /* ── State ───────────────────────────────────────────── */
   let _doc = null;
-  let _view = 'timeline';  /* 'timeline' (SEGUIMIENTO) | 'board' (VERSIONES) | 'log' (NOTAS) */
+  let _view = 'timeline';  /* timeline | board | log */
+  let _source = 'manual';
 
   const $ = id => document.getElementById(id);
   const q = sel => document.querySelector(sel);
   const qa = sel => [...document.querySelectorAll(sel)];
+  const t = (key, vars) => global.UI.t(key, vars);
 
   /* ── Update Header & HUD Mission Control ──────────────── */
   function updateHUD(doc) {
     if (!doc) return;
     const s = doc.stats || {};
-    const n = doc.nowTask || {};
+    const forecast = global.Forecast.calculate(doc);
+    const n = forecast.active && String(doc.nowTask?.id || '').toUpperCase() === String(forecast.active.taskId || '').toUpperCase()
+      ? doc.nowTask : {};
 
     /* Rail brand & crumbs */
-    const brandName = doc.title || 'VOIDFRONT';
+    const brandName = doc.title || 'ROADMAP';
     if ($('rail-brand-name')) $('rail-brand-name').textContent = brandName;
     if ($('crumb-project')) $('crumb-project').textContent = brandName;
 
     /* Updated timestamp */
-    if ($('header-updated') && doc.updated) {
-      $('header-updated').textContent = `Actualizado ${doc.updated}`;
-    }
+    if ($('header-updated')) $('header-updated').textContent = forecast.ageMinutes != null
+      ? t('updatedAgo').replace('{time}', global.Forecast.duration(forecast.ageMinutes)) : t('unknownUpdate');
 
     /* Metric Bar under Title */
-    if ($('m-version')) $('m-version').textContent = doc.version || '0.1';
-    if ($('m-phase')) $('m-phase').textContent = doc.phase || '11';
-    if ($('m-phase-total')) $('m-phase-total').textContent = s.phasesTotal || '14';
-    if ($('m-tasks-done')) $('m-tasks-done').textContent = s.done || '75';
-    if ($('m-tasks-total')) $('m-tasks-total').textContent = s.total || '92';
-    if ($('m-tests')) $('m-tests').textContent = doc.tests ? String(doc.tests) : '397';
-    if ($('m-e2e')) $('m-e2e').textContent = doc.e2e ? String(doc.e2e) : '37';
-    if ($('m-decisions')) $('m-decisions').textContent = doc.decisions ? String(doc.decisions) : '92';
-    if ($('m-lines')) $('m-lines').textContent = doc.linesCount ? String(doc.linesCount).replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '29.421';
-    if ($('m-commit')) $('m-commit').textContent = doc.lastCommit || '335e3ea';
-    if ($('m-commit-time')) $('m-commit-time').textContent = doc.lastCommitTime || 'hace 49 min';
+    const values = { 'm-version': doc.version, 'm-phase': doc.phase, 'm-phase-total': doc.phase ? s.phasesTotal : null, 'm-tasks-done': s.done, 'm-tasks-total': s.total, 'm-tests': doc.meta.tests, 'm-e2e': doc.meta.e2e, 'm-decisions': doc.meta.decisions, 'm-lines': doc.meta.lines, 'm-commit': doc.lastCommit, 'm-commit-time': doc.lastCommitTime };
+    Object.entries(values).forEach(([id, value]) => { if ($(id)) $(id).textContent = value === '' || value == null ? '—' : value; });
+    qa('.m-item').forEach(el => { el.hidden = [...el.querySelectorAll('[id]')].every(child => child.textContent === '—'); });
 
     /* ── Card 1: AHORA MISMO · EN CURSO ── */
-    if ($('now-id')) $('now-id').textContent = n.id || 'T109';
-    if ($('now-name')) $('now-name').textContent = n.name || 'Props del mundo';
-    if ($('now-context')) $('now-context').textContent = n.context || 'Fase 11 · Resto de assets · Arte procedural';
-    if ($('now-expected')) $('now-expected').textContent = n.expected || '01:15';
-    if ($('now-elapsed')) $('now-elapsed').textContent = n.elapsed || '49 min';
-    if ($('now-warn')) $('now-warn').textContent = n.status || 'tarda más de lo previsto';
+    const active = forecast.active;
+    if ($('now-id')) $('now-id').textContent = active?.taskId || n.id || '';
+    if ($('now-name')) $('now-name').textContent = active?.name || t('noTask');
+    if ($('now-context')) $('now-context').textContent = n.context || active?.release || t('markActive');
+    if ($('now-expected')) $('now-expected').textContent = n.expected || (active?.effort ? `${active.effort} h` : '—');
+    if ($('now-elapsed')) $('now-elapsed').textContent = global.Forecast.duration(forecast.elapsed);
+    const moved = forecast.initialEta != null && forecast.eta != null
+      ? Math.round((forecast.eta - forecast.initialEta) / 60000) : 0;
+    if ($('now-warn')) $('now-warn').textContent = forecast.overdue
+      ? `${t('delayed')}: ${global.Forecast.duration(forecast.delayMinutes)} · ${t('provisional')}`
+      : forecast.latestChange && moved > 0 ? `${t('etaExtended')} ${global.Forecast.duration(moved)}` : n.status || '';
+    if ($('now-eta')) $('now-eta').textContent = forecast.eta != null
+      ? `${global.Forecast.dateTime(forecast.eta)}${forecast.provisional ? ' · ' + t('provisional') : ''}` : t('noEstimate');
+    if ($('now-reason')) $('now-reason').textContent = forecast.latestChange?.reason || n.reason || '';
+    if ($('now-forecast-label')) $('now-forecast-label').textContent = forecast.latestChange ? t('revisedEta') : t('agentEta');
 
     if ($('now-fill')) {
       /* Calculate bar width */
-      let pct = 65;
-      if (n.expected && n.elapsed) {
-        const expMins = parseMinutes(n.expected);
-        const elapMins = parseMinutes(n.elapsed);
-        if (expMins > 0) pct = Math.min(100, Math.round((elapMins / expMins) * 100));
-      }
+      const pct = active?.progress || 0;
       $('now-fill').style.width = `${pct}%`;
     }
 
     /* ── Card 2: PROJECT & CADENCE ── */
-    if ($('phase-title')) $('phase-title').textContent = `${brandName} ${doc.version || '0.1'}`;
-    if ($('phase-pct')) $('phase-pct').textContent = `${s.pct || 82} %`;
-    if ($('phase-tasks')) $('phase-tasks').textContent = `${s.done || 75} de ${s.total || 92} tareas`;
-    if ($('phase-fill')) $('phase-fill').style.width = `${s.pct || 82}%`;
+    if ($('phase-title')) $('phase-title').textContent = `${brandName} ${doc.version}`;
+    if ($('phase-pct')) $('phase-pct').textContent = `${s.pct} %`;
+    if ($('phase-tasks')) $('phase-tasks').textContent = `${s.done} ${t('of')} ${s.total} ${t('tasks')}`;
+    if ($('phase-fill')) $('phase-fill').style.width = `${s.pct}%`;
 
-    if ($('phase-done-cnt')) $('phase-done-cnt').textContent = `${s.phasesDone || 10} de ${s.phasesTotal || 14}`;
-    if ($('phase-eta')) $('phase-eta').textContent = s.estimatedText || '27 sept, 12:31';
-    if ($('phase-pace')) $('phase-pace').textContent = s.cadenceText || '39,8 min por tarea';
-    if ($('phase-started')) $('phase-started').textContent = s.startedText || '25 sept, 17:17';
+    if ($('phase-done-cnt')) $('phase-done-cnt').textContent = `${s.phasesDone} ${t('of')} ${s.phasesTotal}`;
+    if ($('phase-eta')) $('phase-eta').textContent = forecast.projectEta != null
+      ? `${global.Forecast.dateTime(forecast.projectEta)} · ${t('calculated')}` : s.estimatedText || t('noEstimate');
+    if ($('phase-pace')) $('phase-pace').textContent = s.cadenceText || (s.cadenceMinutes != null ? `${s.cadenceMinutes} min ${t('perTask')}` : t('noEstimate'));
+    if ($('phase-started')) $('phase-started').textContent = global.Forecast.timestamp(doc.meta.started) != null
+      ? global.Forecast.dateTime(global.Forecast.timestamp(doc.meta.started)) : s.startedText || t('noDate');
+    const rangeText = forecast.projectRange
+      ? `${t('range')}: ${global.Forecast.dateTime(forecast.projectRange.early)} – ${global.Forecast.dateTime(forecast.projectRange.late)} · ${t('confidence')} ${t(forecast.projectRange.confidence === 'baja' ? 'low' : forecast.projectRange.confidence === 'media' ? 'medium' : 'high')}. ` : '';
+    if ($('forecast-note')) $('forecast-note').textContent = rangeText + (forecast.unknown
+      ? `${forecast.unknown} ${t('missingEffort')}`
+      : forecast.provisional ? t('reviewEta')
+      : forecast.samples
+        ? t('calibrated', {count:forecast.samples,capacity:forecast.capacity})
+        : t('basedOnEffort'));
+    const history = $('estimate-history');
+    if (history) {
+      history.replaceChildren();
+      if (forecast.changes.length) forecast.changes.slice(-4).reverse().forEach(change => {
+        const line = document.createElement('div');
+        line.className = 'estimate-event';
+        line.textContent = `${global.Forecast.dateTime(change.time)} · ${change.taskId}: ${change.remaining} ${t('remaining')}${change.reason ? ' · ' + change.reason : ''}`;
+        history.appendChild(line);
+      });
+      else history.textContent = t('noRevisions');
+    }
 
     /* ── Card 3: ÚLTIMOS CAMBIOS ── */
     renderRecentChanges(doc);
@@ -3421,8 +3289,8 @@ body {
     const list = $('changes-list');
     if (!list) return;
 
+    list.innerHTML = '';
     if (doc.recentChanges && doc.recentChanges.length > 0) {
-      list.innerHTML = '';
       doc.recentChanges.slice(0, 7).forEach(c => {
         const row = document.createElement('div');
         row.className = 'change-row';
@@ -3432,31 +3300,22 @@ body {
         if (c.diff) {
           const parts = c.diff.split(/\s+/);
           parts.forEach(p => {
-            if (p.startsWith('+')) diffHtml += `<span class="diff-add">${p}</span> `;
-            else if (p.startsWith('-')) diffHtml += `<span class="diff-sub">${p}</span> `;
+          if (/^\+\d+$/.test(p)) diffHtml += `<span class="diff-add">${p}</span> `;
+            else if (/^-\d+$/.test(p)) diffHtml += `<span class="diff-sub">${p}</span> `;
           });
         }
 
         row.innerHTML = `
-          <span class="change-time">${c.time || '12:00'}</span>
-          <span class="change-icon ${iconCls}">${c.icon || '✓'}</span>
+          <span class="change-time">${escapeHtml(c.time || '')}</span>
+          <span class="change-icon ${iconCls}">${escapeHtml(c.icon || '')}</span>
           <span class="change-text">${escapeHtml(c.text)}</span>
           <span class="change-diff">${diffHtml}</span>
         `;
         list.appendChild(row);
       });
+    } else {
+      list.textContent = t('noChanges');
     }
-  }
-
-  function parseMinutes(str) {
-    if (!str) return 0;
-    const m = /(\d+)\s*(?:m|min)/i.exec(str);
-    if (m) return parseInt(m[1], 10);
-    const hm = /(\d+):(\d+)/.exec(str);
-    if (hm) return parseInt(hm[1], 10) * 60 + parseInt(hm[2], 10);
-    const h = /(\d+)\s*h/i.exec(str);
-    if (h) return parseInt(h[1], 10) * 60;
-    return 60;
   }
 
   function escapeHtml(s) {
@@ -3466,6 +3325,9 @@ body {
   /* ── View Navigation ──────────────────────────────────── */
   function setView(view) {
     _view = view;
+    $('app').dataset.view = view;
+    $('page-title').dataset.i18n = view === 'board' ? 'versionsTitle' : view === 'log' ? 'notes' : 'progress';
+    global.UI.apply();
 
     qa('.rail__btn').forEach(btn => {
       btn.classList.toggle('rail__btn--active', btn.dataset.view === view);
@@ -3482,8 +3344,8 @@ body {
       main.innerHTML = `
         <div class="empty-state">
           <div class="empty-state__icon">📄</div>
-          <p>Selecciona tu <strong>ROADMAP.md</strong> para comenzar la visualización</p>
-          <button class="btn-pick" id="btn-pick-empty" style="margin-top: 10px; height: 32px; padding: 0 16px;">📂 Abrir ROADMAP.md</button>
+          <p>${t('choose')}</p>
+          <button class="btn-pick" id="btn-pick-empty" style="margin-top: 10px; height: 32px; padding: 0 16px;">${t('pick')}</button>
         </div>
       `;
       const emptyPick = $('btn-pick-empty');
@@ -3508,10 +3370,21 @@ body {
     if (!text) return;
     try {
       _doc = global.Roadmap.parse(text);
+      _source = e.detail.source || 'manual';
+      $('app').classList.remove('awaiting-roadmap');
+      $('app').classList.add('has-roadmap');
+      const panel = q('.hud-panel');
+      if (panel) {
+        panel.classList.remove('hud-panel--updated');
+        void panel.offsetWidth;
+        panel.classList.add('hud-panel--updated');
+      }
       updateHUD(_doc);
       renderCurrentView();
     } catch (err) {
       console.error('[App] Error parsing ROADMAP.md', err);
+      const main = $('main-view');
+      if (main) main.textContent = `No se pudo leer ROADMAP.md: ${err.message}`;
     }
   });
 
@@ -3519,9 +3392,32 @@ body {
     const name = e.detail && e.detail.name;
     if ($('file-name') && name) $('file-name').textContent = name;
   });
+  document.addEventListener('roadmap:connection', e => {
+    const state = e.detail?.state || 'offline';
+    const badge = $('live-indicator');
+    if (badge) {
+      badge.dataset.state = state;
+      $('connection-text').textContent = state === 'live' ? t('connected') : state === 'connecting' ? t('connecting') : t('disconnected');
+    }
+  });
+  document.addEventListener('roadmap:no-live', () => {
+    const badge = $('live-indicator');
+    if (badge) { badge.dataset.state = 'snapshot'; $('connection-text').textContent = t('snapshot'); }
+  });
+  document.addEventListener('roadmap:preferences', () => {
+    $('page-title').dataset.i18n = _view === 'board' ? 'versionsTitle' : _view === 'log' ? 'notes' : 'progress';
+    global.UI.apply();
+    if (_doc) { updateHUD(_doc); renderCurrentView(); }
+    else renderCurrentView();
+    const badge = $('live-indicator');
+    if (badge) $('connection-text').textContent = badge.dataset.state === 'live' ? t('connected') : badge.dataset.state === 'connecting' ? t('connecting') : badge.dataset.state === 'snapshot' ? t('snapshot') : t('disconnected');
+  });
 
   /* ── Initialize ───────────────────────────────────────── */
   function init() {
+    global.UI.apply();
+    $('app').dataset.view = _view;
+    if (!$('app').classList.contains('has-roadmap')) $('app').classList.add('awaiting-roadmap');
     /* Rail Nav Buttons */
     qa('.rail__btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -3532,13 +3428,21 @@ body {
     /* Open file button */
     const pickBtn = $('btn-pick');
     if (pickBtn) pickBtn.addEventListener('click', () => global.Watcher.pickFile());
+    $('language-select')?.addEventListener('change', e => global.UI.setLanguage(e.target.value));
+    $('theme-toggle')?.addEventListener('click', () => global.UI.setTheme(global.UI.theme === 'dark' ? 'light' : 'dark'));
 
     /* Setup drag & drop on the whole body */
     global.Watcher.setupDragDrop(document.body);
     global.Watcher.setupPaste();
+    setInterval(() => { if (_doc) updateHUD(_doc); global.Timeline?.tickNow(); }, 15000);
 
     /* Try auto-loading local ROADMAP.md if served over http/https */
     if (location.protocol === 'http:' || location.protocol === 'https:') {
+      if (location.pathname === '/' && location.hostname === '127.0.0.1') {
+        global.Watcher.setupSSE('/sse');
+        renderCurrentView();
+        return;
+      }
       fetch('../ROADMAP.md')
         .then(r => r.ok ? r.text() : Promise.reject())
         .then(text => global.Watcher.inject(text, 'ROADMAP.md'))

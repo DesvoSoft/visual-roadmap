@@ -1,7 +1,7 @@
 /* server.js — SSE server for live ROADMAP.md updates
    Used by  visual-roadmap serve  or  require('./server.js').serve()
    
-   Viewer URL: open index.html?sse=http://localhost:3579/sse
+   Viewer URL: http://127.0.0.1:3579/
    
    Protocol:
    - GET /sse        → text/event-stream with "roadmap" events
@@ -75,17 +75,22 @@ function serve({ file, port = 3579 } = {}) {
   /* ── HTTP server ────────────────────────────────────── */
 
   const server = http.createServer((req, res) => {
-    /* CORS */
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    if (req.method === 'OPTIONS') {
-      res.writeHead(204);
+    const allowedOrigins = new Set([`http://127.0.0.1:${port}`, `http://localhost:${port}`]);
+    if ((req.headers.origin && !allowedOrigins.has(req.headers.origin)) ||
+        (req.headers.host && !new Set([`127.0.0.1:${port}`, `localhost:${port}`]).has(req.headers.host))) {
+      res.writeHead(403);
       res.end();
       return;
     }
+    if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
     const url = new URL(req.url, `http://localhost:${port}`);
+
+    if (url.pathname === '/' || url.pathname === '/roadmap.html') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+      fs.createReadStream(path.join(__dirname, 'dist', 'roadmap.html')).pipe(res);
+      return;
+    }
 
     /* SSE endpoint */
     if (url.pathname === '/sse') {
@@ -151,10 +156,9 @@ function serve({ file, port = 3579 } = {}) {
     console.log('');
     console.log(`\x1b[32m  ✓\x1b[0m  Watching: \x1b[1m${file}\x1b[0m`);
     console.log(`\x1b[32m  ✓\x1b[0m  SSE at:   \x1b[1m${sseUrl}\x1b[0m`);
+    console.log(`\x1b[32m  ✓\x1b[0m  Viewer:   \x1b[1mhttp://127.0.0.1:${port}/\x1b[0m`);
     console.log('');
-    console.log('  Open the viewer and append to the URL:');
-    console.log(`  \x1b[2m?sse=${encodeURIComponent(sseUrl)}\x1b[0m`);
-    console.log('');
+    console.log('  Open the viewer URL above; updates connect automatically.');
     console.log('  \x1b[2mCtrl+C to stop\x1b[0m');
     console.log('');
   });

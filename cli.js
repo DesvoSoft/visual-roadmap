@@ -52,6 +52,8 @@ const VIEWER_FILES = [
   'tokens.css',
   'viewer.css',
   'md.js',
+  'ui.js',
+  'forecast.js',
   'watcher.js',
   'board.js',
   'timeline.js',
@@ -84,7 +86,9 @@ function copyViewer(destDir) {
 function cmdInit() {
   const projectName = FLAGS.project || path.basename(CWD);
   const owner       = FLAGS.owner   || 'you';
-  const today       = new Date().toISOString().slice(0, 10);
+  const localNow    = new Date();
+  const now         = new Date(localNow.getTime() - localNow.getTimezoneOffset() * 60000)
+    .toISOString().slice(0, 16).replace('T', ' ');
   const viewerDir   = path.join(CWD, FLAGS['viewer-dir'] || 'visual-roadmap');
   const roadmapFile = path.join(CWD, FLAGS.file || 'ROADMAP.md');
 
@@ -101,7 +105,7 @@ function cmdInit() {
     const seed = fs.readFileSync(path.join(SELF, 'ROADMAP.seed.md'), 'utf8')
       .replace(/\[PROJECT_NAME\]/g, projectName)
       .replace(/\[OWNER\]/g, owner)
-      .replace(/\[TODAY\]/g, today);
+      .replace(/\[NOW\]/g, now);
     fs.writeFileSync(roadmapFile, seed);
     ok(`Created  → ${path.relative(CWD, roadmapFile)}`);
   }
@@ -130,9 +134,8 @@ function cmdInit() {
 
   log('');
   log(bold('  ¡Listo para usar!'));
-  log(`  1. Haz doble clic en ${bold(path.relative(CWD, standaloneDest))} para abrir el visor en tu navegador.`);
-  log(`  2. Haz clic en ${bold('📂 Abrir')} y selecciona ${bold(path.relative(CWD, roadmapFile))}.`);
-  log(`  3. Tu agente de IA actualizará ${bold('ROADMAP.md')} en silencio y el HUD reflejará el progreso en vivo.`);
+  log(`  Ejecuta ${bold('visual-roadmap live')} para ver ${bold(path.relative(CWD, roadmapFile))} en vivo.`);
+  log('  El agente actualiza tareas y estimaciones cuando cambian, sin escrituras periódicas.');
   log('');
 }
 
@@ -151,6 +154,7 @@ function cmdServe() {
 }
 
 function cmdSkill() {
+  // Skill discovery remains available for agents using the portable viewer.
   const p = path.join(SELF, 'SKILL.md');
   log(p);
   log('');
@@ -162,25 +166,30 @@ function cmdSkill() {
   log('');
 }
 
-function cmdOpen() {
-  const viewerDir = FLAGS['viewer-dir'] || 'visual-roadmap';
-  const htmlPath  = path.join(CWD, viewerDir, 'index.html');
-
-  if (!fs.existsSync(htmlPath)) {
-    warn('Viewer not found locally. Opening the hosted version instead…');
-    openUrl('https://desvosoft.github.io/visual-roadmap');
+function cmdLive() {
+  const port = parseInt(FLAGS.port || '3579', 10);
+  const file = path.resolve(CWD, FLAGS.file || 'ROADMAP.md');
+  if (!fs.existsSync(file)) {
+    err(`File not found: ${file}`);
+    process.exitCode = 1;
     return;
   }
+  const server = require('./server.js').serve({ file, port });
+  server.once('listening', () => openUrl(`http://127.0.0.1:${port}/`));
+}
 
+function cmdOpen() {
+  const viewerDir = FLAGS['viewer-dir'] || 'visual-roadmap';
+  const modular = path.join(CWD, viewerDir, 'index.html');
+  const portable = path.join(CWD, 'roadmap.html');
+  const htmlPath = fs.existsSync(modular) ? modular : fs.existsSync(portable) ? portable : path.join(SELF, 'dist', 'roadmap.html');
   openUrl('file://' + htmlPath.replace(/\\/g, '/'));
 }
 
 function openUrl(url) {
-  const cmd = process.platform === 'win32' ? 'start'
-    : process.platform === 'darwin' ? 'open'
-    : 'xdg-open';
   try {
-    execSync(`${cmd} "${url}"`, { stdio: 'ignore' });
+    if (process.platform === 'win32') execSync(`cmd.exe /d /c start "" "${url}"`, { stdio: 'ignore' });
+    else execSync(`${process.platform === 'darwin' ? 'open' : 'xdg-open'} "${url}"`, { stdio: 'ignore' });
     ok(`Opening: ${url}`);
   } catch {
     info(`Open manually: ${url}`);
@@ -200,6 +209,7 @@ function cmdHelp() {
   log('');
   log('  ' + bold('init') + '           Bootstrap ROADMAP.md + viewer in the current directory');
   log('  ' + bold('serve') + '          Start SSE server for live updates without File System API');
+  log('  ' + bold('live') + '           Start server and open the live viewer');
   log('  ' + bold('open') + '           Open the viewer in the default browser');
   log('  ' + bold('skill') + '          Print the SKILL.md path for AI agent configuration');
   log('');
@@ -218,11 +228,11 @@ function cmdHelp() {
   log('');
   log(bold('  Examples:'));
   log('');
-  log('    npx visual-roadmap init --project "Mi App" --owner johangdev');
-  log('    npx visual-roadmap serve --port 3579');
-  log('    npx visual-roadmap open');
+  log('    visual-roadmap init --project "My App"');
+  log('    visual-roadmap live');
+  log('    visual-roadmap serve --file ROADMAP.md --port 3579');
+  log('    visual-roadmap open');
   log('');
-  log(dim('  Viewer hosted: https://desvosoft.github.io/visual-roadmap'));
   log(dim('  Skill:         https://raw.githubusercontent.com/DesvoSoft/visual-roadmap/main/SKILL.md'));
   log('');
 }
@@ -232,6 +242,7 @@ function cmdHelp() {
 const CMDS = {
   init:    cmdInit,
   serve:   cmdServe,
+  live:    cmdLive,
   server:  cmdServe,
   skill:   cmdSkill,
   open:    cmdOpen,

@@ -38,7 +38,7 @@
       container.appendChild(
         h('div', { class: 'empty-state' },
           h('div', { class: 'empty-state__icon' }, '📓'),
-          h('p', {}, 'El log está vacío. Agrega entradas al ## Log del ROADMAP.md.')
+          h('p', {}, global.UI.t('logEmpty'))
         )
       );
       return;
@@ -47,7 +47,7 @@
     /* Agrupar por fecha */
     const groups = new Map();
     for (const entry of log) {
-      const date = extractDate(entry.text) || 'Sin fecha';
+      const date = extractDate(entry.text) || global.UI.t('noDate');
       if (!groups.has(date)) groups.set(date, []);
       groups.get(date).push(entry);
     }
@@ -60,9 +60,9 @@
 
     container.appendChild(
       h('div', { class: 'log-stats' },
-        h('span', { class: 'log-stat log-stat--done' }, `✓ ${done} completados`),
-        pending    ? h('span', { class: 'log-stat log-stat--pending' },   `◯ ${pending} pendientes`)   : null,
-        cancelled  ? h('span', { class: 'log-stat log-stat--cancelled' }, `✗ ${cancelled} cancelados`) : null
+        h('span', { class: 'log-stat log-stat--done' }, `✓ ${done} ${global.UI.t('completed')}`),
+        pending    ? h('span', { class: 'log-stat log-stat--pending' },   `◯ ${pending} ${global.UI.t('pending')}`)   : null,
+        cancelled  ? h('span', { class: 'log-stat log-stat--cancelled' }, `✗ ${cancelled} ${global.UI.t('cancelled')}`) : null
       )
     );
 
@@ -73,9 +73,9 @@
       const entries = groups.get(date);
 
       let label = date;
-      if (date !== 'Sin fecha') {
+      if (date !== global.UI.t('noDate')) {
         const d = R.toDate(date);
-        if (d) label = R.fmtLong(d);
+        if (d) label = new Intl.DateTimeFormat(global.UI.language,{day:'numeric',month:'short',year:'numeric'}).format(d);
       }
 
       const group = h('div', { class: 'log-group' },

@@ -32,6 +32,9 @@
       detail: { name }
     }));
   }
+  function connection(state) {
+    document.dispatchEvent(new CustomEvent('roadmap:connection', { detail: { state } }));
+  }
 
   /* ── File System Access API ─────────────────────────── */
 
@@ -46,6 +49,7 @@
       }
     } catch (e) {
       console.warn('[Watcher] poll error', e);
+      connection('offline');
     }
   }
 
@@ -76,6 +80,7 @@
       const text = await file.text();
       dispatchFileOpen(handle.name);
       dispatch(text, 'fsa');
+      connection('live');
       _startPoll();
       return true;
     } catch (e) {
@@ -110,14 +115,19 @@
 
   function setupSSE(url) {
     if (_sse) { _sse.close(); _sse = null; }
+    connection('connecting');
     _sse = new EventSource(url);
+    _sse.addEventListener('open', () => connection('live'));
     _sse.addEventListener('roadmap', e => {
-      dispatchFileOpen('roadmap (sse)');
-      dispatch(e.data, 'sse');
+      try {
+        const content = JSON.parse(e.data);
+        dispatchFileOpen('ROADMAP.md');
+        dispatch(content, 'sse');
+        connection('live');
+      } catch (error) { console.error('[Watcher] invalid SSE content', error); }
     });
     _sse.addEventListener('error', () => {
-      console.warn('[Watcher] SSE error, closing');
-      _sse.close(); _sse = null;
+      connection('connecting');
     });
     return _sse;
   }

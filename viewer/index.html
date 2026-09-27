@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visual Roadmap · Seguimiento del Progreso</title>
-  <meta name="description" content="Visor en vivo de hoja de ruta y avance para proyectos y agentes autónomos">
+  <title>Visual Roadmap · Progress Tracker</title>
+  <meta name="description" content="Live roadmap and progress tracker for independent coding agents">
 
   <!-- Google Fonts: Space/Sci-Fi + UI + Monospace -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,10 +16,10 @@
 </head>
 <body>
 
-<div id="app" class="app-layout">
+<div id="app" class="app-layout awaiting-roadmap">
 
-  <!-- ── 1. Left Sidebar Rail (RSI / Voidfront style) ──── -->
-  <aside class="rail" id="sidebar-rail" aria-label="Navegación principal">
+  <!-- ── 1. Left Sidebar Rail ──── -->
+  <aside class="rail" id="sidebar-rail" aria-label="Primary navigation">
     <div class="rail__top-accent"></div>
 
     <div class="rail__brand" title="Visual Roadmap">
@@ -30,12 +30,12 @@
           <polyline points="2 12 12 17 22 12"></polyline>
         </svg>
       </div>
-      <span class="rail__brand-text" id="rail-brand-name">VOIDFRONT</span>
+      <span class="rail__brand-text" id="rail-brand-name">ROADMAP</span>
     </div>
 
     <nav class="rail__nav">
-      <!-- Seguimiento (Timeline / Progress Tracker) -->
-      <button class="rail__btn rail__btn--active" data-view="timeline" id="btn-nav-timeline" title="Seguimiento del progreso">
+      <!-- Seguimiento -->
+      <button class="rail__btn rail__btn--active" data-view="timeline" id="btn-nav-timeline" title="Progress tracker">
         <div class="rail__btn-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="4" y1="6" x2="20" y2="6"></line>
@@ -44,11 +44,11 @@
             <polyline points="15 15 18 18 15 21"></polyline>
           </svg>
         </div>
-        <span class="rail__btn-label">SEGUIMIENTO</span>
+        <span class="rail__btn-label" data-i18n="tracking">TRACKING</span>
       </button>
 
-      <!-- Versiones (Kanban Board / Releases) -->
-      <button class="rail__btn" data-view="board" id="btn-nav-board" title="Versiones y entregables">
+      <!-- Versions -->
+      <button class="rail__btn" data-view="board" id="btn-nav-board" title="Versions and deliverables">
         <div class="rail__btn-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="5" height="18" rx="1"></rect>
@@ -56,13 +56,13 @@
             <rect x="17" y="3" width="5" height="15" rx="1"></rect>
           </svg>
         </div>
-        <span class="rail__btn-label">VERSIONES</span>
+        <span class="rail__btn-label" data-i18n="versions">VERSIONS</span>
       </button>
     </nav>
 
     <!-- Bottom Rail item (Notas / Log) -->
     <div class="rail__bottom">
-      <button class="rail__btn" data-view="log" id="btn-nav-log" title="Notas y decisiones">
+      <button class="rail__btn" data-view="log" id="btn-nav-log" title="Notes and decisions">
         <div class="rail__btn-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -71,7 +71,7 @@
             <line x1="16" y1="17" x2="8" y2="17"></line>
           </svg>
         </div>
-        <span class="rail__btn-label">NOTAS</span>
+        <span class="rail__btn-label" data-i18n="notes">NOTES</span>
       </button>
     </div>
   </aside>
@@ -83,43 +83,40 @@
     <header class="hud-header">
       <div class="hud-header__top">
         <div class="hud-header__crumbs">
-          <span class="hud-header__crumb-project" id="crumb-project">VOIDFRONT</span>
+          <span class="hud-header__crumb-project" id="crumb-project">ROADMAP</span>
           <span class="hud-header__crumb-sep">·</span>
-          <span class="hud-header__crumb-page">HOJA DE RUTA</span>
-          <span class="badge-live" id="live-indicator">
-            <span class="badge-live__dot"></span>
-            EN VIVO
-          </span>
+          <span class="hud-header__crumb-page" data-i18n="roadmap">ROADMAP</span>
+          <span class="connection-status" id="live-indicator" aria-live="polite"><span class="connection-status__dot"></span><span id="connection-text">Disconnected</span></span>
         </div>
 
         <div class="hud-header__meta">
-          <span class="hud-header__updated" id="header-updated">Actualizado hace 48 min</span>
-          <span class="hud-header__filename" id="file-name" title="Archivo activo">ROADMAP.md</span>
-          <button class="btn-pick" id="btn-pick" title="Abrir archivo ROADMAP.md local">
-            📂 Abrir
-          </button>
+          <span class="hud-header__updated" id="header-updated"></span>
+          <span class="hud-header__filename" id="file-name" title="Archivo activo"></span>
+          <select id="language-select" class="preference-select" aria-label="Interface language"><option value="en">EN</option><option value="es">ES</option></select>
+          <button id="theme-toggle" class="preference-button" type="button" aria-label="Toggle color theme">☀</button>
+          <button class="btn-pick" id="btn-pick" title="Open local ROADMAP.md"><span data-i18n="open">Open</span></button>
         </div>
       </div>
 
       <div class="hud-header__title-row">
-        <h1 class="hud-header__title" id="page-title">SEGUIMIENTO DEL PROGRESO</h1>
+        <h1 class="hud-header__title" id="page-title" data-i18n="progress">PROGRESS TRACKER</h1>
       </div>
 
       <!-- Quick Metrics Bar -->
       <div class="hud-metrics-bar">
-        <span class="m-item">Versión en desarrollo <strong id="m-version">0.1</strong></span>
-        <span class="m-item">Fase <strong id="m-phase">11</strong> de <span id="m-phase-total">14</span></span>
-        <span class="m-item"><strong id="m-tasks-done">75</strong>/<span id="m-tasks-total">92</span> tareas</span>
-        <span class="m-item"><strong id="m-tests">397</strong> tests</span>
-        <span class="m-item"><strong id="m-e2e">37</strong> e2e</span>
-        <span class="m-item"><strong id="m-decisions">92</strong> decisiones</span>
-        <span class="m-item"><strong id="m-lines">29.421</strong> líneas</span>
-        <span class="m-item">último commit <code id="m-commit">335e3ea</code> <span id="m-commit-time">hace 49 min</span></span>
+        <span class="m-item"><span data-i18n="version">Version</span> <strong id="m-version"></strong></span>
+        <span class="m-item"><span data-i18n="phase">Phase</span> <strong id="m-phase"></strong> <span data-i18n="of">of</span> <span id="m-phase-total"></span></span>
+        <span class="m-item"><strong id="m-tasks-done"></strong>/<span id="m-tasks-total"></span> <span data-i18n="tasks">tasks</span></span>
+        <span class="m-item"><strong id="m-tests"></strong> tests</span>
+        <span class="m-item"><strong id="m-e2e"></strong> e2e</span>
+        <span class="m-item"><strong id="m-decisions"></strong> <span data-i18n="decisions">decisions</span></span>
+        <span class="m-item"><strong id="m-lines"></strong> <span data-i18n="lines">lines</span></span>
+        <span class="m-item"><span data-i18n="lastCommit">last commit</span> <code id="m-commit"></code> <span id="m-commit-time"></span></span>
       </div>
     </header>
 
     <!-- ── 3. Mission Control HUD (3-Column Card) ──────── -->
-    <section class="hud-panel" aria-label="Centro de control en vivo">
+    <section class="hud-panel" aria-label="Progress overview">
       <div class="hud-panel__corner hud-panel__corner--tl"></div>
       <div class="hud-panel__corner hud-panel__corner--tr"></div>
       <div class="hud-panel__corner hud-panel__corner--bl"></div>
@@ -127,99 +124,68 @@
 
       <!-- Col 1: AHORA MISMO · EN CURSO -->
       <div class="hud-card hud-card--now">
-        <div class="hud-card__head-label">AHORA MISMO · EN CURSO</div>
+        <div class="hud-card__head-label" data-i18n="now">CURRENT TASK</div>
         <div class="hud-card__now-title">
-          <span class="hud-card__now-id" id="now-id">T109</span>
-          <span class="hud-card__now-name" id="now-name">Props del mundo</span>
+          <span class="hud-card__now-id" id="now-id"></span>
+          <span class="hud-card__now-name" id="now-name"></span>
         </div>
-        <div class="hud-card__now-context" id="now-context">Fase 11 · Resto de assets · Arte procedural</div>
+        <div class="hud-card__now-context" id="now-context"></div>
 
         <div class="hud-card__now-times">
-          <span>Esperado: <strong id="now-expected">01:15</strong></span>
-          <span>Lleva <strong id="now-elapsed">49 min</strong></span>
-          <span class="hud-card__now-warn" id="now-warn">tarda más de lo previsto</span>
+          <span><span data-i18n="expected">Expected</span>: <strong id="now-expected"></strong></span>
+          <span><span data-i18n="elapsed">Elapsed</span>: <strong id="now-elapsed"></strong></span>
+          <span class="hud-card__now-warn" id="now-warn"></span>
         </div>
+        <div class="hud-card__now-times"><span id="now-forecast-label">Agent ETA</span>: <strong id="now-eta"></strong></div>
+        <div class="hud-card__now-context" id="now-reason"></div>
 
         <div class="hud-card__now-track">
-          <div class="hud-card__now-fill" id="now-fill" style="width: 65%;"></div>
+          <div class="hud-card__now-fill" id="now-fill" style="width: 0;"></div>
         </div>
       </div>
 
       <!-- Col 2: PROJECT & CADENCE ESTIMATES -->
       <div class="hud-card hud-card--stats">
-        <div class="hud-card__phase-title" id="phase-title">VOIDFRONT 0.1</div>
+        <div class="hud-card__phase-title" id="phase-title"></div>
         <div class="hud-card__pct-row">
-          <span class="hud-card__pct" id="phase-pct">82 %</span>
-          <span class="hud-card__tasks-count" id="phase-tasks">75 de 92 tareas</span>
+          <span class="hud-card__pct" id="phase-pct"></span>
+          <span class="hud-card__tasks-count" id="phase-tasks"></span>
         </div>
 
         <div class="hud-card__phase-track">
-          <div class="hud-card__phase-fill" id="phase-fill" style="width: 82%;"></div>
+          <div class="hud-card__phase-fill" id="phase-fill" style="width: 0;"></div>
         </div>
 
         <div class="hud-card__meta-list">
           <div class="hud-card__meta-row">
-            <span class="hud-card__meta-label">Fases completadas</span>
-            <strong class="hud-card__meta-val" id="phase-done-cnt">10 de 14</strong>
+            <span class="hud-card__meta-label" data-i18n="phasesDone">Phases completed</span>
+            <strong class="hud-card__meta-val" id="phase-done-cnt"></strong>
           </div>
           <div class="hud-card__meta-row">
-            <span class="hud-card__meta-label">0.1 estimada</span>
-            <strong class="hud-card__meta-val" id="phase-eta">27 sept, 12:31</strong>
+            <span class="hud-card__meta-label" data-i18n="calculatedDelivery">Projected delivery</span>
+            <strong class="hud-card__meta-val" id="phase-eta"></strong>
           </div>
           <div class="hud-card__meta-row">
-            <span class="hud-card__meta-label">Ritmo real</span>
-            <strong class="hud-card__meta-val" id="phase-pace">39,8 min por tarea</strong>
+            <span class="hud-card__meta-label" data-i18n="pace">Observed pace</span>
+            <strong class="hud-card__meta-val" id="phase-pace"></strong>
           </div>
           <div class="hud-card__meta-row">
-            <span class="hud-card__meta-label">En desarrollo desde</span>
-            <strong class="hud-card__meta-val" id="phase-started">25 sept, 17:17</strong>
+            <span class="hud-card__meta-label" data-i18n="since">In development since</span>
+            <strong class="hud-card__meta-val" id="phase-started"></strong>
           </div>
         </div>
       </div>
 
       <!-- Col 3: ÚLTIMOS CAMBIOS -->
       <div class="hud-card hud-card--changes">
-        <div class="hud-card__head-label">ÚLTIMOS CAMBIOS</div>
-        <div class="hud-card__changes-list" id="changes-list">
-          <div class="change-row">
-            <span class="change-time">01:15</span>
-            <span class="change-icon change-icon--ok">✓</span>
-            <span class="change-text">Cairn props y collision meshes</span>
-            <span class="change-diff"><span class="diff-add">+1163</span> <span class="diff-sub">-251</span></span>
-          </div>
-          <div class="change-row">
-            <span class="change-time">23:55</span>
-            <span class="change-icon change-icon--file">📄</span>
-            <span class="change-text">tools: pipeline de exportación</span>
-            <span class="change-diff"><span class="diff-add">+29</span> <span class="diff-sub">-2</span></span>
-          </div>
-          <div class="change-row">
-            <span class="change-time">23:52</span>
-            <span class="change-icon change-icon--file">📄</span>
-            <span class="change-text">roadmap: sync de entregables</span>
-            <span class="change-diff"><span class="diff-add">+5</span> <span class="diff-sub">-0</span></span>
-          </div>
-          <div class="change-row">
-            <span class="change-time">23:51</span>
-            <span class="change-icon change-icon--ok">✓</span>
-            <span class="change-text">Kit de iluminación volumétrica</span>
-            <span class="change-diff"><span class="diff-add">+1175</span> <span class="diff-sub">-42</span></span>
-          </div>
-          <div class="change-row">
-            <span class="change-time">22:44</span>
-            <span class="change-icon change-icon--file">📄</span>
-            <span class="change-text">roadmap: estimación de esfuerzo</span>
-            <span class="change-diff"><span class="diff-add">+4</span> <span class="diff-sub">-0</span></span>
-          </div>
-          <div class="change-row">
-            <span class="change-time">22:43</span>
-            <span class="change-icon change-icon--ok">✓</span>
-            <span class="change-text">Asteroides procedurales LODs</span>
-            <span class="change-diff"><span class="diff-add">+751</span> <span class="diff-sub">-84</span></span>
-          </div>
-        </div>
+        <div class="hud-card__head-label" data-i18n="recentChanges">RECENT CHANGES</div>
+        <div class="hud-card__changes-list" id="changes-list"></div>
+        <div class="hud-card__head-label" style="margin-top: 12px;" data-i18n="etaChanges">ETA CHANGES</div>
+        <div class="hud-card__changes-list" id="estimate-history"></div>
       </div>
     </section>
+
+    <div class="forecast-note" id="forecast-note"></div>
 
     <!-- ── 4. Main Viewport (Timeline / Deliverables / Board) ─ -->
     <main id="main-view" class="main-viewport" role="main">
@@ -232,6 +198,8 @@
 
 <!-- Scripts -->
 <script src="md.js"></script>
+<script src="ui.js"></script>
+<script src="forecast.js"></script>
 <script src="watcher.js"></script>
 <script src="timeline.js"></script>
 <script src="board.js"></script>

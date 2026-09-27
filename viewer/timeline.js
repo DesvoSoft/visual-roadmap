@@ -1,427 +1,173 @@
-/* timeline.js — Deliverables Timeline / Progress Tracker view
-   Faithfully reproduces the Voidfront / RSI Progress Tracker style:
-   - Collapsible Phase rows with progress count (e.g. ⌵ FASE 11 · RESTO DE ASSETS  9/12)
-   - Composite phase summary bar (cyan done + orange striped active + outlined planned)
-   - Done tasks: solid cyan bar with real duration (e.g. Asteroides procedurales · 48 min)
-   - In-progress task: diagonal striped orange bar (e.g. Props del mundo · desde 01:15)
-   - Planned tasks: dark outlined box with projected start time (e.g. est. 02:35)
-   - Vertical glowing orange "AHORA" guideline
-   - Bottom legend: Hecho, En curso, Comprometido (estimado), Provisional (estimado), Ahora
-*/
-
+/* Chronogram from declared dates and provisional effort projections. */
 (function (global) {
   'use strict';
-
-  const R = global.Roadmap;
-
-  let currentZoom = '1d';   /* '6h' | '1d' | '3d' | '1w' | '1m' */
-  let searchQuery = '';
-
-  function h(tag, attrs, ...children) {
-    const el = document.createElement(tag);
-    for (const [k, v] of Object.entries(attrs || {})) {
-      if (k === 'class') el.className = v;
-      else if (k === 'style') el.style.cssText = v;
-      else if (k.startsWith('data-')) el.dataset[k.slice(5)] = v;
-      else el.setAttribute(k, v);
-    }
-    for (const c of children.flat()) {
-      if (c == null) continue;
-      el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
-    }
-    return el;
+  const DAY = 86400000;
+  const scales = { '6h': [6*3600000,3600000], '1d': [DAY,2*3600000], '3d': [3*DAY,12*3600000], '1w': [7*DAY,DAY], '1m': [30*DAY,5*DAY] };
+  let zoom = '1d', offset = 0, search = '';
+  let liveRange = null;
+  const expanded = new Set();
+  const t = key => global.UI.t(key);
+  let initialized = false;
+  function el(tag, cls, label) { const n = document.createElement(tag); n.className = cls; if (label != null) n.textContent = label; return n; }
+  function time(raw, end) {
+    if (!raw || typeof raw !== 'string') return null;
+    const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw + (end ? 'T23:59:59' : 'T00:00:00') : raw.replace(' ','T'));
+    return isNaN(d.getTime()) ? null : d.getTime();
   }
-
   function render(doc, container) {
-    container.innerHTML = '';
-
-    if (!doc || !doc.releases || !doc.releases.length) {
-      container.appendChild(h('div', { class: 'empty-state' },
-        h('div', { class: 'empty-state__icon' }, '📅'),
-        h('p', {}, 'No hay fases ni tareas en el ROADMAP.md.')
-      ));
-      return;
+    container.replaceChildren();
+    if (!doc?.releases?.length) { container.appendChild(el('div','empty-state',t('noPhases'))); return; }
+    const forecast = global.Forecast.calculate(doc);
+    if (!initialized) {
+      const current = doc.releases.find(r => r.items.some(it => it.status === 'active'));
+      if (current) expanded.add(current.id);
+      else doc.releases.slice(0, 2).forEach(r => expanded.add(r.id));
+      const days = forecast.totalRemaining / (24 * 60);
+      if (days > 5) zoom = '1m';
+      else if (days > 2) zoom = '1w';
+      else if (days > .6) zoom = '3d';
+      initialized = true;
     }
-
-    /* ── 1. Top Subnav & Controls Toolbar ────────────────── */
-    const subnavBar = h('div', { class: 'subnav-bar' },
-      h('div', { class: 'subnav-tabs' },
-        h('button', { class: 'subnav-tab' }, 'EQUIPOS'),
-        h('button', { class: 'subnav-tab subnav-tab--active' }, 'ENTREGABLES')
-      ),
-      h('div', { class: 'subnav-controls' },
-        h('div', { class: 'search-box' },
-          h('input', {
-            type: 'text',
-            class: 'search-input',
-            placeholder: 'Buscar entregables',
-            value: searchQuery
-          }),
-          h('button', { class: 'btn-icon-toggle btn-expand-all', title: 'Expandir todo' }, '⌵'),
-          h('button', { class: 'btn-icon-toggle btn-collapse-all', title: 'Colapsar todo' }, '⌃')
-        ),
-        h('div', { class: 'zoom-group' },
-          ...['6 H', '1 DÍA', '3 DÍAS', '1 SEMANA', '1 MES'].map(label => {
-            const key = label.toLowerCase().replace(/\s+/g, '');
-            const isActive = (key === '1día' && currentZoom === '1d') ||
-                             (key === '6h' && currentZoom === '6h') ||
-                             (key === '3días' && currentZoom === '3d') ||
-                             (key === '1semana' && currentZoom === '1w') ||
-                             (key === '1mes' && currentZoom === '1m');
-            const btn = h('button', {
-              class: `zoom-btn ${isActive ? 'zoom-btn--active' : ''}`
-            }, label);
-            btn.addEventListener('click', () => {
-              if (key === '6h') currentZoom = '6h';
-              else if (key === '1día') currentZoom = '1d';
-              else if (key === '3días') currentZoom = '3d';
-              else if (key === '1semana') currentZoom = '1w';
-              else if (key === '1mes') currentZoom = '1m';
-              render(doc, container);
-            });
-            return btn;
-          })
-        ),
-        h('div', { class: 'time-nav-group' },
-          h('button', { class: 'btn-nav-arrow btn-nav-prev', title: 'Anterior' }, '‹'),
-          h('button', { class: 'btn-nav-now', title: 'Ir al presente' }, 'AHORA'),
-          h('button', { class: 'btn-nav-arrow btn-nav-next', title: 'Siguiente' }, '›')
-        )
-      )
-    );
-
-    /* Search event listener */
-    const searchInput = subnavBar.querySelector('.search-input');
-    searchInput.addEventListener('input', e => {
-      searchQuery = e.target.value.toLowerCase().trim();
-      filterRows();
-    });
-
-    container.appendChild(subnavBar);
-
-    /* ── 2. Deliverables Table Container ─────────────────── */
-    const trackerContainer = h('div', { class: 'tracker-container' });
-    const trackerTable = h('div', { class: 'tracker-table' });
-
-    /* Left Panel: VERSIÓN · HECHAS */
-    const leftPanel = h('div', { class: 'tracker-left' },
-      h('div', { class: 'tracker-left__head' }, 'VERSIÓN · HECHAS'),
-      h('div', { class: 'tracker-left__rows' })
-    );
-
-    /* Right Panel: Time Header + Timeline Grid */
-    const rightPanel = h('div', { class: 'tracker-right' },
-      h('div', { class: 'tracker-right__head' }),
-      h('div', { class: 'tracker-right__rows' })
-    );
-
-    /* Time column dimensions */
-    const timeCols = generateTimeColumns(currentZoom);
-    const tickW = currentZoom === '6h' ? 70 : currentZoom === '1d' ? 88 : 100;
-    const totalW = timeCols.ticks.length * tickW;
-
-    const rightHead = rightPanel.querySelector('.tracker-right__head');
-    rightHead.style.width = `${totalW}px`;
-
-    let nowIndex = timeCols.nowIndex;
-    let nowLeftPx = nowIndex >= 0 ? nowIndex * tickW + (tickW / 2) : -1;
-
-    /* Build header cells */
-    for (let i = 0; i < timeCols.ticks.length; i++) {
-      const tick = timeCols.ticks[i];
-      const isNow = i === nowIndex;
-      const cell = h('div', {
-        class: `time-tick-cell ${isNow ? 'time-tick-cell--now' : ''}`,
-        style: `width: ${tickW}px;`
-      });
-
-      if (isNow) {
-        cell.appendChild(h('span', { class: 'time-tick-date' }, tick.dayLabel || 'DOM, 27 SEPT'));
-        cell.appendChild(h('span', { class: 'badge-ahora-pill' }, 'AHORA'));
-      } else {
-        cell.textContent = tick.label;
+    const now = Date.now(), span = scales[zoom][0], tick = scales[zoom][1], start = now + offset*span - span*.3, end = start+span;
+    liveRange = { start, end, span, container, doc };
+    const pos = ms => (ms-start)/span*100;
+    const toolbar = el('div','subnav-bar'), controls = el('div','subnav-controls');
+    toolbar.appendChild(el('strong','timeline-title',t('deliverables')));
+    const input = el('input','search-input'); input.placeholder = t('search'); input.value = search;
+    input.addEventListener('input', () => { search=input.value.toLowerCase().trim(); render(doc,container); container.querySelector('.search-input').focus(); });
+    controls.appendChild(input);
+    const expand=el('button','btn-icon-toggle',t('expand'));
+    expand.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.add(group.id));render(doc,container);});
+    const collapse=el('button','btn-icon-toggle',t('collapse'));
+    collapse.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.delete(group.id));render(doc,container);});
+    controls.append(expand,collapse);
+    for (const [key,label] of [['6h','6 H'],['1d',global.UI.language==='es'?'1 DÍA':'1 DAY'],['3d',global.UI.language==='es'?'3 DÍAS':'3 DAYS'],['1w',global.UI.language==='es'?'1 SEMANA':'1 WEEK'],['1m',global.UI.language==='es'?'1 MES':'1 MONTH']]) {
+      const b=el('button','zoom-btn'+(zoom===key?' zoom-btn--active':''),label);
+      b.addEventListener('click',()=>{zoom=key;offset=0;render(doc,container);}); controls.appendChild(b);
+    }
+    for (const [label,delta] of [['‹',-1],[t('nowButton'),0],['›',1]]) {
+      const b=el('button','btn-nav-now',label);
+      b.addEventListener('click',()=>{offset=delta?offset+delta:0;render(doc,container);}); controls.appendChild(b);
+    }
+    toolbar.appendChild(controls); container.appendChild(toolbar);
+    const late = doc.items.filter(it => it.status !== 'done' && it.status !== 'cancelled' && time(it.end,true) != null && time(it.end,true) < now).length;
+    const blocked = doc.items.filter(it => it.status === 'blocked').length;
+    const missingDates = doc.items.filter(it => it.status !== 'done' && !it.start && !it.end).length;
+    const signals = el('div','timeline-signals');
+    for (const [key,value] of [['pending',doc.stats.open],['blocked',blocked],['overdue',late],['undated',missingDates]]) {
+      const label=t(key);
+      const signal=el('span','timeline-signal',`${label}: ${value}`);
+      if(value && (key==='blocked'||key==='overdue')) signal.classList.add('timeline-signal--alert');
+      signals.appendChild(signal);
+    }
+    container.appendChild(signals);
+    const tracker=el('div','tracker-container'), table=el('div','tracker-table');
+    const left=el('div','tracker-left'), right=el('div','tracker-right');
+    left.appendChild(el('div','tracker-left__head',t('versionDone')));
+    const head=el('div','tracker-right__head'); head.style.width='100%';
+    const count=Math.round(span/tick);
+    for(let i=0;i<=count;i++) {
+      const ms=start+i*tick;
+      const label=new Intl.DateTimeFormat(global.UI.language,span<=DAY?{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}:{day:'numeric',month:'short'}).format(new Date(ms));
+      const cell=el('div','time-tick-cell',label); cell.style.width=`${100/(count+1)}%`; head.appendChild(cell);
+    }
+    right.appendChild(head);
+    const lRows=el('div','tracker-left__rows'), rRows=el('div','tracker-right__rows'); rRows.style.width='100%';
+    function row(label,bar,phase) {
+      const l=el('div',phase?'phase-head-row':'task-label-row',label), r=el('div',phase?'phase-bar-row':'tracker-bar-row');
+      if(bar) r.appendChild(bar); lRows.appendChild(l);rRows.appendChild(r);return l;
+    }
+    let undated=0;
+    doc.releases.forEach((rel,index)=>{
+      const items=(rel.items||[]).filter(it=>!search||`${it.taskId||''} ${it.name}`.toLowerCase().includes(search));
+      if(search&&!items.length)return;
+      const key=rel.id||String(index), done=rel.items.filter(it=>it.status==='done').length;
+      let summary=null;
+      const phaseStart=time(rel.start,false), phaseEnd=time(rel.end,true);
+      if(phaseStart!=null&&phaseEnd!=null&&phaseEnd>=start&&phaseStart<=end){
+        summary=el('div','phase-summary-bar');
+        summary.style.left=`${Math.max(0,pos(phaseStart))}%`;
+        summary.style.width=`${Math.max(1.5,Math.min(100,pos(phaseEnd))-Math.max(0,pos(phaseStart)))}%`;
+        summary.appendChild(el('div','phase-seg-done'));
+        summary.firstChild.style.width=`${rel.progress||0}%`;
       }
-      rightHead.appendChild(cell);
-    }
-
-    /* Vertical line guide dropping down from AHORA */
-    if (nowLeftPx >= 0) {
-      const vLine = h('div', {
-        class: 'vertical-now-line',
-        style: `left: ${nowLeftPx}px;`
-      });
-      rightPanel.appendChild(vLine);
-    }
-
-    const leftRows = leftPanel.querySelector('.tracker-left__rows');
-    const rightRows = rightPanel.querySelector('.tracker-right__rows');
-    rightRows.style.width = `${totalW}px`;
-
-    /* Render by Releases / Phases */
-    doc.releases.forEach((rel, rIdx) => {
-      const relItems = rel.items || [];
-      const doneCnt = relItems.filter(i => i.status === 'done').length;
-      const totalCnt = relItems.length;
-
-      /* Phase Header Row (Collapsible) */
-      const phaseId = `phase-${rel.id || rIdx}`;
-      const phaseLeft = h('div', {
-        class: 'phase-head-row',
-        'data-phase': phaseId
-      },
-        h('span', { class: 'phase-chevron' }, '⌵'),
-        h('span', { class: 'phase-title-text' }, `${rel.name || rel.id}`),
-        h('span', { class: 'phase-count-badge' }, `${doneCnt}/${totalCnt}`)
-      );
-      leftRows.appendChild(phaseLeft);
-
-      /* Phase Summary Bar on Timeline */
-      const phaseBarRow = h('div', { class: 'phase-bar-row', 'data-phase': phaseId });
-      const phaseBar = buildPhaseSummaryBar(relItems, timeCols, tickW);
-      if (phaseBar) phaseBarRow.appendChild(phaseBar);
-      rightRows.appendChild(phaseBarRow);
-
-      /* Items inside this Phase */
-      relItems.forEach((it, idx) => {
-        const taskId = it.taskId || `T${String(idx + 1).padStart(3, '0')}`;
-        const isNow = it.status === 'active';
-        const isDone = it.status === 'done';
-        const isPlanned = it.status === 'planned' || it.status === 'risk' || it.status === 'blocked';
-
-        /* Left row */
-        const bulletCls = isDone ? 'bullet-done' : isNow ? 'bullet-now' : 'bullet-planned';
-        const leftItemRow = h('div', {
-          class: `task-label-row ${isNow ? 'task-label-row--now' : ''}`,
-          'data-phase-item': phaseId,
-          'data-name': it.name.toLowerCase()
-        },
-          h('span', { class: `task-bullet ${bulletCls}` }, isPlanned ? '□' : '■'),
-          h('span', { class: `task-id-badge ${isNow ? 'task-id-badge--now' : ''}` }, taskId),
-          h('span', { class: `task-name-text ${isNow ? 'task-name-text--now' : ''}`, title: it.name }, it.name)
-        );
-        leftRows.appendChild(leftItemRow);
-
-        /* Right timeline row */
-        const rightItemRow = h('div', {
-          class: 'tracker-bar-row',
-          'data-phase-item': phaseId,
-          'data-name': it.name.toLowerCase()
-        });
-
-        const barEl = buildTaskBar(it, taskId, idx, timeCols, tickW);
-        if (barEl) rightItemRow.appendChild(barEl);
-        rightRows.appendChild(rightItemRow);
-      });
-
-      /* Toggle phase collapse */
-      phaseLeft.addEventListener('click', () => {
-        const isOpen = !phaseLeft.classList.contains('phase-head-row--closed');
-        phaseLeft.classList.toggle('phase-head-row--closed', isOpen);
-        phaseLeft.querySelector('.phase-chevron').textContent = isOpen ? '›' : '⌵';
-
-        leftRows.querySelectorAll(`[data-phase-item="${phaseId}"]`).forEach(el => {
-          el.style.display = isOpen ? 'none' : '';
-        });
-        rightRows.querySelectorAll(`[data-phase-item="${phaseId}"]`).forEach(el => {
-          el.style.display = isOpen ? 'none' : '';
-        });
+      const phase=row(`${expanded.has(key)?'⌄':'›'}  ${rel.id} · ${rel.name}   ${done}/${rel.items.length}`,summary,true);
+      phase.setAttribute('role','button');phase.tabIndex=0;
+      const toggle=()=>{expanded.has(key)?expanded.delete(key):expanded.add(key);render(doc,container);};
+      phase.addEventListener('click',toggle);phase.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')toggle();});
+      if(!expanded.has(key)&&!search)return;
+      items.forEach(it=>{
+        const predicted = forecast.projections.get(it.id);
+        const declaredStart = time(it.start,false), declaredEnd = time(it.end,true);
+        const a=declaredStart ?? predicted?.start ?? null, b=declaredEnd ?? predicted?.end ?? null;
+        const provisional = declaredStart == null && declaredEnd == null && predicted != null;
+        let bar=null;
+        if(a!=null||b!=null){
+          const from=a??b,to=b??a;
+          if(to>=start&&from<=end){
+            bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':'planned'}${provisional?' tracker-bar--provisional':''}`,it.name);
+            bar.style.left=`${Math.max(0,pos(from))}%`;
+            bar.style.width=`${Math.max(1.5,Math.min(100,pos(to))-Math.max(0,pos(from)))}%`;
+            bar.title=provisional ? `${it.name} · ${t('projection')}` : `${it.name} · ${it.start||'?'} → ${it.end||'?'} · ${it.status}`;
+          }
+        }
+        if(declaredStart==null&&declaredEnd==null)undated++;
+        const l=row(`${it.status==='done'?'■':it.status==='active'?'▰':'□'}  ${it.taskId||''} ${it.name}`,bar,false);
+        if(declaredStart==null&&declaredEnd==null)l.title=provisional?t('projection'):t('undated');
+        l.setAttribute('role','button'); l.tabIndex=0; l.classList.add('task-label-row--interactive');
+        l.addEventListener('click',()=>showDetail(it,doc,forecast));
+        l.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')showDetail(it,doc,forecast);});
+        if(bar)bar.addEventListener('click',()=>showDetail(it,doc,forecast));
       });
     });
-
-    /* Synchronize vertical scrolling */
-    rightPanel.addEventListener('scroll', () => {
-      leftRows.scrollTop = rightPanel.scrollTop;
+    if(start<=now&&now<=end){const line=el('div','vertical-now-line');line.style.left=`${pos(now)}%`;right.appendChild(line);}
+    left.appendChild(lRows);right.appendChild(rRows);table.append(left,right);tracker.appendChild(table);
+    tracker.appendChild(el('div','timeline-legend',`${undated} ${t('fixedDate')} · ${t('declared')} · ${t('projection')}`));
+    container.appendChild(tracker);
+    right.addEventListener('scroll',()=>{lRows.scrollTop=right.scrollTop;});
+  }
+  function showDetail(item, doc, forecast) {
+    document.querySelector('.task-detail-overlay')?.remove();
+    const overlay=el('div','task-detail-overlay');
+    const panel=el('section','task-detail-panel');
+    panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label',item.name);
+    const close=el('button','task-detail-close','×');close.setAttribute('aria-label',t('close'));
+    const dismiss=()=>{document.removeEventListener('keydown',onKey);overlay.remove();};
+    const onKey=e=>{if(e.key==='Escape')dismiss();};
+    close.addEventListener('click',dismiss);
+    overlay.addEventListener('click',e=>{if(e.target===overlay)dismiss();});
+    document.addEventListener('keydown',onKey);
+    panel.append(close,el('div','hud-card__head-label',item.taskId||t('deliverables')),el('h2','task-detail-title',item.name));
+    const fields=[
+      [t('status'),t(item.status==='done'?'done':item.status==='blocked'?'blockedStatus':item.status==='cancelled'?'cancelledStatus':item.status)],
+      [t('taskProgress'),`${item.progress||0} %`],
+      [t('owner'),item.owner||'—'],
+      [t('estimatedEffort'),item.effortRaw||t('noEstimate')],
+      [t('actualDuration'),item.actual?global.Roadmap.fmtEffort(item.actual):t('pendingDuration')],
+      [t('plannedStart'),item.start||t('noDate')],
+      [t('plannedEnd'),item.end||t('noDate')],
+      [t('depends'),item.depends.length?item.depends.join(', '):t('noDependencies')]
+    ];
+    const prediction=forecast.projections.get(item.id);
+    if(prediction)fields.push([t('calculatedWindow'),`${global.Forecast.dateTime(prediction.start)} → ${global.Forecast.dateTime(prediction.end)}`]);
+    fields.forEach(([label,value])=>{
+      const line=el('div','task-detail-row');line.append(el('span','',label),el('strong','',value));panel.appendChild(line);
     });
-
-    trackerTable.appendChild(leftPanel);
-    trackerTable.appendChild(rightPanel);
-    trackerContainer.appendChild(trackerTable);
-
-    /* ── 3. Bottom Legend Strip ──────────────────────────── */
-    const legendBar = h('div', { class: 'timeline-legend' },
-      h('div', { class: 'legend-item' },
-        h('span', { class: 'legend-swatch legend-swatch--done' }),
-        h('span', {}, 'Hecho')
-      ),
-      h('div', { class: 'legend-item' },
-        h('span', { class: 'legend-swatch legend-swatch--now' }),
-        h('span', {}, 'En curso')
-      ),
-      h('div', { class: 'legend-item' },
-        h('span', { class: 'legend-swatch legend-swatch--committed' }),
-        h('span', {}, 'Comprometido (estimado)')
-      ),
-      h('div', { class: 'legend-item' },
-        h('span', { class: 'legend-swatch legend-swatch--provisional' }),
-        h('span', {}, 'Provisional (estimado)')
-      ),
-      h('div', { class: 'legend-item' },
-        h('span', { class: 'legend-line--now' }),
-        h('span', {}, 'Ahora')
-      )
-    );
-    trackerContainer.appendChild(legendBar);
-
-    container.appendChild(trackerContainer);
-
-    /* Scroll to AHORA */
-    if (nowLeftPx > 300) {
-      setTimeout(() => {
-        rightPanel.scrollLeft = nowLeftPx - 260;
-      }, 50);
+    if(item.note)panel.appendChild(el('p','task-detail-note',item.note));
+    const changes=(doc.estimateChanges||[]).filter(change=>change.taskId.toUpperCase()===(item.taskId||'').toUpperCase());
+    if(changes.length){
+      panel.appendChild(el('h3','hud-card__head-label',t('estimateHistory')));
+      changes.forEach(change=>panel.appendChild(el('div','estimate-event',`${change.at} · ${change.remaining} ${t('remaining')} · ${change.reason||t('noReason')}`)));
     }
-
-    /* Expand / Collapse all button listeners */
-    subnavBar.querySelector('.btn-expand-all').addEventListener('click', () => {
-      leftRows.querySelectorAll('.phase-head-row').forEach(p => {
-        p.classList.remove('phase-head-row--closed');
-        p.querySelector('.phase-chevron').textContent = '⌵';
-      });
-      leftRows.querySelectorAll('[data-phase-item]').forEach(el => el.style.display = '');
-      rightRows.querySelectorAll('[data-phase-item]').forEach(el => el.style.display = '');
-    });
-
-    subnavBar.querySelector('.btn-collapse-all').addEventListener('click', () => {
-      leftRows.querySelectorAll('.phase-head-row').forEach(p => {
-        p.classList.add('phase-head-row--closed');
-        p.querySelector('.phase-chevron').textContent = '›';
-      });
-      leftRows.querySelectorAll('[data-phase-item]').forEach(el => el.style.display = 'none');
-      rightRows.querySelectorAll('[data-phase-item]').forEach(el => el.style.display = 'none');
-    });
-
-    function filterRows() {
-      const q = searchQuery;
-      leftRows.querySelectorAll('.task-label-row').forEach(row => {
-        const name = row.dataset.name || '';
-        row.style.display = (!q || name.includes(q)) ? '' : 'none';
-      });
-      rightRows.querySelectorAll('.tracker-bar-row').forEach(row => {
-        const name = row.dataset.name || '';
-        row.style.display = (!q || name.includes(q)) ? '' : 'none';
-      });
-    }
+    overlay.appendChild(panel);document.body.appendChild(overlay);close.focus();
   }
-
-  /* ── Helper: Multi-segment Phase Summary Bar ─────────── */
-  function buildPhaseSummaryBar(items, timeCols, tickW) {
-    if (!items.length) return null;
-    const nowPos = timeCols.nowIndex * tickW;
-    const startX = Math.max(10, nowPos - (tickW * 3.5));
-    const totalW = tickW * 5.5;
-
-    const doneCount = items.filter(i => i.status === 'done').length;
-    const activeCount = items.filter(i => i.status === 'active').length;
-    const doneRatio = doneCount / items.length;
-    const activeRatio = activeCount / items.length;
-
-    const doneW = totalW * doneRatio;
-    const activeW = Math.max(16, totalW * activeRatio);
-    const plannedW = Math.max(0, totalW - doneW - activeW);
-
-    const bar = h('div', {
-      class: 'phase-summary-bar',
-      style: `left: ${startX}px; width: ${totalW}px;`
-    },
-      h('div', { class: 'phase-seg-done', style: `width: ${doneW}px;` }),
-      activeCount > 0 ? h('div', { class: 'phase-seg-now', style: `width: ${activeW}px;` }) : null,
-      h('div', { class: 'phase-seg-planned', style: `width: ${plannedW}px;` })
-    );
-
-    return bar;
+  function tickNow() {
+    if (!liveRange) return;
+    const { start, end, span, container, doc } = liveRange;
+    const now = Date.now();
+    if (now > end || now < start) { render(doc, container); return; }
+    const line = container.querySelector('.vertical-now-line');
+    if (line) line.style.left = `${(now - start) / span * 100}%`;
   }
-
-  /* ── Helper: Task Bar with Duration / Start Times ─────── */
-  function buildTaskBar(it, taskId, idx, timeCols, tickW) {
-    const nowPos = timeCols.nowIndex * tickW;
-    const isDone = it.status === 'done';
-    const isNow = it.status === 'active';
-    const effortHrs = it.effort || 4;
-    const barW = Math.max(tickW * 1.1, (effortHrs / 4) * tickW * 1.2);
-
-    let left = nowPos;
-    let label = it.name;
-
-    if (isDone) {
-      /* Placed to the left of AHORA */
-      const backOffset = (itemsBeforeCount(idx) + 1) * (tickW * 0.9);
-      left = Math.max(10, nowPos - backOffset);
-      const durationText = it.effort ? formatDuration(it.effort) : '48 min';
-      label = `${it.name} · ${durationText}`;
-
-      return h('div', {
-        class: 'tracker-bar tracker-bar--done',
-        style: `left: ${left}px; width: ${barW}px;`,
-        title: `${taskId}: ${it.name} (Completado)`
-      }, label);
-
-    } else if (isNow) {
-      /* Crosses the AHORA line */
-      left = nowPos - (tickW * 0.4);
-      const width = tickW * 1.5;
-      const sinceText = it.start ? `desde ${it.start}` : 'desde 01:15';
-      label = `${it.name} · ${sinceText}`;
-
-      return h('div', {
-        class: 'tracker-bar tracker-bar--now',
-        style: `left: ${left}px; width: ${width}px;`,
-        title: `${taskId}: ${it.name} (En curso)`
-      }, label);
-
-    } else {
-      /* Planned / Future task: translucent outlined box */
-      const forwardOffset = (idx % 3 + 1) * (tickW * 0.9);
-      left = nowPos + forwardOffset;
-      const estTime = `est. 0${2 + (idx % 3)}:35`;
-      label = `${it.name} · ${estTime}`;
-
-      return h('div', {
-        class: 'tracker-bar tracker-bar--planned',
-        style: `left: ${left}px; width: ${barW}px;`,
-        title: `${taskId}: ${it.name} (${estTime})`
-      }, label);
-    }
-  }
-
-  function itemsBeforeCount(idx) {
-    return (idx * 7) % 6;
-  }
-
-  function formatDuration(effortHrs) {
-    const h = Math.floor(effortHrs);
-    const m = Math.round((effortHrs - h) * 60);
-    if (h === 0) return `${m} min`;
-    if (m === 0) return `${h} h`;
-    return `${h} h ${m} min`;
-  }
-
-  function generateTimeColumns(zoom) {
-    const ticks = [];
-    let nowIndex = 7;
-
-    if (zoom === '6h' || zoom === '1d') {
-      const hours = ['10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00', 'AHORA', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00'];
-      nowIndex = 7;
-      hours.forEach((h, i) => {
-        ticks.push({ label: h, dayLabel: 'DOM, 27 SEPT', index: i });
-      });
-    } else if (zoom === '3d') {
-      const days = ['Jue 24', 'Vie 25', 'Sáb 26', 'AHORA', 'Lun 28', 'Mar 29', 'Mié 30', 'Jue 01'];
-      nowIndex = 3;
-      days.forEach((d, i) => {
-        ticks.push({ label: d, dayLabel: 'DOM, 27 SEPT', index: i });
-      });
-    } else {
-      const weeks = ['Sem 38', 'Sem 39', 'AHORA', 'Sem 41', 'Sem 42', 'Sem 43', 'Sem 44'];
-      nowIndex = 2;
-      weeks.forEach((w, i) => {
-        ticks.push({ label: w, dayLabel: 'SEPT / OCT', index: i });
-      });
-    }
-
-    return { ticks, nowIndex };
-  }
-
-  global.Timeline = { render };
-
-})(typeof window !== 'undefined' ? window : globalThis);
+  global.Timeline={render, tickNow, openTask:showDetail};
+})(typeof window!=='undefined'?window:globalThis);
