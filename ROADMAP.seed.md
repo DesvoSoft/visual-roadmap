@@ -14,7 +14,7 @@ El agente completará este roadmap al iniciar el trabajo. Las estimaciones son p
 
 ## Releases
 
-<!-- Sustituye este espacio por versiones reales en orden: ### v0.1 · Nombre, luego una línea opcional `AAAA-MM-DD → AAAA-MM-DD` · **active**, y una tabla de tareas como la de SKILL.md. Usa — cuando no haya fecha fija; incluye esfuerzo y dependencias para la proyección. -->
+<!-- Vacío hasta que el agente planifique: visual-roadmap add "Tarea" --effort 30m --release "v0.1 · Nombre" (ver SKILL.md). -->
 
 ## Estimaciones
 
