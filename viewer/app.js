@@ -53,7 +53,7 @@
     if ($('now-elapsed')) $('now-elapsed').textContent = global.Forecast.duration(forecast.elapsed);
     const moved = forecast.initialEta != null && forecast.eta != null
       ? Math.round((forecast.eta - forecast.initialEta) / 60000) : 0;
-    if ($('now-warn')) $('now-warn').textContent = forecast.overdue
+    if ($('now-warn')) $('now-warn').textContent = active?.status === 'paused' ? t('paused') : forecast.overdue
       ? `${t('delayed')}: ${global.Forecast.duration(forecast.delayMinutes)} · ${t('provisional')}`
       : forecast.latestChange && moved > 0 ? `${t('etaExtended')} ${global.Forecast.duration(moved)}` : n.status || '';
     if ($('now-eta')) $('now-eta').textContent = forecast.eta != null
@@ -65,6 +65,7 @@
       /* Calculate bar width */
       const pct = active?.progress || 0;
       $('now-fill').style.width = `${pct}%`;
+      $('now-fill').classList.toggle('now-fill--running', active?.status === 'active');
     }
 
     /* ── Card 2: PROJECT & CADENCE ── */

@@ -961,6 +961,15 @@ body {
   box-shadow: 0 0 14px rgba(255, 122, 0, 0.6);
   z-index: 3;
 }
+.tracker-bar--paused { background: #a66b19; border: 2px solid #ffd07a; color: #fff; font-weight: 700; }
+.tracker-bar--blocked { background: #9b3042; border: 2px solid #ff8595; color: #fff; font-weight: 700; }
+.tracker-bar--slipped { outline: 2px solid #ffcb48; outline-offset: 1px; }
+.task-label-row--paused { color: #d9a43f; font-weight: 700; }
+.now-fill--running { animation: active-glow 2s ease-in-out infinite; }
+html[data-theme="light"] .tracker-bar--paused { background: #9a5c00; color: #fff; }
+html[data-theme="light"] .tracker-bar--blocked { background: #9d2439; color: #fff; }
+html[data-theme="light"] .tracker-bar--slipped { outline-color: #a66100; }
+@media (prefers-reduced-motion: reduce) { .now-fill--running, .tracker-bar--now { animation: none; } }
 
 .tracker-bar--planned {
   background: rgba(6, 17, 32, 0.85);
@@ -1082,6 +1091,9 @@ html[data-theme="light"] .health__head, html[data-theme="light"] .health__item {
 .vertical-now-line::after { content: ''; position: absolute; top: 0; left: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--neon-orange); box-shadow: 0 0 14px var(--neon-orange); }
 .timeline-signal--alert { animation: alert-breathe 3s ease-in-out infinite; }
 .tracker-bar--provisional { border-style: dashed; opacity: .8; background: repeating-linear-gradient(135deg, rgba(74,137,172,.18), rgba(74,137,172,.18) 7px, rgba(5,15,30,.4) 7px, rgba(5,15,30,.4) 14px); }
+.tracker-bar--now.tracker-bar--provisional { opacity: 1; background: repeating-linear-gradient(45deg, #ff7a00, #ff7a00 10px, #db6100 10px, #db6100 20px); }
+.tracker-bar--paused.tracker-bar--provisional { opacity: 1; background: #a66b19; }
+.tracker-bar--blocked.tracker-bar--provisional { opacity: 1; background: #9b3042; }
 .task-label-row--interactive { cursor: pointer; }
 .task-label-row--interactive:focus-visible { outline: 1px solid var(--cyan); outline-offset: -2px; }
 .task-detail-overlay { position: fixed; inset: 0; z-index: 300; display: flex; justify-content: flex-end; background: rgba(0,4,10,.72); backdrop-filter: blur(3px); animation: panel-enter .2s ease-out; }

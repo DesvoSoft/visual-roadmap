@@ -141,3 +141,14 @@ test('brief is a few plain lines an agent can act on', () => {
   assert.match(lines[1], /^now: T001 .*ETA PASSED/);
   assert.match(Agent.brief('---\ntitle: X\n---\n'), /No tasks yet/);
 });
+
+test('pause and resume exclude paused time from actual work', () => {
+  let text = Agent.start(base, 'T001', {}, at('10:00')).text;
+  text = Agent.pause(text, 'T001', 'break', at('10:10')).text;
+  assert.equal(parse(text).items[0].status, 'paused');
+  assert.throws(() => Agent.start(text, 'T001'), /resume/);
+  text = Agent.resume(text, 'T001', at('11:10')).text;
+  assert.equal(parse(text).nowTask.pausedMinutes, 60);
+  text = Agent.done(text, 'T001', {}, at('11:20')).text;
+  assert.equal(parse(text).items[0].actual, 20 / 60);
+});

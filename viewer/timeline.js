@@ -14,10 +14,15 @@
     const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw + (end ? 'T23:59:59' : 'T00:00:00') : raw.replace(' ','T'));
     return isNaN(d.getTime()) ? null : d.getTime();
   }
-  function windowForItem(item, prediction) {
+  function windowForItem(item, prediction, now = Date.now()) {
     const declaredStart = time(item.start, false), declaredEnd = time(item.end, true);
     const coarse = /^\d{4}-\d{2}-\d{2}$/.test(item.start || '') && /^\d{4}-\d{2}-\d{2}$/.test(item.end || '');
     const shortHours = item.actual || item.effort;
+    if (item.status !== 'done' && item.status !== 'cancelled' && prediction) return { start: prediction.start, end: prediction.end, coarse: false, estimated: true, slipMinutes: prediction.slipMinutes || 0 };
+    if (item.status !== 'done' && item.status !== 'cancelled' && declaredStart != null && declaredStart < now) {
+      const duration = declaredEnd != null && declaredEnd > declaredStart ? declaredEnd - declaredStart : Math.max(1, shortHours || 0) * 3600000;
+      return { start: now, end: now + duration, coarse: false, estimated: true, slipMinutes: Math.round((now - declaredStart) / 60000) };
+    }
     if (coarse && shortHours > 0 && shortHours <= 3) {
       const midpoint = (declaredStart + declaredEnd) / 2;
       const half = shortHours * 3600000 / 2;
@@ -102,7 +107,12 @@
       if(search&&!items.length)return;
       const key=rel.id||String(index), done=rel.items.filter(it=>it.status==='done').length;
       let summary=null;
-      const phaseStart=time(rel.start,false), phaseEnd=time(rel.end,true);
+      const projectedWindows=rel.items.map(it=>forecast.projections.get(it.id)).filter(Boolean);
+      let phaseStart=projectedWindows.length ? Math.min(...projectedWindows.map(p=>p.start)) : time(rel.start,false);
+      let phaseEnd=projectedWindows.length ? Math.max(...projectedWindows.map(p=>p.end)) : time(rel.end,true);
+      if(!projectedWindows.length && rel.items.some(it=>it.status!=='done'&&it.status!=='cancelled') && phaseStart!=null && phaseStart<now) {
+        phaseEnd=now+Math.max(3600000,(phaseEnd||phaseStart)-phaseStart);phaseStart=now;
+      }
       if(phaseStart!=null&&phaseEnd!=null&&phaseEnd>=start&&phaseStart<=end){
         summary=el('div','phase-summary-bar');
         summary.style.left=`${Math.max(0,pos(phaseStart))}%`;
@@ -117,7 +127,7 @@
       if(!expanded.has(key)&&!search)return;
       items.forEach(it=>{
         const predicted = forecast.projections.get(it.id);
-        const window = windowForItem(it,predicted);
+        const window = windowForItem(it,predicted,now);
         const a=window.start, b=window.end;
         const provisional = window.estimated;
         let bar=null;
@@ -125,18 +135,20 @@
           const from=a??b,to=b??a;
           if(to>=start&&from<=end){
             const left=Math.max(0,pos(from)), right=Math.min(100,pos(to)), width=Math.max(0,right-left);
-            bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':'planned'}${provisional?' tracker-bar--provisional':''}${width<8?' tracker-bar--compact':''}`,width>=8?it.name:'');
+            bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':it.status==='paused'?'paused':it.status==='blocked'?'blocked':'planned'}${provisional?' tracker-bar--provisional':''}${width<8?' tracker-bar--compact':''}`,width>=8?it.name:'');
             bar.style.left=`${left}%`;
             bar.style.width=`${width}%`;
             bar.title=window.coarse ? `${it.name} · ${t('dayPrecision')}` : provisional ? `${it.name} · ${t('projection')}` : `${it.name} · ${it.start||'?'} → ${it.end||'?'} · ${it.status}`;
+            if(window.slipMinutes > 0) { bar.classList.add('tracker-bar--slipped'); bar.title += ` · ${t('slip')} +${global.Forecast.duration(window.slipMinutes)}`; }
           }
         }
         if(!it.start&&!it.end)undated++;
-        const l=row(`${it.status==='done'?'■':it.status==='active'?'▰':'□'}  ${it.taskId||''} ${it.name}`,bar,false);
+        const l=row(`${it.status==='done'?'■':it.status==='active'?'▰':it.status==='paused'?'Ⅱ':'□'}  ${it.taskId||''} ${it.name}${window.slipMinutes>0?` · ${t('slip')} +${global.Forecast.duration(window.slipMinutes)}`:''}`,bar,false);
         if(!it.start&&!it.end)l.title=provisional?t('projection'):t('undated');
         l.setAttribute('role','button'); l.tabIndex=0; l.classList.add('task-label-row--interactive');
         if(it.status==='cancelled')l.classList.add('task-label-row--cancelled');
         if(it.status==='blocked')l.classList.add('task-label-row--blocked');
+        if(it.status==='paused')l.classList.add('task-label-row--paused');
         l.addEventListener('click',()=>showDetail(it,doc,forecast));
         l.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')showDetail(it,doc,forecast);});
         if(bar)bar.addEventListener('click',()=>showDetail(it,doc,forecast));
@@ -176,6 +188,7 @@
     ];
     const prediction=forecast.projections.get(item.id);
     if(prediction)fields.push([t('calculatedWindow'),`${global.Forecast.dateTime(prediction.start)} → ${global.Forecast.dateTime(prediction.end)}`]);
+    if(prediction?.slipMinutes)fields.push([t('slip'),global.Forecast.duration(prediction.slipMinutes)]);
     fields.forEach(([label,value])=>{
       const line=el('div','task-detail-row');line.append(el('span','',label),el('strong','',value));panel.appendChild(line);
     });

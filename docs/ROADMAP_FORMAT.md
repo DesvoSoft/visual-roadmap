@@ -1,5 +1,7 @@
 # Formato de `ROADMAP.md`
 
+El estado `paused` conserva `now_task` con `paused_at` y `paused_minutes` (minutos acumulados). `resume` agrega el intervalo pausado a ese total; el tiempo pausado no cuenta como trabajo real. Las tareas abiertas con inicio previsto vencido se proyectan desde ahora o desde el fin de sus dependencias. El visor indica el desplazamiento (`slip`). Los bloqueos dejan la fecha final del proyecto sin estimar hasta resolverse.
+
 El archivo pertenece al proyecto que se está siguiendo. El visor lo lee; el agente lo modifica cuando hay cambios comprobables. `SKILL.md` contiene el protocolo breve para el agente.
 
 ## Ejemplo mínimo

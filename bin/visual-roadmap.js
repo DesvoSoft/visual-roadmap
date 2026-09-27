@@ -179,8 +179,8 @@ function agentSnippet(skillPath = 'SKILL.md') {
     `El usuario sigue tu trabajo en \`ROADMAP.md\`. Protocolo: \`${skillPath}\`. Mínimo:`,
     '',
     '- Petición nueva: divídela en tareas verificables de 15–90 min con `npx visual-roadmap add "Resultado" --effort 30m`.',
-    '- `npx visual-roadmap start T00X` antes de trabajar; `npx visual-roadmap done T00X --note "evidencia" --next` al verificar.',
-    '- Bloqueo: `block T00X "causa"`. ETA irreal: `eta T00X 20m "razón"`. Al retomar: `status`.',
+    '- Obligatorio e implícito: tú ejecutas `start T00X` antes de editar código, `progress T00X 60` al verificar avance y `done T00X --note "evidencia" --next` al terminar. No esperes que el usuario lo pida.',
+    '- Bloqueo: `block T00X "causa"`. Pausa: `pause T00X "motivo"` / `resume T00X`. ETA irreal: `eta T00X 20m "razón"`. Al retomar: `status`.',
     '- Commits con el ID (`T00X: …`). Nunca `done` sin evidencia.',
     SNIPPET_END
   ].join('\n');
@@ -294,6 +294,8 @@ function cmdHelp() {
   log('  ' + bold('start') + '    T002 [--expected 40m]   Mark active, set now_task and start time');
   log('  ' + bold('done') + '     T002 [--note "…"] [--next]  Close (real time + git lines auto), start next');
   log('  ' + bold('block') + '    T003 "reason"           Mark blocked and log the cause');
+  log('  ' + bold('pause') + '    T003 "reason"           Pause the work clock');
+  log('  ' + bold('resume') + '   T003                    Resume the work clock');
   log('  ' + bold('progress') + ' T002 60                 Set verified progress');
   log('  ' + bold('eta') + '      T002 25m "reason"       Record remaining time and why it changed');
   log('  ' + bold('log') + '      "message" [--icon ✓]    Add a line to Recent changes');
@@ -416,7 +418,7 @@ function cmdHook() {
   const event = POS[0];
 
   if (event === 'session-start') { log(Agent.brief(text, Date.now(), lang())); return; }
-  if (event !== 'stop' || input.stop_hook_active) return;
+  if (!['stop', 'post-tool-use', 'user-prompt-submit'].includes(event) || (event === 'stop' && input.stop_hook_active)) return;
 
   const problems = [];
   Agent.check(text, lang()).filter(i => i.level === 'error').forEach(i => problems.push(i.text));
@@ -427,17 +429,20 @@ function cmdHook() {
   if (!s.active && s.total) {
     /* Code changed but no task is active: the user sees a stale roadmap. Remind once per roadmap update. */
     const updated = globalThis.Forecast.timestamp(globalThis.Roadmap.parse(text).meta.updated);
-    const stamp = path.join(base, '.git', 'visual-roadmap-reminded');
-    const key = String(updated);
-    const already = fs.existsSync(stamp) && fs.readFileSync(stamp, 'utf8') === key;
     const changed = require('../lib/git.js').changesSince(base, updated);
-    if (!already && changed.add + changed.del >= 20) {
-      problems.push(`Code changed (+${changed.add} -${changed.del}) but no roadmap task is active. Record it: visual-roadmap start <ID> / done <ID>, or visual-roadmap add "Task" --effort 20m.`);
-      try { fs.writeFileSync(stamp, key); } catch {}
+    if (changed.add + changed.del > 0 && s.next.length) {
+      const next = s.next[0].id;
+      const started = Agent.start(text, next);
+      fs.writeFileSync(file, started.text);
+      log(`[visual-roadmap] ${next} started automatically after code changes.`);
+      return;
+    }
+    if (changed.add + changed.del > 0) {
+      problems.push(`Code changed (+${changed.add} -${changed.del}) with no active task. Add a task and start it.`);
     }
   }
   if (!problems.length) return;
-  process.stderr.write('[visual-roadmap] ' + problems.join('\n') + '\n');
+  process.stderr.write('[visual-roadmap] ' + problems.join(' · ') + '\n');
   process.exitCode = 2;
 }
 
@@ -458,7 +463,7 @@ function installHooks() {
   const cmd = selfCommand();
   settings.hooks = settings.hooks || {};
   let changed = false;
-  for (const [event, arg] of [['SessionStart', 'session-start'], ['Stop', 'stop']]) {
+  for (const [event, arg] of [['SessionStart', 'session-start'], ['Stop', 'stop'], ['PostToolUse', 'post-tool-use'], ['UserPromptSubmit', 'user-prompt-submit']]) {
     const groups = settings.hooks[event] = settings.hooks[event] || [];
     const command = `${cmd} hook ${arg}`;
     const existing = groups.flatMap(g => g.hooks || []).find(h => /visual-roadmap|cli\.js"? hook /.test(h.command || '') && h.command.endsWith(` hook ${arg}`));
@@ -469,13 +474,15 @@ function installHooks() {
   if (!changed) return;
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
-  ok(`Hooks    → ${path.relative(CWD, file)} (SessionStart brief, Stop check)`);
+  ok(`Hooks    → ${path.relative(CWD, file)} (SessionStart, Stop, PostToolUse, UserPromptSubmit)`);
 }
 
 function cmdHooks() {
   if (FLAGS.install) { installHooks(); return; }
   log(`SessionStart: ${selfCommand()} hook session-start`);
   log(`Stop:         ${selfCommand()} hook stop`);
+  log(`PostToolUse:  ${selfCommand()} hook post-tool-use`);
+  log(`UserPromptSubmit: ${selfCommand()} hook user-prompt-submit`);
   info('Install into .claude/settings.json with  visual-roadmap hooks --install');
 }
 
@@ -488,6 +495,8 @@ const cmdDone     = () => agentCommand((A, text) => A.done(text, POS[0], {
 const cmdAdd      = () => agentCommand((A, text) => A.add(text, POS.join(' '), { effort: FLAGS.effort, release: FLAGS.release, depends: FLAGS.depends, after: FLAGS.after, note: FLAGS.note }));
 const cmdSplit    = () => agentCommand((A, text) => A.split(text, POS[0], POS.slice(1)));
 const cmdBlock    = () => agentCommand((A, text) => A.block(text, POS[0], rest(1)));
+const cmdPause    = () => agentCommand((A, text) => A.pause(text, POS[0], rest(1)));
+const cmdResume   = () => agentCommand((A, text) => A.resume(text, POS[0]));
 const cmdProgress = () => agentCommand((A, text) => A.progress(text, POS[0], POS[1]));
 const cmdEta      = () => agentCommand((A, text) => A.eta(text, POS[0], POS[1], rest(2)));
 const cmdLog      = () => agentCommand((A, text) => A.note(text, rest(0), { icon: FLAGS.icon, diff: FLAGS.diff }));
@@ -514,6 +523,8 @@ const CMDS = {
   start:   cmdStart,
   done:    cmdDone,
   block:   cmdBlock,
+  pause:   cmdPause,
+  resume:  cmdResume,
   progress: cmdProgress,
   eta:     cmdEta,
   log:     cmdLog,

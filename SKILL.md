@@ -1,9 +1,11 @@
 ---
 name: visual-roadmap
-description: Use when doing coding work in a project with ROADMAP.md. Split each request into small verifiable tasks and keep the user informed with one-line `npx visual-roadmap` commands (start, done, block, eta).
+description: Use automatically for coding work in a project with ROADMAP.md. Run the one-line visual-roadmap commands yourself without a user reminder.
 ---
 
 # Visual Roadmap: protocolo para agentes
+
+Este protocolo es obligatorio e implícito cuando existe `ROADMAP.md`: ejecuta tú los comandos, sin esperar una petición del usuario. Antes de editar código, asegúrate de que haya una tarea activa. Registra progreso verificable y cierra con evidencia. Cada comando responde en una línea.
 
 El usuario ve `ROADMAP.md` en vivo: tarea actual, tiempo transcurrido, ETA, bloqueos y problemas del plan. Tu parte es **planificar bien una vez y ejecutar un comando corto en cada cambio de estado**. El visor calcula relojes, ETAs y proyecciones. No escribas nada solo porque pasó el tiempo.
 
@@ -50,6 +52,7 @@ npx visual-roadmap split T003 "Enviar email de reset:30m" "Pantalla de nueva con
 | La ETA ya no es creíble | `eta T004 25m "razón"` |
 | Terminar | `done T004 --note "evidencia" [--next]` |
 | Bloqueo | `block T004 "causa"` |
+| Pausa temporal | `pause T004 "motivo"` · `resume T004` |
 | Decisión o nota | `log "texto"` |
 | Tras editar a mano | `check` — corrige todo `✗` |
 

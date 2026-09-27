@@ -99,3 +99,25 @@ test('projection waits for dependencies and runs independent work in parallel la
   assert.equal(p('T002').start, p('T001').end);
   assert.equal(f.projectEta, now + 2 * 3600000);
 });
+
+test('overdue planned work moves to now and records slip', () => {
+  const doc = global.Roadmap.parse(`---\ntitle: Delay\n---\n## Releases\n### v1 · Work\n| Item | Estado | Esfuerzo | Inicio | Fin | Depende |\n| --- | --- | --- | --- | --- | --- |\n| T001 Base | planned | 1h | 2026-09-26 08:00 | 2026-09-26 09:00 | — |\n| T002 Followup | planned | 1h | 2026-09-26 09:00 | 2026-09-26 10:00 | T001 |`);
+  const now = new Date('2026-09-26T12:00:00').getTime();
+  const f = global.Forecast.calculate(doc, now);
+  const first = f.projections.get(doc.items[0].id), second = f.projections.get(doc.items[1].id);
+  assert.equal(first.start, now);
+  assert.equal(first.slipMinutes, 240);
+  assert.equal(second.start, first.end);
+  assert.equal(global.Timeline.windowForItem(doc.items[0], first).start, now);
+  assert.equal(global.Timeline.windowForItem(doc.items[0], null, now).start, now);
+});
+
+test('paused work freezes elapsed time and delays its dependent', () => {
+  const doc = global.Roadmap.parse(source.replace('  expected: 01:00', '  expected: 01:00\n  paused_at: 2026-09-26 09:20\n  paused_minutes: 0').replace('| active |', '| paused |'));
+  const now = new Date('2026-09-26T10:00:00').getTime();
+  const f = global.Forecast.calculate(doc, now);
+  assert.equal(f.elapsed, 20);
+  assert.equal(f.eta, null);
+  assert.equal(f.activeRemaining, 40);
+  assert.equal(f.projections.get(doc.items[1].id).start, now + 40 * 60000);
+});

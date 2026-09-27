@@ -120,6 +120,8 @@ All commands edit the nearest `ROADMAP.md` up to the repository root (or `--file
 | The ETA no longer holds | `visual-roadmap eta T004 25m "reason"` |
 | Finish | `visual-roadmap done T004 --note "evidence" [--next]` |
 | Blocked | `visual-roadmap block T004 "cause"` |
+| Pause work | `visual-roadmap pause T004 "reason"` |
+| Resume work | `visual-roadmap resume T004` |
 | Decision or note | `visual-roadmap log "text"` |
 | After editing by hand | `visual-roadmap check [--json] [--strict]` |
 

@@ -96,6 +96,7 @@
   const STATUS = {
     planned: { id: 'planned', label: 'Planeado', color: 'var(--idle)', cls: 'st-planned' },
     active: { id: 'active', label: 'En curso', color: 'var(--blue-300)', cls: 'st-active' },
+    paused: { id: 'paused', label: 'Pausado', color: 'var(--warn)', cls: 'st-paused' },
     blocked: { id: 'blocked', label: 'Bloqueado', color: 'var(--danger)', cls: 'st-blocked' },
     risk: { id: 'risk', label: 'En riesgo', color: 'var(--warn)', cls: 'st-risk' },
     done: { id: 'done', label: 'Hecho', color: 'var(--ok)', cls: 'st-done' },
@@ -105,6 +106,7 @@
   const STATUS_ALIASES = {
     planned: 'planned', backlog: 'planned', todo: 'planned', 'to do': 'planned', pending: 'planned', new: 'planned',
     active: 'active', doing: 'active', wip: 'active', progress: 'active', 'in progress': 'active', started: 'active',
+    paused: 'paused', pause: 'paused', pausado: 'paused', pausada: 'paused',
     blocked: 'blocked', block: 'blocked', stuck: 'blocked',
     risk: 'risk', 'at-risk': 'risk', 'at risk': 'risk', delayed: 'risk', slip: 'risk',
     done: 'done', complete: 'done', completed: 'done', finished: 'done', shipped: 'done', delivered: 'done', closed: 'done',
@@ -136,7 +138,7 @@
     if (!k) return null;
     if (STATUS[k]) return k;
     if (STATUS_ALIASES[k]) return STATUS_ALIASES[k];
-    const m = /^(st[- ]?)?(planned|active|blocked|risk|done|cancelled)/.exec(k);
+    const m = /^(st[- ]?)?(planned|active|paused|blocked|risk|done|cancelled)/.exec(k);
     return m ? m[2] : null;
   }
 
@@ -339,8 +341,10 @@
     const status = n.status || meta.now_status || meta.current_task_status || '';
     const startedAt = n.started_at || n.started || meta.now_started_at || '';
     const remaining = n.remaining || meta.now_remaining || '';
+    const pausedAt = n.paused_at || '';
+    const pausedMinutes = Number(n.paused_minutes || 0);
     const reason = n.reason || meta.now_reason || '';
-    return { id, name, context, expected, elapsed, status, startedAt, remaining, reason };
+    return { id, name, context, expected, elapsed, status, startedAt, pausedAt, pausedMinutes, remaining, reason };
   }
 
   /* ------------------------------------------------------------------ *
@@ -704,6 +708,7 @@
     if (!items.length) return 'planned';
     if (items.every(i => i.status === 'done')) return 'done';
     if (items.some(i => i.status === 'blocked')) return 'blocked';
+    if (items.some(i => i.status === 'paused')) return 'paused';
     if (items.some(i => i.status === 'risk')) return 'risk';
     if (items.some(i => i.status === 'active' || (i.progress || 0) > 0)) return 'active';
     return 'planned';
@@ -850,7 +855,7 @@
     if (active.length > cap) push('warn', 'multipleActive', { count: active.length, ids: active.map(label).join(', ') }, active.map(i => i.id));
     const now = doc.nowTask;
     if (now && now.id) {
-      const match = active.find(i => i.taskId && i.taskId.toUpperCase() === String(now.id).toUpperCase());
+      const match = items.find(i => (i.status === 'active' || i.status === 'paused') && i.taskId && i.taskId.toUpperCase() === String(now.id).toUpperCase());
       if (!match) push('warn', 'nowTaskMismatch', { id: now.id });
       else {
         if (!now.startedAt && !now.elapsed) push('info', 'noStartedAt', {}, [match.id]);

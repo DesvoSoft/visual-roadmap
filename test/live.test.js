@@ -81,3 +81,22 @@ test('stop hook asks the agent to fix roadmap errors once', () => {
     assert.match(brief.stdout, /^\[visual-roadmap\] H · 0\/1 tasks/);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('post-tool hook starts a ready task after code changes', () => {
+  const { spawnSync } = require('node:child_process');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'visual-roadmap-auto-'));
+  const cli = path.join(__dirname, '../bin/visual-roadmap.js');
+  const run = (bin, args, input) => spawnSync(bin, args, { cwd: dir, input, encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
+  try {
+    fs.writeFileSync(path.join(dir, 'ROADMAP.md'), '---\ntitle: Auto\nupdated: 2026-09-26 09:00\n---\n## Releases\n### v1 · Work\n| Item | Estado | Esfuerzo |\n| --- | --- | --- |\n| T001 Ready | planned | 30m |\n');
+    fs.writeFileSync(path.join(dir, 'code.js'), 'const x = 1;\n');
+    assert.equal(run('git', ['init']).status, 0);
+    assert.equal(run('git', ['add', '.']).status, 0);
+    assert.equal(run('git', ['-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', 'commit', '-m', 'initial']).status, 0);
+    fs.writeFileSync(path.join(dir, 'code.js'), 'const x = 2;\n');
+    const hook = run(process.execPath, [cli, 'hook', 'post-tool-use'], '{}');
+    assert.equal(hook.status, 0);
+    assert.match(hook.stdout, /T001 started automatically/);
+    assert.match(fs.readFileSync(path.join(dir, 'ROADMAP.md'), 'utf8'), /\| T001 Ready \| active \|/);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});

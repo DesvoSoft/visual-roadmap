@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- `pause` and `resume` commands keep paused time out of actual work duration.
+- Claude Code PostToolUse and UserPromptSubmit hooks automatically start the next ready task when code changed without an active task.
+- Timeline slip labels, distinct paused and blocked styles, and a stronger active progress pulse.
+
+### Changed
+- Forecast and timeline move unfinished work past stale planned dates and reschedule dependent tasks after delays.
+- Agent instructions make roadmap updates implicit during coding work.
+
 ## [0.2.0] - 2026-09-27
 
 ### Added

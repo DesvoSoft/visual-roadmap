@@ -23,7 +23,7 @@
       items:'Items', effort:'Effort', schedule:'Schedule', remaining:'remaining', projectDays:'project days', noItems:'No items match this filter',
       releaseWindow:'Delivery window', activeTasks:'Active', riskTasks:'At risk', completion:'Completion', releaseDetails:'Release details',
       logEmpty:'The log is empty. Add entries under ## Log in ROADMAP.md.', completed:'completed', cancelled:'cancelled', noDate:'No date',
-      planned:'Planned', active:'Active', blockedStatus:'Blocked', risk:'At risk', cancelledStatus:'Cancelled', calculated:'calculated', plannedLabel:'planned',
+      planned:'Planned', active:'Active', paused:'Paused', slip:'Slipped', blockedStatus:'Blocked', risk:'At risk', cancelledStatus:'Cancelled', calculated:'calculated', plannedLabel:'planned',
       health:'ROADMAP HEALTH', health_error:'error(s)', health_warn:'warning(s)', health_info:'suggestion(s)', parseError:'Could not read ROADMAP.md',
       ago:'{time} ago', commits:'COMMITS', notifyOn:'Notifications on (task done, blocked or stuck)', notifyOff:'Enable desktop notifications', allDone:'All tasks done'
     },
@@ -48,7 +48,7 @@
       items:'Ítems', effort:'Esfuerzo', schedule:'Plazo', remaining:'restantes', projectDays:'días de proyecto', noItems:'No hay ítems para este filtro',
       releaseWindow:'Ventana de entrega', activeTasks:'Activas', riskTasks:'En riesgo', completion:'Avance', releaseDetails:'Detalle de la versión',
       logEmpty:'El log está vacío. Agrega entradas a ## Log en ROADMAP.md.', completed:'completados', cancelled:'cancelados', noDate:'Sin fecha',
-      planned:'Planeado', active:'En curso', blockedStatus:'Bloqueado', risk:'En riesgo', cancelledStatus:'Descartado', calculated:'calculada', plannedLabel:'planificada',
+      planned:'Planeado', active:'En curso', paused:'Pausada', slip:'Desplazada', blockedStatus:'Bloqueado', risk:'En riesgo', cancelledStatus:'Descartado', calculated:'calculada', plannedLabel:'planificada',
       health:'SALUD DEL ROADMAP', health_error:'error(es)', health_warn:'aviso(s)', health_info:'sugerencia(s)', parseError:'No se pudo leer ROADMAP.md',
       ago:'hace {time}', commits:'COMMITS', notifyOn:'Notificaciones activas (tarea hecha, bloqueada o atascada)', notifyOff:'Activar notificaciones de escritorio', allDone:'Todas las tareas terminadas'
     }

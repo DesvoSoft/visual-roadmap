@@ -1108,6 +1108,15 @@ body {
   box-shadow: 0 0 14px rgba(255, 122, 0, 0.6);
   z-index: 3;
 }
+.tracker-bar--paused { background: #a66b19; border: 2px solid #ffd07a; color: #fff; font-weight: 700; }
+.tracker-bar--blocked { background: #9b3042; border: 2px solid #ff8595; color: #fff; font-weight: 700; }
+.tracker-bar--slipped { outline: 2px solid #ffcb48; outline-offset: 1px; }
+.task-label-row--paused { color: #d9a43f; font-weight: 700; }
+.now-fill--running { animation: active-glow 2s ease-in-out infinite; }
+html[data-theme="light"] .tracker-bar--paused { background: #9a5c00; color: #fff; }
+html[data-theme="light"] .tracker-bar--blocked { background: #9d2439; color: #fff; }
+html[data-theme="light"] .tracker-bar--slipped { outline-color: #a66100; }
+@media (prefers-reduced-motion: reduce) { .now-fill--running, .tracker-bar--now { animation: none; } }
 
 .tracker-bar--planned {
   background: rgba(6, 17, 32, 0.85);
@@ -1229,6 +1238,9 @@ html[data-theme="light"] .health__head, html[data-theme="light"] .health__item {
 .vertical-now-line::after { content: ''; position: absolute; top: 0; left: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--neon-orange); box-shadow: 0 0 14px var(--neon-orange); }
 .timeline-signal--alert { animation: alert-breathe 3s ease-in-out infinite; }
 .tracker-bar--provisional { border-style: dashed; opacity: .8; background: repeating-linear-gradient(135deg, rgba(74,137,172,.18), rgba(74,137,172,.18) 7px, rgba(5,15,30,.4) 7px, rgba(5,15,30,.4) 14px); }
+.tracker-bar--now.tracker-bar--provisional { opacity: 1; background: repeating-linear-gradient(45deg, #ff7a00, #ff7a00 10px, #db6100 10px, #db6100 20px); }
+.tracker-bar--paused.tracker-bar--provisional { opacity: 1; background: #a66b19; }
+.tracker-bar--blocked.tracker-bar--provisional { opacity: 1; background: #9b3042; }
 .task-label-row--interactive { cursor: pointer; }
 .task-label-row--interactive:focus-visible { outline: 1px solid var(--cyan); outline-offset: -2px; }
 .task-detail-overlay { position: fixed; inset: 0; z-index: 300; display: flex; justify-content: flex-end; background: rgba(0,4,10,.72); backdrop-filter: blur(3px); animation: panel-enter .2s ease-out; }
@@ -1649,6 +1661,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
   const STATUS = {
     planned: { id: 'planned', label: 'Planeado', color: 'var(--idle)', cls: 'st-planned' },
     active: { id: 'active', label: 'En curso', color: 'var(--blue-300)', cls: 'st-active' },
+    paused: { id: 'paused', label: 'Pausado', color: 'var(--warn)', cls: 'st-paused' },
     blocked: { id: 'blocked', label: 'Bloqueado', color: 'var(--danger)', cls: 'st-blocked' },
     risk: { id: 'risk', label: 'En riesgo', color: 'var(--warn)', cls: 'st-risk' },
     done: { id: 'done', label: 'Hecho', color: 'var(--ok)', cls: 'st-done' },
@@ -1658,6 +1671,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
   const STATUS_ALIASES = {
     planned: 'planned', backlog: 'planned', todo: 'planned', 'to do': 'planned', pending: 'planned', new: 'planned',
     active: 'active', doing: 'active', wip: 'active', progress: 'active', 'in progress': 'active', started: 'active',
+    paused: 'paused', pause: 'paused', pausado: 'paused', pausada: 'paused',
     blocked: 'blocked', block: 'blocked', stuck: 'blocked',
     risk: 'risk', 'at-risk': 'risk', 'at risk': 'risk', delayed: 'risk', slip: 'risk',
     done: 'done', complete: 'done', completed: 'done', finished: 'done', shipped: 'done', delivered: 'done', closed: 'done',
@@ -1689,7 +1703,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     if (!k) return null;
     if (STATUS[k]) return k;
     if (STATUS_ALIASES[k]) return STATUS_ALIASES[k];
-    const m = /^(st[- ]?)?(planned|active|blocked|risk|done|cancelled)/.exec(k);
+    const m = /^(st[- ]?)?(planned|active|paused|blocked|risk|done|cancelled)/.exec(k);
     return m ? m[2] : null;
   }
 
@@ -1892,8 +1906,10 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     const status = n.status || meta.now_status || meta.current_task_status || '';
     const startedAt = n.started_at || n.started || meta.now_started_at || '';
     const remaining = n.remaining || meta.now_remaining || '';
+    const pausedAt = n.paused_at || '';
+    const pausedMinutes = Number(n.paused_minutes || 0);
     const reason = n.reason || meta.now_reason || '';
-    return { id, name, context, expected, elapsed, status, startedAt, remaining, reason };
+    return { id, name, context, expected, elapsed, status, startedAt, pausedAt, pausedMinutes, remaining, reason };
   }
 
   /* ------------------------------------------------------------------ *
@@ -2257,6 +2273,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     if (!items.length) return 'planned';
     if (items.every(i => i.status === 'done')) return 'done';
     if (items.some(i => i.status === 'blocked')) return 'blocked';
+    if (items.some(i => i.status === 'paused')) return 'paused';
     if (items.some(i => i.status === 'risk')) return 'risk';
     if (items.some(i => i.status === 'active' || (i.progress || 0) > 0)) return 'active';
     return 'planned';
@@ -2403,7 +2420,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     if (active.length > cap) push('warn', 'multipleActive', { count: active.length, ids: active.map(label).join(', ') }, active.map(i => i.id));
     const now = doc.nowTask;
     if (now && now.id) {
-      const match = active.find(i => i.taskId && i.taskId.toUpperCase() === String(now.id).toUpperCase());
+      const match = items.find(i => (i.status === 'active' || i.status === 'paused') && i.taskId && i.taskId.toUpperCase() === String(now.id).toUpperCase());
       if (!match) push('warn', 'nowTaskMismatch', { id: now.id });
       else {
         if (!now.startedAt && !now.elapsed) push('info', 'noStartedAt', {}, [match.id]);
@@ -2524,7 +2541,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       items:'Items', effort:'Effort', schedule:'Schedule', remaining:'remaining', projectDays:'project days', noItems:'No items match this filter',
       releaseWindow:'Delivery window', activeTasks:'Active', riskTasks:'At risk', completion:'Completion', releaseDetails:'Release details',
       logEmpty:'The log is empty. Add entries under ## Log in ROADMAP.md.', completed:'completed', cancelled:'cancelled', noDate:'No date',
-      planned:'Planned', active:'Active', blockedStatus:'Blocked', risk:'At risk', cancelledStatus:'Cancelled', calculated:'calculated', plannedLabel:'planned',
+      planned:'Planned', active:'Active', paused:'Paused', slip:'Slipped', blockedStatus:'Blocked', risk:'At risk', cancelledStatus:'Cancelled', calculated:'calculated', plannedLabel:'planned',
       health:'ROADMAP HEALTH', health_error:'error(s)', health_warn:'warning(s)', health_info:'suggestion(s)', parseError:'Could not read ROADMAP.md',
       ago:'{time} ago', commits:'COMMITS', notifyOn:'Notifications on (task done, blocked or stuck)', notifyOff:'Enable desktop notifications', allDone:'All tasks done'
     },
@@ -2549,7 +2566,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       items:'Ítems', effort:'Esfuerzo', schedule:'Plazo', remaining:'restantes', projectDays:'días de proyecto', noItems:'No hay ítems para este filtro',
       releaseWindow:'Ventana de entrega', activeTasks:'Activas', riskTasks:'En riesgo', completion:'Avance', releaseDetails:'Detalle de la versión',
       logEmpty:'El log está vacío. Agrega entradas a ## Log en ROADMAP.md.', completed:'completados', cancelled:'cancelados', noDate:'Sin fecha',
-      planned:'Planeado', active:'En curso', blockedStatus:'Bloqueado', risk:'En riesgo', cancelledStatus:'Descartado', calculated:'calculada', plannedLabel:'planificada',
+      planned:'Planeado', active:'En curso', paused:'Pausada', slip:'Desplazada', blockedStatus:'Bloqueado', risk:'En riesgo', cancelledStatus:'Descartado', calculated:'calculada', plannedLabel:'planificada',
       health:'SALUD DEL ROADMAP', health_error:'error(es)', health_warn:'aviso(s)', health_info:'sugerencia(s)', parseError:'No se pudo leer ROADMAP.md',
       ago:'hace {time}', commits:'COMMITS', notifyOn:'Notificaciones activas (tarea hecha, bloqueada o atascada)', notifyOff:'Activar notificaciones de escritorio', allDone:'Todas las tareas terminadas'
     }
@@ -2596,21 +2613,23 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
   }
   function timestamp(raw) {
     if (!raw) return null;
-    const value = new Date(String(raw).trim().replace(' ', 'T')).getTime();
+    const normalized = String(raw).trim();
+    const value = new Date(/^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized + 'T00:00:00' : normalized.replace(' ', 'T')).getTime();
     return Number.isFinite(value) ? value : null;
   }
   function taskId(item) { return String(item?.taskId || '').toUpperCase(); }
   function calculate(doc, clock) {
     const now = clock instanceof Date ? clock.getTime() : typeof clock === 'number' ? clock : Date.now();
     const items = doc.items || [];
-    const active = items.find(it => it.status === 'active' && taskId(it) === String(doc.nowTask?.id || '').toUpperCase())
-      || items.find(it => it.status === 'active') || null;
+    const active = items.find(it => (it.status === 'active' || it.status === 'paused') && taskId(it) === String(doc.nowTask?.id || '').toUpperCase())
+      || items.find(it => it.status === 'active' || it.status === 'paused') || null;
     const n = active && String(doc.nowTask?.id || '').toUpperCase() === taskId(active) ? doc.nowTask : {};
     const legacyElapsed = minutes(n.elapsed);
     const start = timestamp(n.startedAt) ?? (legacyElapsed != null && timestamp(doc.meta?.updated) != null
       ? timestamp(doc.meta.updated) - legacyElapsed * MINUTE : null);
     const initialMinutes = minutes(n.expected) || (active?.effort ? active.effort * 60 : null);
-    const elapsed = start != null ? Math.max(0, Math.floor((now - start) / MINUTE)) : minutes(n.elapsed);
+    const paused = Math.max(0, +n.pausedMinutes || 0) + (n.pausedAt ? Math.max(0, (now - (timestamp(n.pausedAt) ?? now)) / MINUTE) : 0);
+    const elapsed = start != null ? Math.max(0, Math.floor((now - start) / MINUTE - paused)) : minutes(n.elapsed);
     const changes = (doc.estimateChanges || [])
       .filter(e => taskId(active) && e.taskId.toUpperCase() === taskId(active))
       .map(e => ({ ...e, time: timestamp(e.at), remainingMinutes: minutes(e.remaining) }))
@@ -2621,7 +2640,8 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     const remainingAt = timestamp(doc.meta?.updated) ?? now;
     const initialEta = start != null && initialMinutes != null ? start + initialMinutes * MINUTE : null;
     let eta = latest ? latest.time + latest.remainingMinutes * MINUTE :
-      explicitRemaining != null ? remainingAt + explicitRemaining * MINUTE : initialEta;
+      explicitRemaining != null ? remainingAt + explicitRemaining * MINUTE : initialEta != null ? initialEta + paused * MINUTE : null;
+    if (active?.status === 'paused') eta = null;
     const overdue = eta != null && now > eta && active != null;
     const overdueMinutes = overdue ? Math.floor((now - eta) / MINUTE) : 0;
     const delayMinutes = initialMinutes != null && elapsed != null ? Math.max(0, elapsed - initialMinutes) : 0;
@@ -2631,7 +2651,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       eta = now + extension * MINUTE;
       provisional = true;
     }
-    const activeRemaining = active && eta != null ? Math.max(0, Math.ceil((eta - now) / MINUTE)) : null;
+    const activeRemaining = active ? active.status === 'paused' ? Math.max(0, (initialMinutes || 0) - (elapsed || 0)) : eta != null ? Math.max(0, Math.ceil((eta - now) / MINUTE)) : null : null;
     const cadence = minutes(doc.meta?.cadence);
     const ratios = items.filter(it => it.status === 'done' && it.effort > 0 && it.actual > 0)
       .map(it => it.actual / it.effort).sort((a, b) => a - b);
@@ -2646,8 +2666,9 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     const pending = open.slice();
     if (active && activeRemaining != null) {
       totalRemaining += activeRemaining;
-      projections.set(active.id, { start: start ?? now, end: eta });
-      lanes[0] = Math.max(now, eta);
+      const finishActive = active.status === 'paused' ? now + activeRemaining * MINUTE : eta;
+      projections.set(active.id, { start: active.status === 'paused' ? now : start ?? now, end: finishActive, paused: active.status === 'paused' });
+      lanes[0] = Math.max(now, finishActive);
       pending.splice(pending.indexOf(active), 1);
     }
     const find = dep => global.Roadmap && global.Roadmap.findTask ? global.Roadmap.findTask(doc, dep) : null;
@@ -2656,15 +2677,20 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       let index = pending.findIndex(item => !blockers(item).length);
       if (index === -1) index = 0;                       /* dependency cycle: keep row order */
       const item = pending.splice(index, 1)[0];
+      if (item.status === 'blocked' || item.depends.some(dep => {
+        const target = find(dep);
+        return target && (target.status === 'blocked' || (target.status !== 'done' && !projections.has(target.id)));
+      })) { unknown++; continue; }
       const effort = item.effort ? item.effort * 60 * paceFactor * (1 - (item.progress || 0) / 100) : cadence;
       if (effort == null) { unknown++; continue; }
       const duration = Math.max(0, effort);
-      const ready = Math.max(now, ...item.depends.map(dep => projections.get(find(dep)?.id)?.end || now));
+      const declared = timestamp(item.start);
+      const ready = Math.max(now, declared || now, ...item.depends.map(dep => projections.get(find(dep)?.id)?.end || now));
       let lane = 0;
       for (let i = 1; i < lanes.length; i++) if (Math.max(lanes[i], ready) < Math.max(lanes[lane], ready)) lane = i;
       const begin = Math.max(lanes[lane], ready);
       lanes[lane] = begin + duration * MINUTE;
-      projections.set(item.id, { start: begin, end: lanes[lane] });
+      projections.set(item.id, { start: begin, end: lanes[lane], slipMinutes: declared != null ? Math.max(0, Math.round((begin - declared) / MINUTE)) : 0 });
       totalRemaining += duration;
     }
     const finish = Math.max(now, ...[...projections.values()].map(p => p.end));
@@ -2676,7 +2702,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       confidence: ratios.length >= 5 ? 'alta' : ratios.length >= 2 ? 'media' : 'baja'
     };
     return {
-      active, elapsed, initialMinutes, initialEta, eta, activeRemaining,
+      active, elapsed, pausedMinutes: paused, initialMinutes, initialEta, eta, activeRemaining,
       overdue, overdueMinutes, delayMinutes, provisional, latestChange: latest, changes,
       projectEta, projectRange, unknown, totalRemaining, capacity, paceFactor, samples: ratios.length, projections,
       ageMinutes: timestamp(doc.meta?.updated) != null ? Math.max(0, Math.floor((now - timestamp(doc.meta.updated)) / MINUTE)) : null
@@ -2892,10 +2918,15 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw + (end ? 'T23:59:59' : 'T00:00:00') : raw.replace(' ','T'));
     return isNaN(d.getTime()) ? null : d.getTime();
   }
-  function windowForItem(item, prediction) {
+  function windowForItem(item, prediction, now = Date.now()) {
     const declaredStart = time(item.start, false), declaredEnd = time(item.end, true);
     const coarse = /^\d{4}-\d{2}-\d{2}$/.test(item.start || '') && /^\d{4}-\d{2}-\d{2}$/.test(item.end || '');
     const shortHours = item.actual || item.effort;
+    if (item.status !== 'done' && item.status !== 'cancelled' && prediction) return { start: prediction.start, end: prediction.end, coarse: false, estimated: true, slipMinutes: prediction.slipMinutes || 0 };
+    if (item.status !== 'done' && item.status !== 'cancelled' && declaredStart != null && declaredStart < now) {
+      const duration = declaredEnd != null && declaredEnd > declaredStart ? declaredEnd - declaredStart : Math.max(1, shortHours || 0) * 3600000;
+      return { start: now, end: now + duration, coarse: false, estimated: true, slipMinutes: Math.round((now - declaredStart) / 60000) };
+    }
     if (coarse && shortHours > 0 && shortHours <= 3) {
       const midpoint = (declaredStart + declaredEnd) / 2;
       const half = shortHours * 3600000 / 2;
@@ -2980,7 +3011,12 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       if(search&&!items.length)return;
       const key=rel.id||String(index), done=rel.items.filter(it=>it.status==='done').length;
       let summary=null;
-      const phaseStart=time(rel.start,false), phaseEnd=time(rel.end,true);
+      const projectedWindows=rel.items.map(it=>forecast.projections.get(it.id)).filter(Boolean);
+      let phaseStart=projectedWindows.length ? Math.min(...projectedWindows.map(p=>p.start)) : time(rel.start,false);
+      let phaseEnd=projectedWindows.length ? Math.max(...projectedWindows.map(p=>p.end)) : time(rel.end,true);
+      if(!projectedWindows.length && rel.items.some(it=>it.status!=='done'&&it.status!=='cancelled') && phaseStart!=null && phaseStart<now) {
+        phaseEnd=now+Math.max(3600000,(phaseEnd||phaseStart)-phaseStart);phaseStart=now;
+      }
       if(phaseStart!=null&&phaseEnd!=null&&phaseEnd>=start&&phaseStart<=end){
         summary=el('div','phase-summary-bar');
         summary.style.left=`${Math.max(0,pos(phaseStart))}%`;
@@ -2995,7 +3031,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       if(!expanded.has(key)&&!search)return;
       items.forEach(it=>{
         const predicted = forecast.projections.get(it.id);
-        const window = windowForItem(it,predicted);
+        const window = windowForItem(it,predicted,now);
         const a=window.start, b=window.end;
         const provisional = window.estimated;
         let bar=null;
@@ -3003,18 +3039,20 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
           const from=a??b,to=b??a;
           if(to>=start&&from<=end){
             const left=Math.max(0,pos(from)), right=Math.min(100,pos(to)), width=Math.max(0,right-left);
-            bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':'planned'}${provisional?' tracker-bar--provisional':''}${width<8?' tracker-bar--compact':''}`,width>=8?it.name:'');
+            bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':it.status==='paused'?'paused':it.status==='blocked'?'blocked':'planned'}${provisional?' tracker-bar--provisional':''}${width<8?' tracker-bar--compact':''}`,width>=8?it.name:'');
             bar.style.left=`${left}%`;
             bar.style.width=`${width}%`;
             bar.title=window.coarse ? `${it.name} · ${t('dayPrecision')}` : provisional ? `${it.name} · ${t('projection')}` : `${it.name} · ${it.start||'?'} → ${it.end||'?'} · ${it.status}`;
+            if(window.slipMinutes > 0) { bar.classList.add('tracker-bar--slipped'); bar.title += ` · ${t('slip')} +${global.Forecast.duration(window.slipMinutes)}`; }
           }
         }
         if(!it.start&&!it.end)undated++;
-        const l=row(`${it.status==='done'?'■':it.status==='active'?'▰':'□'}  ${it.taskId||''} ${it.name}`,bar,false);
+        const l=row(`${it.status==='done'?'■':it.status==='active'?'▰':it.status==='paused'?'Ⅱ':'□'}  ${it.taskId||''} ${it.name}${window.slipMinutes>0?` · ${t('slip')} +${global.Forecast.duration(window.slipMinutes)}`:''}`,bar,false);
         if(!it.start&&!it.end)l.title=provisional?t('projection'):t('undated');
         l.setAttribute('role','button'); l.tabIndex=0; l.classList.add('task-label-row--interactive');
         if(it.status==='cancelled')l.classList.add('task-label-row--cancelled');
         if(it.status==='blocked')l.classList.add('task-label-row--blocked');
+        if(it.status==='paused')l.classList.add('task-label-row--paused');
         l.addEventListener('click',()=>showDetail(it,doc,forecast));
         l.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')showDetail(it,doc,forecast);});
         if(bar)bar.addEventListener('click',()=>showDetail(it,doc,forecast));
@@ -3054,6 +3092,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     ];
     const prediction=forecast.projections.get(item.id);
     if(prediction)fields.push([t('calculatedWindow'),`${global.Forecast.dateTime(prediction.start)} → ${global.Forecast.dateTime(prediction.end)}`]);
+    if(prediction?.slipMinutes)fields.push([t('slip'),global.Forecast.duration(prediction.slipMinutes)]);
     fields.forEach(([label,value])=>{
       const line=el('div','task-detail-row');line.append(el('span','',label),el('strong','',value));panel.appendChild(line);
     });
@@ -3371,7 +3410,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
     if ($('now-elapsed')) $('now-elapsed').textContent = global.Forecast.duration(forecast.elapsed);
     const moved = forecast.initialEta != null && forecast.eta != null
       ? Math.round((forecast.eta - forecast.initialEta) / 60000) : 0;
-    if ($('now-warn')) $('now-warn').textContent = forecast.overdue
+    if ($('now-warn')) $('now-warn').textContent = active?.status === 'paused' ? t('paused') : forecast.overdue
       ? `${t('delayed')}: ${global.Forecast.duration(forecast.delayMinutes)} · ${t('provisional')}`
       : forecast.latestChange && moved > 0 ? `${t('etaExtended')} ${global.Forecast.duration(moved)}` : n.status || '';
     if ($('now-eta')) $('now-eta').textContent = forecast.eta != null
@@ -3383,6 +3422,7 @@ html[data-theme="light"] .connection-status[data-state="live"] { color: #1f7fa8;
       /* Calculate bar width */
       const pct = active?.progress || 0;
       $('now-fill').style.width = `${pct}%`;
+      $('now-fill').classList.toggle('now-fill--running', active?.status === 'active');
     }
 
     /* ── Card 2: PROJECT & CADENCE ── */
