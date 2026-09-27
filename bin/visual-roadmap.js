@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* bin/visual-roadmap.js — visual-roadmap CLI
    Viewer:  init · live · serve · open · skill · agents
-   Agent:   status · check · start · done · block · progress · eta · log
+   Agent:   status · check · start · done · block · progress · eta · log · shot · shots
    Agent commands edit ROADMAP.md deterministically (see lib/agent.js). */
 
 'use strict';
@@ -17,7 +17,7 @@ const SELF    = path.join(__dirname, '..');   /* package root */
 const ARGS    = process.argv.slice(2);
 const CMD     = ARGS[0] || 'help';
 const POS     = [];
-const BOOLEAN_FLAGS = new Set(['force', 'modular', 'json', 'strict', 'no-agents', 'install', 'hooks', 'no-hooks', 'brief']);
+const BOOLEAN_FLAGS = new Set(['force', 'modular', 'json', 'strict', 'no-agents', 'install', 'hooks', 'no-hooks', 'brief', 'final']);
 const FLAGS   = parseFlags(ARGS.slice(1));
 
 /* ── utils ───────────────────────────────────────────── */
@@ -288,6 +288,8 @@ function cmdHelp() {
   log(bold('  Agent commands') + dim('  (nearest ROADMAP.md upwards; --file to override)'));
   log('');
   log('  ' + bold('status') + '   [--json]                Current task, ETA, next ready tasks, problems');
+  log('  ' + bold('shot') + '     [ID] <image> ["caption"] [--final]  Attach a screenshot to the task');
+  log('  ' + bold('shots') + '    [ID] [--json] | prune   List or prune screenshots');
   log('  ' + bold('add') + '      "Result" --effort 30m [--release "v0.2 · Name"] [--after T003]');
   log('  ' + bold('split') + '    T005 "Part A:30m" "Part B:45m"   Replace a task with ordered parts');
   log('  ' + bold('check') + '    [--json] [--strict]     Validate ROADMAP.md; exit 1 on errors');
@@ -501,6 +503,39 @@ const cmdProgress = () => agentCommand((A, text) => A.progress(text, POS[0], POS
 const cmdEta      = () => agentCommand((A, text) => A.eta(text, POS[0], POS[1], rest(2)));
 const cmdLog      = () => agentCommand((A, text) => A.note(text, rest(0), { icon: FLAGS.icon, diff: FLAGS.diff }));
 
+/* ── screenshots ─────────────────────────────────────── */
+
+function shotContext() {
+  const file = roadmapPath();
+  if (!fs.existsSync(file)) { err(`ROADMAP.md not found from ${CWD}. Run  visual-roadmap init  first, or pass --file.`); process.exit(1); }
+  const Agent = require('../lib/agent.js');
+  const text = fs.readFileSync(file, 'utf8');
+  return { Agent, text, root: path.dirname(file), Shots: require('../lib/shots.js'), options: require('../lib/shots.js').optionsFromRoadmap(globalThis.Roadmap.parse(text)) };
+}
+
+function cmdShot() {
+  const { Agent, text, root, Shots, options } = shotContext();
+  const args = [...POS];
+  const task = /^[A-Za-z]+\d+$/.test(args[0] || '') && !fs.existsSync(path.resolve(CWD, args[0])) ? args.shift() : Agent.status(text).active?.id;
+  const image = args.shift();
+  if (!task) { err('No active task: pass the task ID (visual-roadmap shot T004 file.png) or start one.'); process.exit(1); }
+  if (!image) { err('Usage: visual-roadmap shot [T004] <image> ["caption"] [--final]'); process.exit(1); }
+  try {
+    const r = Shots.add(root, { task, file: path.resolve(CWD, image), caption: args.join(' '), kind: FLAGS.final ? 'final' : 'progress', source: 'cli', ...options });
+    if (r.skipped) info(`${task.toUpperCase()} duplicate, already stored`);
+    else ok(`${r.entry.task} shot ${r.entry.id} · ${r.count} shots`);
+  } catch (e) { err(e.message); process.exit(1); }
+}
+
+function cmdShots() {
+  const { root, Shots, options } = shotContext();
+  if (POS[0] === 'prune') { ok(`${Shots.prune(root, options).length} file(s) removed`); return; }
+  const entries = Shots.list(root, POS[0]);
+  if (FLAGS.json) { log(JSON.stringify(entries, null, 2)); return; }
+  if (!entries.length) { info('No screenshots yet'); return; }
+  entries.forEach(s => log(`${s.task}  ${s.at.slice(0, 16).replace('T', ' ')}  ${s.id}  ${s.kind === 'final' ? '★ ' : ''}${s.caption || path.basename(s.file)}`));
+}
+
 /* ── router ───────────────────────────────────────────── */
 
 const CMDS = {
@@ -528,6 +563,8 @@ const CMDS = {
   progress: cmdProgress,
   eta:     cmdEta,
   log:     cmdLog,
+  shot:    cmdShot,
+  shots:   cmdShots,
   help:    cmdHelp,
   '--help': cmdHelp,
   '-h':    cmdHelp
