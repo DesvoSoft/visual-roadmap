@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 package-lock.json
+*.tgz
 
 # OS and editor files
 .DS_Store
@@ -8,4 +9,7 @@ Thumbs.db
 *.log
 .vscode/
 .idea/
+
+# Local AI tooling configuration
+.claude/
 .serena/

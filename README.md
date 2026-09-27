@@ -8,6 +8,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/DesvoSoft/visual-roadmap/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/DesvoSoft/visual-roadmap/actions/workflows/ci.yml/badge.svg" /></a>
   <img alt="Node.js 18+" src="https://img.shields.io/badge/node-18+-3c873a.svg?logo=node.js&logoColor=white" />
   <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg" />
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-0-brightgreen.svg" />
@@ -101,7 +102,7 @@ The viewer opens at `http://127.0.0.1:3579` and updates whenever `ROADMAP.md` ch
 
 After that, every new request is split and tracked the same way. You do not have to repeat the instruction.
 
-> **Working from a local clone?** Run `node path/to/visual-roadmap/cli.js init` in your project, then `node path/to/visual-roadmap/cli.js live`. The package is not on npm yet.
+> **Working from a local clone?** Run `node path/to/visual-roadmap/bin/visual-roadmap.js init` in your project, then `… live`. The package is not on npm yet.
 
 ---
 
@@ -164,18 +165,20 @@ $ npx visual-roadmap done T002 --note "6 search tests green" --next
 
 ```
 visual-roadmap/
-├── cli.js              # Commands: init, live, agent commands, hooks
-├── agent.js            # Deterministic ROADMAP.md edits (pure text → text)
-├── git.js              # Read-only git facts: commits per task, lines changed
-├── server.js           # Local server: viewer, SSE updates, /git
-├── build.js            # Bundles viewer/ into dist/roadmap.html
-├── viewer/             # Parser, forecast, views, styles, i18n
-├── dist/roadmap.html   # Portable single-file viewer (committed)
-├── SKILL.md            # Agent protocol installed into projects
-├── ROADMAP.seed.md     # Template used by init
-├── docs/               # Format and development guides
-├── tools/              # Screenshot generator for this README
-└── test/               # node:test suite
+├── bin/visual-roadmap.js   # CLI: init, live, agent commands, hooks
+├── lib/
+│   ├── agent.js            # Deterministic ROADMAP.md edits (pure text → text)
+│   ├── git.js              # Read-only git facts: commits per task, lines changed
+│   └── server.js           # Local server: viewer, SSE updates, /git
+├── viewer/                 # Parser, forecast, views, styles, i18n
+├── dist/roadmap.html       # Portable single-file viewer (generated, committed)
+├── templates/              # ROADMAP.md seed used by init
+├── SKILL.md                # Agent protocol installed into projects
+├── scripts/                # build.js (bundle) · screenshots.js (README images)
+├── docs/                   # Format and development guides
+├── examples/               # Fictional demo roadmap
+├── assets/                 # Logo and screenshots
+└── test/                   # node:test suite
 ```
 
 ---
@@ -186,6 +189,7 @@ visual-roadmap/
 - **[docs/ROADMAP_FORMAT.md](docs/ROADMAP_FORMAT.md)** — The `ROADMAP.md` format and its rules *(Spanish)*.
 - **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** — Repository layout and local workflow *(Spanish)*.
 - **[examples/VOIDFRONT.md](examples/VOIDFRONT.md)** — A larger fictional roadmap (`npm start` opens it).
+- **[CHANGELOG.md](CHANGELOG.md)** — Release notes, including unreleased changes.
 
 ### Development
 
