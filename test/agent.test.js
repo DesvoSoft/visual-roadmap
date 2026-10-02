@@ -107,6 +107,20 @@ test('add assigns the next ID, creates releases and places rows after a task', (
   assert.equal(doc.releases[1].items[0].effort, 1);
 });
 
+test('add places tasks in the #### subgroup by --group, --after or the last table', () => {
+  const grouped = base.replace(/(\| Item[^\n]*\n\| ---[^\n]*\n(?:\|[^\n]*\n)*)/, '#### Acceso\n\n$1\n#### Perfil\n\n| Item | Estado | Progreso | Esfuerzo | Inicio | Fin | Depende |\n| --- | --- | --- | --- | --- | --- | --- |\n| T010 Editar perfil | planned | 0% | 30m | — | — | — |\n');
+  const categoryOf = (text, id) => parse(text).items.find(i => i.taskId === id).category;
+  let r = Agent.add(grouped, 'Avatar', { effort: '20m' }, at('10:00'));
+  assert.equal(categoryOf(r.text, r.id), 'Perfil');
+  r = Agent.add(r.text, 'Cerrar sesión', { effort: '20m', group: 'acceso' }, at('10:01'));
+  assert.equal(categoryOf(r.text, r.id), 'Acceso');
+  r = Agent.add(r.text, 'Recordarme', { effort: '20m', after: 'T001' }, at('10:02'));
+  assert.equal(categoryOf(r.text, r.id), 'Acceso');
+  r = Agent.add(r.text, 'Notificaciones', { effort: '20m', group: 'Ajustes' }, at('10:03'));
+  assert.equal(categoryOf(r.text, r.id), 'Ajustes');
+  assert.equal(parse(r.text).releases.length, 1);
+});
+
 test('split cancels the original, chains parts and moves dependents', () => {
   const started = Agent.start(base, 'T001', {}, at('10:00')).text;
   const r = Agent.split(started, 'T001', ['Formulario:20m', 'Validación: 25m'], at('10:05'));

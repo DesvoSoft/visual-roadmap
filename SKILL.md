@@ -38,14 +38,14 @@ npx visual-roadmap add "La sesión persiste al recargar" --effort 30m --after T0
 npx visual-roadmap split T003 "Enviar email de reset:30m" "Pantalla de nueva contraseña:45m"
 ```
 
-`add` sin `--release` usa la versión de la tarea activa. `split` cancela la original, encadena las partes y pasa sus dependientes a la última parte.
+`add` sin `--release` usa la versión de la tarea activa. `--group "Backend"` agrupa la tarea bajo un subtítulo `#### Backend` de esa versión (lo crea si no existe); úsalo cuando una versión tenga más de ~6 tareas o frentes distintos, para que el usuario siga el avance por bloque. Sin `--group`, `--after` usa el subgrupo de esa tarea y si no, el último. `split` cancela la original, encadena las partes y pasa sus dependientes a la última parte.
 
 ## Comandos
 
 | Cuándo | Comando |
 | --- | --- |
 | Retomar | `status` — tarea actual, ETA, siguientes listas, errores |
-| Planificar | `add "Resultado" --effort 30m [--release "v0.2 · Nombre"] [--after T003]` |
+| Planificar | `add "Resultado" --effort 30m [--release "v0.2 · Nombre"] [--group "Subgrupo"] [--after T003]` |
 | Tarea demasiado grande | `split T005 "Parte A:30m" "Parte B:45m"` |
 | Empezar | `start T004 [--expected 40m]` (por defecto usa el esfuerzo) |
 | Avance verificable | `progress T004 60` |

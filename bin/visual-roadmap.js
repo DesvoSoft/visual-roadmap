@@ -291,7 +291,7 @@ function cmdHelp() {
   log('  ' + bold('status') + '   [--json]                Current task, ETA, next ready tasks, problems');
   log('  ' + bold('shot') + '     [ID] <image> ["caption"] [--final]  Attach a screenshot to the task');
   log('  ' + bold('shots') + '    [ID] [--json] | prune   List or prune screenshots');
-  log('  ' + bold('add') + '      "Result" --effort 30m [--release "v0.2 · Name"] [--after T003]');
+  log('  ' + bold('add') + '      "Result" --effort 30m [--release "v0.2 · Name"] [--group "Subgroup"] [--after T003]');
   log('  ' + bold('split') + '    T005 "Part A:30m" "Part B:45m"   Replace a task with ordered parts');
   log('  ' + bold('check') + '    [--json] [--strict]     Validate ROADMAP.md; exit 1 on errors');
   log('  ' + bold('start') + '    T002 [--expected 40m]   Mark active, set now_task and start time');
@@ -513,7 +513,7 @@ const cmdDone     = () => agentCommand((A, text) => A.done(text, POS[0], {
   actual: FLAGS.actual, note: FLAGS.note, diff: FLAGS.diff, next: FLAGS.next,
   diffSince: since => require('../lib/git.js').changesSince(path.dirname(roadmapPath()), since)
 }));
-const cmdAdd      = () => agentCommand((A, text) => A.add(text, POS.join(' '), { effort: FLAGS.effort, release: FLAGS.release, depends: FLAGS.depends, after: FLAGS.after, note: FLAGS.note }));
+const cmdAdd      = () => agentCommand((A, text) => A.add(text, POS.join(' '), { effort: FLAGS.effort, release: FLAGS.release, group: FLAGS.group, depends: FLAGS.depends, after: FLAGS.after, note: FLAGS.note }));
 const cmdSplit    = () => agentCommand((A, text) => A.split(text, POS[0], POS.slice(1)));
 const cmdBlock    = () => agentCommand((A, text) => A.block(text, POS[0], rest(1)));
 const cmdPause    = () => agentCommand((A, text) => A.pause(text, POS[0], rest(1)));

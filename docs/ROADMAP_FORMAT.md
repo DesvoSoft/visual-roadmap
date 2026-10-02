@@ -44,6 +44,7 @@ now_task:
 - Usa encabezados `### v0.1 · Nombre` o `### R1 · Nombre` dentro de `## Releases`. Mantén IDs estables y coloca las versiones en el orden previsto.
 - Cada tarea tiene un ID `T001`, `T002`, etc. Los estados admitidos son `planned`, `active`, `blocked`, `risk`, `done` y `cancelled`. Una tarea `done` tiene `100%`; no marques una versión terminada si conserva trabajo abierto.
 - `Esfuerzo` admite `45m`, `1.5h`, `2d` o `1w`. `Inicio` y `Fin` admiten `AAAA-MM-DD HH:mm` para intervalos precisos y `AAAA-MM-DD` para planificación a nivel de día; escribe `—` si no hay fecha fija. Las tareas sin fecha pueden recibir barras proyectadas si tienen esfuerzo. Una tarea breve con solo fechas de día se dibuja como bloque aproximado, no como un día completo.
+- Dentro de una versión puedes agrupar tareas con subtítulos `#### Nombre` seguidos de su tabla. El timeline los muestra como subgrupos plegables con su propio avance. `add --group "Nombre"` coloca la tarea en ese subgrupo y lo crea si falta.
 - `Depende` contiene IDs separados por comas. El orden de las filas representa la secuencia prevista para la proyección.
 - `now_task.started_at` y `updated` usan fecha y hora local `AAAA-MM-DD HH:mm`. `now_task.expected` es una duración estimada desde el inicio, por ejemplo `90m`, `01:30` o `2h`.
 - Una línea de `## Estimaciones` expresa **tiempo restante** en el momento registrado, seguido de la razón. No reescribas la estimación inicial ni agregues entradas por el solo paso del tiempo.
