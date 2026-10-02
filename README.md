@@ -52,8 +52,8 @@ There are no accounts and no services. The roadmap is a Markdown file you own, a
 - **Plans in small tasks** — The bundled skill teaches the agent to turn every request into verifiable 15–90 minute tasks grouped into usable releases. `add` and `split` create them without the agent touching Markdown tables.
 - **One command per state change** — `done T004 --next` records the end time, the real duration and the lines changed (from git), then starts the next ready task. Output is a single line with no ANSI colors when piped, so it costs the agent almost no tokens.
 - **Automatic with Claude Code** — A `SessionStart` hook gives the agent a 4-line brief (current task, next tasks, anything to fix). A `Stop` hook warns it once when the roadmap has errors, an ETA has passed, or code changed with no active task, and the `PostToolUse` / `UserPromptSubmit` hooks start the next ready task when code changes with nothing active.
-- **Timeline first** — A one-line header and a compact overview leave most of the screen to the deliverables timeline. The current task shows elapsed vs. expected time on one bar (orange past the estimate), and the overview collapses to a single strip. Filter chips (pending, blocked, overdue, undated) narrow the timeline in one click.
-- **Live viewer** — Current task with elapsed time and ETA, revisions with their reasons, project forecast with a confidence window, and a timeline whose labels stay readable next to short bars. The tab title reads `▶ T004 · 23 min` even when the tab is in the background.
+- **Timeline first** — A one-line header and a compact overview leave most of the screen to the deliverables timeline. Each row reads `T109: Props del mundo` in a wide, resizable column on the left, with status, progress and slip chips; the right side only draws the bar. Releases split into collapsible `####` subgroups with their own progress, and the release of the active task opens by itself as the agent moves on. Filter chips (pending, blocked, overdue, undated) narrow the timeline in one click.
+- **Live viewer** — Current task with elapsed time and ETA, revisions with their reasons and a project forecast with a confidence window. The tab title reads `▶ T004 · 23 min` even when the tab is in the background.
 - **Screenshots as progress** — With Claude Code, screenshots the agent takes to verify its work (Chrome, Playwright, reading an image) are kept on the active task. The timeline shows a 📷 badge, a cover preview on hover and capture marks; the task detail shows an activity log with thumbnails and a lightbox. Images live in `.roadmap/shots/` (ignored by git), are compressed to WebP by the viewer and pruned automatically (`shots_max_mb`, default 150).
 - **Roadmap health** — Catches missing or cancelled dependencies, several active tasks, stale ETAs, tasks without an effort estimate and tasks too big to verify. Click a warning to open the task.
 - **Honest forecasts** — Projections respect dependencies, run independent work in parallel lanes (`capacity`) and are calibrated with the real durations of finished tasks.
@@ -112,6 +112,10 @@ Paste this into Claude Code, Codex, Cursor or any agent with a shell:
 
 The agent only needs a shell and Node.js 18+. Every command answers in one line, and `npx visual-roadmap status` tells it where to resume.
 
+### See it in action first
+
+From a clone of this repository, `npm run demo` creates a throwaway project, opens the viewer and plays a scripted agent session through the real CLI: planning with releases and subgroups, starting, progress, a revised ETA, a block, `done --next` and a split. Nothing in your repository changes.
+
 > **Working from a local clone?** Run `node path/to/visual-roadmap/bin/visual-roadmap.js init` in your project, then `… live`. The package is not on npm yet.
 
 ---
@@ -123,7 +127,7 @@ All commands edit the nearest `ROADMAP.md` up to the repository root (or `--file
 | When | Command |
 | --- | --- |
 | Resume a session | `visual-roadmap status [--json]` |
-| Plan a task | `visual-roadmap add "Result" --effort 30m [--release "v0.2 · Name"] [--after T003]` |
+| Plan a task | `visual-roadmap add "Result" --effort 30m [--release "v0.2 · Name"] [--group "Subgroup"] [--after T003]` |
 | A task grew too big | `visual-roadmap split T005 "Part A:30m" "Part B:45m"` |
 | Start working | `visual-roadmap start T004 [--expected 40m]` |
 | Verified progress | `visual-roadmap progress T004 60` |
@@ -193,13 +197,16 @@ visual-roadmap/
 ├── lib/
 │   ├── agent.js            # Deterministic ROADMAP.md edits (pure text → text)
 │   ├── git.js              # Read-only git facts: commits per task, lines changed
-│   └── server.js           # Local server: viewer, SSE updates, /git
-├── viewer/                 # Parser, forecast, views, styles, i18n
+│   ├── server.js           # Local server: viewer, SSE updates, /git, /shots
+│   ├── shots.js            # Screenshot storage, dedupe and pruning
+│   └── shot-hook.js        # Claude Code hook that keeps the agent's screenshots
+├── viewer/                 # Parser, forecast, timeline, versions, notifications, i18n
 ├── dist/roadmap.html       # Portable single-file viewer (generated, committed)
 ├── templates/              # ROADMAP.md seed used by init
 ├── SKILL.md                # Agent protocol installed into projects
-├── scripts/                # build.js (bundle) · screenshots.js (README images)
-├── docs/                   # Format and development guides
+├── AGENTS.md               # Guide for agents changing this repository
+├── scripts/                # build.js (bundle) · screenshots.js (README images) · simulate.js (demo)
+├── docs/                   # Format and development guides, design specs, proposals
 ├── examples/               # Fictional demo roadmap
 ├── assets/                 # Logo and screenshots
 └── test/                   # node:test suite
@@ -212,6 +219,9 @@ visual-roadmap/
 - **[SKILL.md](SKILL.md)** — Agent protocol: how to split work, which command to run and when *(Spanish)*.
 - **[docs/ROADMAP_FORMAT.md](docs/ROADMAP_FORMAT.md)** — The `ROADMAP.md` format and its rules *(Spanish)*.
 - **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** — Repository layout and local workflow *(Spanish)*.
+- **[AGENTS.md](AGENTS.md)** — Where each change goes and the rules, for agents working on this repository.
+- **[docs/design/](docs/design/)** — Design specs and implementation plans of shipped features.
+- **[Windows setup proposal](docs/proposals/windows-setup.md)** — Planned per-user/project installation and agent integration; not implemented *(Spanish)*.
 - **[examples/VOIDFRONT.md](examples/VOIDFRONT.md)** — A larger fictional roadmap (`npm start` opens it).
 - **[CHANGELOG.md](CHANGELOG.md)** — Release notes, including unreleased changes.
 
@@ -221,6 +231,7 @@ visual-roadmap/
 npm test               # node:test suite
 npm run build          # rebuild dist/roadmap.html after editing viewer/
 npm start              # serve the demo roadmap
+npm run demo           # watch a scripted agent session update the viewer live
 npm run screenshots    # regenerate the README screenshots (needs Edge or Chrome)
 ```
 

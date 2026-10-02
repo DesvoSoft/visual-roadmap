@@ -9,6 +9,19 @@ All notable changes to this project are documented here. The format follows [Kee
 - Screenshots stored in `.roadmap/shots/` (self-ignored by git), deduplicated, pruned per task and by `shots_max_mb`, and compressed to WebP by the viewer.
 - Timeline 📷 badge, cover preview on hover and capture marks; task detail activity log with thumbnails and a lightbox.
 - Server: `GET /shots`, `GET /shots/file/*`, `POST /shots/:id` and an SSE `shots` event.
+- Timeline: task code and full description live in a wide, resizable left column (`T109: Props del mundo`), with status, progress, slip and screenshot chips; the right side shows bars only.
+- Timeline: `#### Subgroup` headings inside a release render as collapsible subgroups with their own progress bar.
+- `add --group "Subgroup"` places a task under a `####` subgroup (creating it if needed); `--after` keeps the task in that row's subgroup.
+- Timeline: the release of the active task opens by itself when the agent moves to another release.
+- `npm run demo` (`scripts/simulate.js`): plays a scripted agent session through the real CLI in a temporary project while the viewer updates live.
+- `AGENTS.md`: map of where each change goes and the rules, for agents working on this repository.
+
+### Fixed
+- `add` into a release with several tables no longer always lands in the first one; it defaults to the last table.
+- Timeline: a cancelled task that never finished no longer draws a projected bar, and release/subgroup counts leave cancelled tasks out.
+
+### Changed
+- Design specs and plans moved to `docs/design/`; the Windows setup proposal to `docs/proposals/windows-setup.md`.
 
 ## [0.4.0] - 2026-09-27
 
