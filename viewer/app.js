@@ -7,7 +7,7 @@
 
   /* ── State ───────────────────────────────────────────── */
   let _doc = null;
-  let _view = 'timeline';  /* timeline | board | log */
+  let _view = 'timeline';  /* timeline | board */
   let _source = 'manual';
 
   const $ = id => document.getElementById(id);
@@ -138,49 +138,6 @@
     }).catch(() => {});
   }
 
-  /* ── Desktop notifications: task done / blocked, ETA stuck, all done ── */
-  const canNotify = 'Notification' in global && global.isSecureContext;
-  let _notify = false;
-  try { _notify = canNotify && localStorage.getItem('visual-roadmap-notify') === 'on' && Notification.permission === 'granted'; } catch {}
-  const _notified = new Set();
-  function paintNotify() {
-    const b = $('notify-toggle');
-    if (!b) return;
-    b.hidden = !canNotify;
-    b.textContent = _notify ? '🔔' : '🔕';
-    b.setAttribute('aria-pressed', String(_notify));
-    b.title = t(_notify ? 'notifyOn' : 'notifyOff');
-  }
-  function setNotify(on) {
-    _notify = on;
-    try { localStorage.setItem('visual-roadmap-notify', on ? 'on' : 'off'); } catch {}
-    paintNotify();
-  }
-  function toggleNotify() {
-    if (_notify) { setNotify(false); return; }
-    Notification.requestPermission().then(p => setNotify(p === 'granted'));
-  }
-  function notify(key, title, body) {
-    if (!_notify || _notified.has(key)) return;
-    _notified.add(key);
-    if (!document.hidden && document.hasFocus()) return;   /* the user is already looking */
-    try { new Notification(title, { body, tag: key }); } catch {}
-  }
-  function notifyTransitions(prev, doc) {
-    if (!prev) return;
-    const before = new Map(prev.items.map(i => [i.taskId || i.id, i.status]));
-    for (const it of doc.items) {
-      const was = before.get(it.taskId || it.id);
-      if (!was || was === it.status) continue;
-      const label = `${it.taskId ? it.taskId + ' · ' : ''}${it.name}`;
-      if (it.status === 'done') notify(`done:${label}`, `✓ ${t('done')}: ${label}`, doc.title);
-      if (it.status === 'blocked') notify(`blocked:${label}`, `⚠ ${t('blockedStatus')}: ${label}`, doc.title);
-    }
-    if (doc.stats.total && doc.stats.done === doc.stats.total && prev.stats.done !== prev.stats.total) {
-      notify(`complete:${doc.title}`, `✓ ${doc.title}`, t('allDone'));
-    }
-  }
-
   /* ── Roadmap health: consistency problems the agent should fix ── */
   let _healthOpen = false;
   function renderHealth(doc, forecast) {
@@ -191,7 +148,7 @@
     if (forecast.overdue && forecast.ageMinutes != null && forecast.ageMinutes >= forecast.overdueMinutes && forecast.overdueMinutes >= 10) {
       issues.unshift({ level: 'warn', code: 'stale', vars: { minutes: forecast.overdueMinutes } });
       const a = forecast.active;
-      notify(`stale:${a.taskId || a.id}:${doc.meta.updated}`, `⏱ ${a.taskId || ''} ${a.name}`, global.Roadmap.formatIssue(issues[0], global.UI.language));
+      global.RoadmapNotifications?.send(`stale:${a.taskId || a.id}:${doc.meta.updated}`, `⏱ ${a.taskId || ''} ${a.name}`, global.Roadmap.formatIssue(issues[0], global.UI.language));
     }
     box.replaceChildren();
     box.hidden = !issues.length;
@@ -264,7 +221,6 @@
     } else {
       list.textContent = t('noChanges');
     }
-    if ($('changes-more')) $('changes-more').hidden = events.length <= 4;
   }
 
   function escapeHtml(s) {
@@ -275,7 +231,7 @@
   function setView(view) {
     _view = view;
     $('app').dataset.view = view;
-    $('page-title').dataset.i18n = view === 'board' ? 'versionsTitle' : view === 'log' ? 'notes' : 'progress';
+    $('page-title').dataset.i18n = view === 'board' ? 'versionsTitle' : 'progress';
     global.UI.apply();
 
     qa('.rail__btn').forEach(btn => {
@@ -308,8 +264,6 @@
       if (global.Timeline) global.Timeline.render(_doc, main);
     } else if (_view === 'board') {
       if (global.Board) global.Board.render(_doc, main);
-    } else if (_view === 'log') {
-      if (global.Log) global.Log.render(_doc, main);
     }
   }
 
@@ -321,7 +275,7 @@
       const prev = _doc;
       _doc = global.Roadmap.parse(text);
       _source = e.detail.source || 'manual';
-      notifyTransitions(prev, _doc);
+      global.RoadmapNotifications?.transitions(prev, _doc);
       refreshGit();
       $('app').classList.remove('awaiting-roadmap');
       $('app').classList.add('has-roadmap');
@@ -357,9 +311,8 @@
     if (badge) { badge.dataset.state = 'snapshot'; $('connection-text').textContent = t('snapshot'); }
   });
   document.addEventListener('roadmap:preferences', () => {
-    $('page-title').dataset.i18n = _view === 'board' ? 'versionsTitle' : _view === 'log' ? 'notes' : 'progress';
+    $('page-title').dataset.i18n = _view === 'board' ? 'versionsTitle' : 'progress';
     global.UI.apply();
-    paintNotify();
     if (_doc) { updateHUD(_doc); renderCurrentView(); }
     else renderCurrentView();
     const badge = $('live-indicator');
@@ -368,12 +321,12 @@
 
   /* ── Initialize ───────────────────────────────────────── */
   function init() {
-    /* Shareable links: ?view=board|log|timeline&theme=light&lang=es */
+    /* Shareable links: ?view=board|timeline&theme=light&lang=es */
     const params = new URLSearchParams(location.search);
     if (params.get('lang')) global.UI.setLanguage(params.get('lang'));
     if (params.get('theme')) global.UI.setTheme(params.get('theme'));
-    if (['timeline', 'board', 'log'].includes(params.get('view'))) _view = params.get('view');
-    $('page-title').dataset.i18n = _view === 'board' ? 'versionsTitle' : _view === 'log' ? 'notes' : 'progress';
+    if (['timeline', 'board'].includes(params.get('view'))) _view = params.get('view');
+    $('page-title').dataset.i18n = _view === 'board' ? 'versionsTitle' : 'progress';
     qa('.rail__btn').forEach(btn => btn.classList.toggle('rail__btn--active', btn.dataset.view === _view));
     global.UI.apply();
     $('app').dataset.view = _view;
@@ -390,7 +343,7 @@
     if (pickBtn) pickBtn.addEventListener('click', () => global.Watcher.pickFile());
     $('language-select')?.addEventListener('change', e => global.UI.setLanguage(e.target.value));
     $('theme-toggle')?.addEventListener('click', () => global.UI.setTheme(global.UI.theme === 'dark' ? 'light' : 'dark'));
-    $('notify-toggle')?.addEventListener('click', toggleNotify);
+    global.RoadmapNotifications?.init();
     let hudCollapsed = false;
     try { hudCollapsed = localStorage.getItem('visual-roadmap-hud-collapsed') === 'true'; } catch {}
     const toggleHud = () => {
@@ -402,10 +355,8 @@
     };
     toggleHud();
     $('hud-toggle')?.addEventListener('click', () => { hudCollapsed = !hudCollapsed; try { localStorage.setItem('visual-roadmap-hud-collapsed', String(hudCollapsed)); } catch {} toggleHud(); });
-    $('changes-more')?.addEventListener('click', () => setView('log'));
     global.RoadmapShots?.init();
     document.addEventListener('roadmap:shots-updated', () => { if (_doc) renderCurrentView(); });
-    paintNotify();
     setInterval(refreshGit, 60000);
 
     /* Setup drag & drop on the whole body */

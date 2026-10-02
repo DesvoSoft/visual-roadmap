@@ -60,20 +60,6 @@
       </button>
     </nav>
 
-    <!-- Bottom Rail item (Notas / Log) -->
-    <div class="rail__bottom">
-      <button class="rail__btn" data-view="log" id="btn-nav-log" title="Notes and decisions">
-        <div class="rail__btn-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-          </svg>
-        </div>
-        <span class="rail__btn-label" data-i18n="notes">NOTES</span>
-      </button>
-    </div>
   </aside>
 
   <!-- ── 2. Main Workspace ─────────────────────────────── -->
@@ -93,7 +79,13 @@
           <span class="hud-header__updated" id="header-updated"></span>
           <span class="hud-header__filename" id="file-name" title="Archivo activo"></span>
           <select id="language-select" class="preference-select" aria-label="Interface language"><option value="en">EN</option><option value="es">ES</option></select>
-          <button id="notify-toggle" class="preference-button" type="button" aria-pressed="false" hidden>🔕</button>
+          <button id="notify-toggle" class="preference-button notification-toggle" type="button" aria-pressed="false" aria-label="Enable notifications">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"></path>
+              <path d="M10 21h4"></path>
+              <path class="notification-toggle__slash" d="M3 3l18 18"></path>
+            </svg>
+          </button>
           <button id="theme-toggle" class="preference-button" type="button" aria-label="Toggle color theme">☀</button>
           <button class="btn-pick" id="btn-pick" title="Open local ROADMAP.md"><span data-i18n="open">Open</span></button>
         </div>
@@ -178,7 +170,6 @@
         <div class="hud-card__head-label" data-i18n="recentChanges">RECENT CHANGES</div>
         <div class="hud-card__changes-list" id="changes-list"></div>
         <div id="estimate-history" hidden></div>
-        <button id="changes-more" class="changes-more" type="button" data-i18n-title="moreChanges">⋯</button>
       </div>
     </section>
 
@@ -200,9 +191,9 @@
 <script src="forecast.js"></script>
 <script src="shots.js"></script>
 <script src="watcher.js"></script>
+<script src="notifications.js"></script>
 <script src="timeline.js"></script>
 <script src="board.js"></script>
-<script src="log.js"></script>
 <script src="app.js"></script>
 
 </body>

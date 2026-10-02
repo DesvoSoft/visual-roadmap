@@ -30,9 +30,9 @@ const uiJs = fs.readFileSync(path.join(VIEWER_DIR, 'ui.js'), 'utf8');
 const forecastJs = fs.readFileSync(path.join(VIEWER_DIR, 'forecast.js'), 'utf8');
 const shotsJs = fs.readFileSync(path.join(VIEWER_DIR, 'shots.js'), 'utf8');
 const watcherJs = fs.readFileSync(path.join(VIEWER_DIR, 'watcher.js'), 'utf8');
+const notificationsJs = fs.readFileSync(path.join(VIEWER_DIR, 'notifications.js'), 'utf8');
 const timelineJs = fs.readFileSync(path.join(VIEWER_DIR, 'timeline.js'), 'utf8');
 const boardJs = fs.readFileSync(path.join(VIEWER_DIR, 'board.js'), 'utf8');
-const logJs = fs.readFileSync(path.join(VIEWER_DIR, 'log.js'), 'utf8');
 const appJs = fs.readFileSync(path.join(VIEWER_DIR, 'app.js'), 'utf8');
 
 /* Inline CSS */
@@ -57,14 +57,14 @@ const combinedJs = `
   /* watcher.js */
   ${watcherJs}
 
+  /* notifications.js */
+  ${notificationsJs}
+
   /* timeline.js */
   ${timelineJs}
 
   /* board.js */
   ${boardJs}
-
-  /* log.js */
-  ${logJs}
 
   /* app.js */
   ${appJs}
@@ -75,9 +75,9 @@ html = html.replace(/<script src="ui\.js"><\/script>/, '');
 html = html.replace(/<script src="forecast\.js"><\/script>/, '');
 html = html.replace(/<script src="shots\.js"><\/script>/, '');
 html = html.replace(/<script src="watcher\.js"><\/script>/, '');
+html = html.replace(/<script src="notifications\.js"><\/script>/, '');
 html = html.replace(/<script src="timeline\.js"><\/script>/, '');
 html = html.replace(/<script src="board\.js"><\/script>/, '');
-html = html.replace(/<script src="log\.js"><\/script>/, '');
 html = html.replace(/<script src="app\.js"><\/script>/, `<script>\n${combinedJs}\n</script>`);
 
 /* Write standalone HTML */
