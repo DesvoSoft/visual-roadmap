@@ -3,9 +3,10 @@
   'use strict';
   const DAY = 86400000;
   const scales = { '6h': [6*3600000,3600000], '1d': [DAY,2*3600000], '3d': [3*DAY,12*3600000], '1w': [7*DAY,DAY], '1m': [30*DAY,5*DAY] };
-  let zoom = '1d', offset = 0, search = '', filter = '';
-  let liveRange = null;
+  let zoom = '1d', offset = 0, search = '', filter = '', fitted = false, focusedWindow = null;
+  let liveRange = null, lastActive = '';
   const expanded = new Set();
+  const collapsedGroups = new Set();
   const t = key => global.UI.t(key);
   let initialized = false;
   function el(tag, cls, label) { const n = document.createElement(tag); n.className = cls; if (label != null) n.textContent = label; return n; }
@@ -18,6 +19,7 @@
     const declaredStart = time(item.start, false), declaredEnd = time(item.end, true);
     const coarse = /^\d{4}-\d{2}-\d{2}$/.test(item.start || '') && /^\d{4}-\d{2}-\d{2}$/.test(item.end || '');
     const shortHours = item.actual || item.effort;
+    if (item.status === 'cancelled' && declaredEnd == null) return { start: null, end: null, coarse: false, estimated: false };   /* never ran to the end: nothing to draw */
     if (item.status !== 'done' && item.status !== 'cancelled' && prediction) return { start: prediction.start, end: prediction.end, coarse: false, estimated: true, slipMinutes: prediction.slipMinutes || 0 };
     if (item.status !== 'done' && item.status !== 'cancelled' && declaredStart != null && declaredStart < now) {
       const duration = declaredEnd != null && declaredEnd > declaredStart ? declaredEnd - declaredStart : Math.max(1, shortHours || 0) * 3600000;
@@ -36,11 +38,45 @@
     return { start: declaredStart, end: declaredEnd, coarse: false, estimated: false };
   }
   function clockLabel(now) { return new Intl.DateTimeFormat(global.UI.language,{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(now)); }
+  const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  function matchesTask(item, query) { return normalize(`${item.taskId || ''} ${item.name || ''}`).includes(normalize(query.trim())); }
+  function focusRange(window, span) {
+    const width = Math.max(span, window.end - window.start);
+    const center = (window.start + window.end) / 2;
+    return { start: center-width/2, end: center+width/2, span: width };
+  }
+  function fitRange(windows, now = Date.now()) {
+    const valid = windows.filter(w => Number.isFinite(w.start) && Number.isFinite(w.end));
+    if (!valid.length) return focusRange({ start: now, end: now }, DAY);
+    const first = Math.min(...valid.map(w => w.start)), last = Math.max(...valid.map(w => w.end));
+    const padding = Math.max(3600000, (last-first)*.06);
+    return { start: first-padding, end: last+padding, span: last-first+padding*2 };
+  }
+  /* Consecutive runs of `#### Subgroup` inside a release; one unnamed group when the release has none */
+  function groupItems(items) {
+    const groups = [];
+    for (const it of items) {
+      const name = it.category || '';
+      const last = groups[groups.length - 1];
+      if (last && last.name === name) last.items.push(it);
+      else groups.push({ name, items: [it] });
+    }
+    return groups;
+  }
+  const LABEL_KEY = 'vr.timelineLabelWidth';
+  function storedLabelWidth() { try { const v = Number(localStorage.getItem(LABEL_KEY)); return v >= 200 && v <= 1200 ? v : null; } catch { return null; } }
+  function saveLabelWidth(v) { try { localStorage.setItem(LABEL_KEY, String(Math.round(v))); } catch {} }
+  const glyph = status => status==='done'?'■':status==='active'?'▶':status==='paused'?'Ⅱ':status==='blocked'?'⛔':status==='risk'?'⚠':status==='cancelled'?'✕':'□';
   function render(doc, container) {
     container.replaceChildren();
     document.querySelector('.shot-preview')?.remove();
     if (!doc?.releases?.length) { container.appendChild(el('div','empty-state',t('noPhases'))); return; }
     const forecast = global.Forecast.calculate(doc);
+    /* Follow the agent: open the release of the active task whenever the active task changes */
+    const activeRelease = doc.releases.find(r => r.items.some(it => it.status === 'active'));
+    const activeKey = activeRelease ? `${activeRelease.id}::${activeRelease.items.find(it => it.status === 'active').taskId}` : '';
+    if (initialized && activeRelease && activeKey !== lastActive) expanded.add(activeRelease.id);
+    lastActive = activeKey;
     if (!initialized) {
       const current = doc.releases.find(r => r.items.some(it => it.status === 'active'));
       if (current) expanded.add(current.id);
@@ -52,16 +88,33 @@
       else if (days <= .17) zoom = '6h';   /* a short agent session: under ~4h of work left */
       initialized = true;
     }
-    const now = Date.now(), span = scales[zoom][0], tick = scales[zoom][1], start = now + offset*span - span*.3, end = start+span;
+    const now = Date.now();
+    const windows = doc.items.map(it => windowForItem(it, forecast.projections.get(it.id), now));
+    const allRange = fitRange(windows, now);
+    const selectedRange = fitted ? allRange : focusedWindow || null;
+    const span = selectedRange?.span || scales[zoom][0];
+    const tick = fitted ? (span > 14*DAY ? 7*DAY : span > 3*DAY ? DAY : span > DAY ? 12*3600000 : span > 6*3600000 ? 3600000 : 30*60000) : scales[zoom][1];
+    const start = selectedRange ? selectedRange.start + offset*span*.5 : now + offset*span*.5 - span*.3;
+    const end = start+span;
     liveRange = { start, end, span, container, doc };
     const pos = ms => (ms-start)/span*100;
     const toolbar = el('div','subnav-bar'), controls = el('div','subnav-controls');
     toolbar.appendChild(el('strong','timeline-title',t('deliverables')));
-    const input = el('input','search-input'); input.placeholder = t('search'); input.value = search;
-    input.addEventListener('input', () => { search=input.value.toLowerCase().trim(); render(doc,container); container.querySelector('.search-input').focus(); });
+    const input = el('input','search-input'); input.type='search'; input.placeholder = t('searchTask'); input.setAttribute('aria-label',t('searchTask')); input.value = search;
+    const matching = doc.items.filter(it => matchesTask(it,search) && (!filter || (filter==='pending' ? it.status!=='done'&&it.status!=='cancelled' : filter==='blocked' ? it.status==='blocked' : filter==='overdue' ? it.status!=='done'&&it.status!=='cancelled'&&time(it.end,true)!=null&&time(it.end,true)<now : it.status!=='done'&&!it.start&&!it.end)));
+    input.addEventListener('input', () => {
+      const caret=input.selectionStart;
+      search=input.value.trim(); offset=0; fitted=false; filter='';
+      const hit=doc.items.find(it=>matchesTask(it,search));
+      const w=search&&hit ? windowForItem(hit,forecast.projections.get(hit.id),Date.now()) : null;
+      focusedWindow=w?.start!=null&&w?.end!=null ? focusRange(w,Math.max(scales[zoom][0],(w.end-w.start)*1.8)) : null;
+      render(doc,container);
+      const next=container.querySelector('.search-input'); next.focus(); next.setSelectionRange(caret,caret);
+    });
     controls.appendChild(input);
+    if(search) controls.appendChild(el('span','timeline-search-count',`${matching.length} ${matching.length===1?t('result'):t('results')}`));
     const expand=el('button','btn-icon-toggle','⊞'); expand.title=t('expand'); expand.setAttribute('aria-label',t('expand'));
-    expand.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.add(group.id));render(doc,container);});
+    expand.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.add(group.id));collapsedGroups.clear();render(doc,container);});
     const collapse=el('button','btn-icon-toggle','⊟'); collapse.title=t('collapse'); collapse.setAttribute('aria-label',t('collapse'));
     collapse.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.delete(group.id));render(doc,container);});
     const late = doc.items.filter(it => it.status !== 'done' && it.status !== 'cancelled' && time(it.end,true) != null && time(it.end,true) < now).length;
@@ -78,13 +131,23 @@
     controls.append(signals,expand,collapse);
     for (const [key,label] of [['6h','6 H'],['1d',global.UI.language==='es'?'1 DÍA':'1 DAY'],['3d',global.UI.language==='es'?'3 DÍAS':'3 DAYS'],['1w',global.UI.language==='es'?'1 SEMANA':'1 WEEK'],['1m',global.UI.language==='es'?'1 MES':'1 MONTH']]) {
       const b=el('button','zoom-btn'+(zoom===key?' zoom-btn--active':''),label);
-      b.addEventListener('click',()=>{zoom=key;offset=0;render(doc,container);}); controls.appendChild(b);
+      b.addEventListener('click',()=>{zoom=key;offset=0;fitted=false;focusedWindow=null;render(doc,container);}); controls.appendChild(b);
     }
+    const fit=el('button','zoom-btn'+(fitted?' zoom-btn--active':''),t('fitSchedule'));
+    fit.title=t('fitScheduleHint'); fit.addEventListener('click',()=>{fitted=true;focusedWindow=null;offset=0;render(doc,container);});controls.appendChild(fit);
     for (const [label,delta] of [['‹',-1],[t('nowButton'),0],['›',1]]) {
       const b=el('button','btn-nav-now',label);
-      b.addEventListener('click',()=>{offset=delta?offset+delta:0;render(doc,container);}); controls.appendChild(b);
+      b.title=delta<0?t('earlier'):delta>0?t('later'):t('goToday');
+      b.setAttribute('aria-label',b.title);
+      b.addEventListener('click',()=>{if(delta){if(fitted){focusedWindow=allRange;fitted=false;}offset+=delta;}else{offset=0;fitted=false;focusedWindow=null;}render(doc,container);}); controls.appendChild(b);
     }
     toolbar.appendChild(controls); container.appendChild(toolbar);
+    const guide=el('div','timeline-guide');
+    guide.appendChild(el('span','timeline-guide__range',`${global.Forecast.dateTime(start)} → ${global.Forecast.dateTime(end)}`));
+    for(const [cls,key] of [['now','todayLine'],['done','completedBlock'],['active','currentBlock'],['projection','projectedBlock']]){
+      const item=el('span','timeline-guide__item');item.append(el('i',`timeline-guide__swatch timeline-guide__swatch--${cls}`),el('span','',t(key)));guide.appendChild(item);
+    }
+    container.appendChild(guide);
     const tracker=el('div','tracker-container'), table=el('div','tracker-table');
     const left=el('div','tracker-left'), right=el('div','tracker-right');
     left.appendChild(el('div','tracker-left__head',t('versionDone')));
@@ -98,14 +161,29 @@
     }
     right.appendChild(head);
     const lRows=el('div','tracker-left__rows'), rRows=el('div','tracker-right__rows'); rRows.style.width='100%';
-    function row(label,bar,phase) {
-      const l=el('div',phase?'phase-head-row':'task-label-row',label), r=el('div',phase?'phase-bar-row':'tracker-bar-row');
-      if(bar) r.appendChild(bar); lRows.appendChild(l);rRows.appendChild(r);return l;
+    function row(parts,bar,kind) {
+      const l=el('div',kind==='phase'?'phase-head-row':kind==='group'?'group-head-row':'task-label-row');
+      const r=el('div',kind==='phase'?'phase-bar-row':kind==='group'?'group-bar-row':'tracker-bar-row');
+      l.append(...parts.filter(Boolean)); if(bar) r.appendChild(bar); lRows.appendChild(l);rRows.appendChild(r);return l;
     }
+    function summaryBar(list, progress) {
+      const ws=list.map(it=>windowForItem(it,forecast.projections.get(it.id),now)).filter(w=>w.start!=null&&w.end!=null);
+      if(!ws.length)return null;
+      const a=Math.min(...ws.map(w=>w.start)), b=Math.max(...ws.map(w=>w.end));
+      if(b<start||a>end)return null;
+      const bar=el('div','phase-summary-bar phase-summary-bar--group');
+      bar.style.left=`${Math.max(0,pos(a))}%`;
+      bar.style.width=`${Math.max(1.5,Math.min(100,pos(b))-Math.max(0,pos(a)))}%`;
+      const fill=el('div','phase-seg-done');fill.style.width=`${progress}%`;bar.appendChild(fill);
+      return bar;
+    }
+    const toggleRow=(l,onToggle)=>{
+      l.setAttribute('role','button');l.tabIndex=0;
+      l.addEventListener('click',onToggle);l.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onToggle();}});
+    };
     const preview = el('div', 'shot-preview'); preview.hidden = true; document.body.appendChild(preview);
-    let undated=0;
     doc.releases.forEach((rel,index)=>{
-      const items=(rel.items||[]).filter(it=>(!search||`${it.taskId||''} ${it.name}`.toLowerCase().includes(search)) && (!filter || (filter==='pending' ? it.status!=='done'&&it.status!=='cancelled' : filter==='blocked' ? it.status==='blocked' : filter==='overdue' ? it.status!=='done'&&it.status!=='cancelled'&&time(it.end,true)!=null&&time(it.end,true)<now : it.status!=='done'&&!it.start&&!it.end)));
+      const items=(rel.items||[]).filter(it=>(!search||matchesTask(it,search)) && (!filter || (filter==='pending' ? it.status!=='done'&&it.status!=='cancelled' : filter==='blocked' ? it.status==='blocked' : filter==='overdue' ? it.status!=='done'&&it.status!=='cancelled'&&time(it.end,true)!=null&&time(it.end,true)<now : it.status!=='done'&&!it.start&&!it.end)));
       if((search||filter)&&!items.length)return;
       const key=rel.id||String(index), done=rel.items.filter(it=>it.status==='done').length;
       let summary=null;
@@ -122,12 +200,26 @@
         summary.appendChild(el('div','phase-seg-done'));
         summary.firstChild.style.width=`${rel.progress||0}%`;
       }
-      const phase=row(`${expanded.has(key)?'⌄':'›'}  ${rel.id} · ${rel.name}   ${done}/${rel.items.length}`,summary,true);
-      phase.setAttribute('role','button');phase.tabIndex=0;
-      const toggle=()=>{expanded.has(key)?expanded.delete(key):expanded.add(key);render(doc,container);};
-      phase.addEventListener('click',toggle);phase.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')toggle();});
-      if(!expanded.has(key)&&!search&&!filter)return;
-      items.forEach(it=>{
+      const open=expanded.has(key)||!!search||!!filter;
+      const phase=row([el('span','tl-chevron',open?'⌄':'›'),el('span','tl-phase-code',rel.id),el('span','tl-name',rel.name),el('span','tl-count',`${done}/${rel.items.filter(it=>it.status!=='cancelled').length}`)],summary,'phase');
+      phase.title=`${rel.id} · ${rel.name}`;
+      toggleRow(phase,()=>{expanded.has(key)?expanded.delete(key):expanded.add(key);render(doc,container);});
+      if(!open)return;
+      const groups=groupItems(items), named=groups.some(g=>g.name);
+      groups.forEach((group,gi)=>{
+      const nested=named&&!!group.name;
+      if(nested){
+        const gkey=`${key}::${gi}::${group.name}`;
+        const all=rel.items.filter(it=>(it.category||'')===group.name&&it.status!=='cancelled');
+        const gDone=all.filter(it=>it.status==='done').length;
+        const gOpen=!collapsedGroups.has(gkey)||!!search||!!filter;
+        const progress=all.length?Math.round(all.reduce((n,it)=>n+(it.status==='done'?100:it.progress||0),0)/all.length):0;
+        const gl=row([el('span','tl-chevron',gOpen?'⌄':'›'),el('span','tl-name',group.name),el('span','tl-count',`${gDone}/${all.length}`)],summaryBar(all,progress),'group');
+        gl.title=group.name;
+        toggleRow(gl,()=>{collapsedGroups.has(gkey)?collapsedGroups.delete(gkey):collapsedGroups.add(gkey);render(doc,container);});
+        if(!gOpen)return;
+      }
+      group.items.forEach(it=>{
         const predicted = forecast.projections.get(it.id);
         const window = windowForItem(it,predicted,now);
         const a=window.start, b=window.end;
@@ -137,17 +229,24 @@
           const from=a??b,to=b??a;
           if(to>=start&&from<=end){
             const left=Math.max(0,pos(from)), right=Math.min(100,pos(to)), width=Math.max(0,right-left);
-            bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':it.status==='paused'?'paused':it.status==='blocked'?'blocked':'planned'}${provisional?' tracker-bar--provisional':''}${width<8?' tracker-bar--compact':''}`,width>=8?it.name:'');
-            bar.dataset.label=it.name;
+            bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':it.status==='paused'?'paused':it.status==='blocked'?'blocked':'planned'}${provisional?' tracker-bar--provisional':''}${width<8?' tracker-bar--compact':''}${search?' tracker-bar--found':''}`);
+            bar.setAttribute('aria-label',`${it.taskId||''} ${it.name}`.trim());
+            if(it.status==='active'&&it.progress>0){const fill=el('i','tracker-bar__fill');fill.style.width=`${Math.min(100,it.progress)}%`;bar.appendChild(fill);}
             bar.style.left=`${left}%`;
             bar.style.width=`${width}%`;
             bar.title=window.coarse ? `${it.name} · ${t('dayPrecision')}` : provisional ? `${it.name} · ${t('projection')} · ${global.Forecast.dateTime(from)} → ${global.Forecast.dateTime(to)}` : `${it.name} · ${it.start||'?'} → ${it.end||'?'} · ${it.status}`;
             if(window.slipMinutes > 0) { bar.classList.add('tracker-bar--slipped'); bar.title += ` · ${t('slip')} +${global.Forecast.duration(window.slipMinutes)}`; }
           }
         }
-        if(!it.start&&!it.end)undated++;
-        const l=row(`${it.status==='done'?'■':it.status==='active'?'▰':it.status==='paused'?'Ⅱ':'□'}  ${it.taskId||''} ${it.name}${window.slipMinutes>0?` · ${t('slip')} +${global.Forecast.duration(window.slipMinutes)}`:''}`,bar,false);
-        if(!it.start&&!it.end)l.title=provisional?t('projection'):t('undated');
+        const chips=[];
+        if(it.status==='active'&&it.progress>0)chips.push(el('span','tl-chip tl-chip--progress',`${it.progress}%`));
+        if(window.slipMinutes>0){const chip=el('span','tl-chip tl-chip--slip',`+${global.Forecast.duration(window.slipMinutes)}`);chip.title=t('slip');chips.push(chip);}
+        const l=row([el('span',`tl-glyph tl-glyph--${it.status}`,glyph(it.status)),it.taskId?el('span','tl-code',`${it.taskId}:`):null,el('span','tl-name',it.name),...chips],bar,'task');
+        if(nested)l.classList.add('task-label-row--nested');
+        if(it.status==='active')l.classList.add('task-label-row--now');
+        l.title=`${it.taskId?it.taskId+': ':''}${it.name}${window.slipMinutes>0?` · ${t('slip')} +${global.Forecast.duration(window.slipMinutes)}`:''}`;
+        if(search)l.classList.add('task-label-row--found');
+        if(!it.start&&!it.end)l.title+=` · ${provisional?t('projection'):t('undated')}`;
         l.setAttribute('role','button'); l.tabIndex=0; l.classList.add('task-label-row--interactive');
         if(it.status==='cancelled')l.classList.add('task-label-row--cancelled');
         if(it.status==='blocked')l.classList.add('task-label-row--blocked');
@@ -182,33 +281,34 @@
         }
         l.addEventListener('click',()=>showDetail(it,doc,forecast));
         l.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')showDetail(it,doc,forecast);});
-        if(bar)bar.addEventListener('click',()=>showDetail(it,doc,forecast));
+        if(bar){
+          bar.setAttribute('role','button');bar.tabIndex=0;
+          bar.addEventListener('click',()=>showDetail(it,doc,forecast));
+          bar.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();showDetail(it,doc,forecast);}});
+        }
+      });
       });
     });
     if(start<=now&&now<=end){
-      const line=el('div','vertical-now-line');line.style.left=`${pos(now)}%`;right.appendChild(line);
+      const line=el('div','vertical-now-line');line.style.left=`${pos(now)}%`;rRows.appendChild(line);
       const label=el('div','vertical-now-label',`${t('nowButton')} ${clockLabel(now)}`);
       label.style.left=`${Math.max(7,Math.min(93,pos(now)))}%`;head.appendChild(label);
     }
-    left.appendChild(lRows);right.appendChild(rRows);table.append(left,right);tracker.appendChild(table);
-    tracker.appendChild(el('div','timeline-legend',`${undated} ${t('fixedDate')} · ${t('declared')} · ${t('projection')}`));
-    container.appendChild(tracker);
-    placeBarLabels(rRows);
-    right.addEventListener('scroll',()=>{lRows.scrollTop=right.scrollTop;});
-  }
-  /* Labels that do not fit inside their bar move next to it, on the side with room */
-  function placeBarLabels(rows) {
-    rows.querySelectorAll('.tracker-bar[data-label]').forEach(bar=>{
-      if(bar.textContent && bar.scrollWidth<=bar.clientWidth+1)return;
-      bar.textContent='';
-      const label=el('span','tracker-bar__outside',bar.dataset.label);
-      label.title=bar.title;
-      const left=parseFloat(bar.style.left), width=parseFloat(bar.style.width);
-      if(left+width>70){label.style.right=`calc(${100-left}% + 6px)`;label.classList.add('tracker-bar__outside--before');}
-      else label.style.left=`calc(${left+width}% + 6px)`;
-      label.addEventListener('click',()=>bar.click());
-      bar.parentElement.appendChild(label);
+    left.appendChild(lRows);right.appendChild(rRows);
+    const width=storedLabelWidth(); if(width)table.style.setProperty('--tl-label-width',`${width}px`);
+    const handle=el('div','tracker-resizer');handle.setAttribute('role','separator');handle.setAttribute('aria-orientation','vertical');handle.title=t('resizeColumn');
+    handle.addEventListener('pointerdown',e=>{
+      e.preventDefault();handle.setPointerCapture(e.pointerId);handle.classList.add('tracker-resizer--active');
+      const x0=e.clientX,w0=left.getBoundingClientRect().width,max=table.getBoundingClientRect().width*.7;
+      const move=ev=>{const w=Math.max(200,Math.min(max,w0+ev.clientX-x0));table.style.setProperty('--tl-label-width',`${w}px`);};
+      const up=()=>{handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',up);handle.classList.remove('tracker-resizer--active');saveLabelWidth(left.getBoundingClientRect().width);};
+      handle.addEventListener('pointermove',move);handle.addEventListener('pointerup',up);
     });
+    handle.addEventListener('dblclick',()=>{table.style.removeProperty('--tl-label-width');try{localStorage.removeItem(LABEL_KEY);}catch{}});
+    table.append(left,handle,right);tracker.appendChild(table);
+    if((search||filter)&&!matching.length)rRows.appendChild(el('div','timeline-empty',t('noTimelineMatches')));
+    container.appendChild(tracker);
+    right.addEventListener('scroll',()=>{lRows.scrollTop=right.scrollTop;});
   }
   function openLightbox(shots, index) {
     document.querySelector('.lightbox')?.remove();
@@ -305,5 +405,5 @@
     const label = container.querySelector('.vertical-now-label');
     if (label) { label.style.left = `${Math.max(7,Math.min(93,(now-start)/span*100))}%`; label.textContent = `${t('nowButton')} ${clockLabel(now)}`; }
   }
-  global.Timeline={render, tickNow, openTask:showDetail, windowForItem};
+  global.Timeline={render, tickNow, openTask:showDetail, windowForItem, matchesTask, focusRange, fitRange, groupItems};
 })(typeof window!=='undefined'?window:globalThis);

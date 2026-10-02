@@ -285,12 +285,6 @@ body {
   filter: drop-shadow(0 0 8px var(--cyan-glow));
 }
 
-.rail__bottom {
-  margin-top: auto;
-  margin-bottom: 12px;
-  width: 100%;
-}
-
 /* ── 2. Workspace ─────────────────────────────────────── */
 .workspace {
   flex: 1;
@@ -939,7 +933,7 @@ body {
 /* Vertical line dropping through grid */
 .vertical-now-line {
   position: absolute;
-  top: 40px;
+  top: 0;
   bottom: 0;
   width: 2px;
   background: var(--neon-orange);
@@ -1201,7 +1195,7 @@ html[data-theme="light"] .tracker-bar--slipped { outline-color: #a66100; }
 .awaiting-roadmap .empty-state { max-width: 520px; padding: 48px; text-align: center; }
 .m-item[hidden] { display: none; }
 .timeline-title { color: #9bc7dc; font-size: 12px; letter-spacing: .12em; }
-.tracker-right__rows { flex: 0 0 auto; }
+.tracker-right__rows { flex: 1 0 auto; }
 .tracker-right__head { flex: 0 0 40px; }
 .timeline-signals { display: flex; gap: 14px; flex-wrap: wrap; padding: 0 0 12px; color: #7896b5; font-size: 11px; }
 .timeline-signal { padding: 5px 9px; border: 1px solid rgba(0,180,255,.18); background: #071320; }
@@ -1270,8 +1264,6 @@ html[data-theme="light"] .tracker-bar--slipped { outline-color: #a66100; }
 .hud-card__meta-row:has(.confidence-chip:not(:empty)) .hud-card__meta-label { grid-column: 1 / -1; }
 .hud-card__changes-list { max-height: none; margin-top: 5px; gap: 1px; overflow: hidden; }
 .change-row { padding: 0; line-height: 17px; }
-.changes-more { position: absolute; right: 8px; bottom: 4px; border: 0; background: transparent; color: var(--cyan); cursor: pointer; font-size: 18px; line-height: 14px; }
-.changes-more[hidden] { display: none; }
 .hud-panel__toggle { position: absolute; right: 4px; top: 3px; z-index: 2; border: 0; background: transparent; color: var(--cyan); cursor: pointer; font-size: 15px; }
 .hud-panel--collapsed { display: flex; align-items: center; height: 40px; min-height: 40px; }
 .hud-panel--collapsed .hud-card { padding: 5px 12px; border: 0; }
@@ -1284,7 +1276,20 @@ html[data-theme="light"] .tracker-bar--slipped { outline-color: #a66100; }
 .main-viewport { min-height: 0; overflow: hidden; padding: 0 16px 8px; }
 .subnav-bar { display: flex; align-items: center; gap: 10px; height: 36px; min-height: 36px; margin: 0; padding: 0; }
 .subnav-controls { display: flex; align-items: center; flex: 1; min-width: 0; gap: 5px; flex-wrap: nowrap; }
-.subnav-controls .search-input { width: 135px; min-width: 75px; height: 25px; padding: 0 7px; border: 1px solid var(--border); background: #060e1a; }
+.subnav-controls .search-input { width: 190px; min-width: 120px; height: 27px; padding: 0 8px; border: 1px solid var(--border); background: #060e1a; }
+.subnav-controls .search-input:focus-visible { outline: 1px solid var(--cyan); outline-offset: 1px; }
+.timeline-search-count { color: var(--cyan); font-size: 10px; white-space: nowrap; }
+.timeline-guide { display: flex; align-items: center; gap: 16px; min-height: 28px; padding: 2px 8px; color: #a9c4da; font-size: 10px; }
+.timeline-guide__range { color: #d6e9f5; font-family: 'JetBrains Mono', monospace; margin-right: auto; white-space: nowrap; }
+.timeline-guide__item { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.timeline-guide__swatch { display: inline-block; width: 14px; height: 9px; border-radius: 2px; }
+.timeline-guide__swatch--now { width: 2px; height: 14px; border-radius: 0; background: var(--neon-orange); box-shadow: 0 0 5px var(--neon-orange); }
+.timeline-guide__swatch--done { background: #50b6e6; }
+.timeline-guide__swatch--active { background: #ff7a00; }
+.timeline-guide__swatch--projection { border: 1px dashed #76a6c1; background: repeating-linear-gradient(135deg, #315775, #315775 3px, #091c2b 3px, #091c2b 6px); }
+.timeline-empty { position: absolute; top: 46px; left: 8%; right: 8%; padding: 12px; color: #a9c4da; text-align: center; border: 1px dashed rgba(0,180,255,.3); }
+.tracker-bar--found { outline: 2px solid #fff; outline-offset: 2px; }
+.task-label-row--found { background: rgba(0, 180, 255, .1); }
 .timeline-signals { display: contents; }
 .timeline-signal { flex: none; height: 24px; padding: 0 8px; font: 500 10px 'Inter',sans-serif; color: #a9c4da; white-space: nowrap; cursor: pointer; }
 .timeline-signal:hover { color: #fff; border-color: rgba(0,212,255,.45); }
@@ -1309,6 +1314,7 @@ html[data-theme="light"] .tracker-bar--slipped { outline-color: #a66100; }
 .task-label-row, .phase-head-row { padding-left: 10px; font-size: 11px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .timeline-legend { height: 24px; min-height: 24px; font-size: 9px; }
 @media (max-width: 1250px) { .hud-header__updated, .hud-header__filename, .m-item:nth-child(n+5) { display: none; } .subnav-bar { height: auto; min-height: 36px; padding: 4px 0; } .subnav-controls { flex-wrap: wrap; row-gap: 5px; } }
+@media (max-width: 1000px) { .timeline-guide { flex-wrap: wrap; gap: 5px 12px; } .timeline-guide__range { width: 100%; } }
 @media (max-width: 1024px) { .workspace { overflow-y: auto; } .hud-header { flex-wrap: wrap; height: auto; } .hud-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hud-card--changes { grid-column: 1 / -1; } .hud-panel--collapsed { display: flex; } .main-viewport { min-height: 420px; overflow: visible; } }
 @media (max-width: 680px) { .hud-panel { grid-template-columns: minmax(0, 1fr); margin: 8px; } .hud-header { padding: 5px 8px; } .main-viewport { padding: 0 8px 8px; } .workspace { min-width: 0; } .hud-card--changes { grid-column: auto; } .hud-metrics-bar { display: none; } .hud-header__meta { margin-left: auto; } .subnav-bar { overflow-x: auto; } .tracker-left { width: 170px; min-width: 170px; } }
 .app-layout[data-view="board"] .health { display: none; }
@@ -1321,7 +1327,8 @@ html[data-theme="light"] .health__head, html[data-theme="light"] .health__item {
 .hud-panel--updated { animation: update-flash .9s ease-out; }
 .tracker-bar--now { animation: active-glow 2.8s ease-in-out infinite; }
 .vertical-now-line { transition: left 15s linear; }
-.vertical-now-line::after { content: ''; position: absolute; top: 0; left: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--neon-orange); box-shadow: 0 0 14px var(--neon-orange); }
+.vertical-now-line::after { content: ''; position: absolute; top: 0; left: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--neon-orange); box-shadow: 0 0 14px var(--neon-orange); animation: now-beacon 2.6s ease-in-out infinite; }
+@keyframes now-beacon { 50% { box-shadow: 0 0 0 6px rgba(255,122,0,.14), 0 0 18px var(--neon-orange); } }
 .timeline-signal--alert { animation: alert-breathe 3s ease-in-out infinite; }
 .tracker-bar--provisional { border-style: dashed; opacity: .8; background: repeating-linear-gradient(135deg, rgba(74,137,172,.18), rgba(74,137,172,.18) 7px, rgba(5,15,30,.4) 7px, rgba(5,15,30,.4) 14px); }
 .tracker-bar--now.tracker-bar--provisional { opacity: 1; background: repeating-linear-gradient(45deg, #ff7a00, #ff7a00 10px, #db6100 10px, #db6100 20px); }
@@ -1352,6 +1359,20 @@ html[data-theme="light"] .health__head, html[data-theme="light"] .health__item {
 .preference-select,.preference-button { height: 26px; border: 1px solid rgba(0,180,255,.2); background: #071420; color: #a5bdd3; font: 10px 'JetBrains Mono', monospace; cursor: pointer; }
 .preference-select { padding: 0 5px; }
 .preference-button { width: 28px; font-size: 15px; }
+.notification-toggle { display: inline-flex; align-items: center; justify-content: center; }
+.notification-toggle svg { display: block; }
+.notification-toggle__slash { display: block; color: #e49b71; }
+.notification-toggle--on { color: var(--cyan); border-color: rgba(0,212,255,.55); background: rgba(0,212,255,.1); }
+.notification-toggle--on .notification-toggle__slash { display: none; }
+.notification-toggle:disabled { opacity: .45; cursor: not-allowed; }
+.notification-toasts { position: fixed; z-index: 350; top: 48px; right: 18px; width: min(340px, calc(100vw - 36px)); display: grid; gap: 8px; pointer-events: none; }
+.notification-toast { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; padding: 11px 12px; color: #d8edfa; background: #092034; border: 1px solid rgba(0,212,255,.5); box-shadow: 0 8px 28px rgba(0,0,0,.4); pointer-events: auto; animation: panel-enter .2s ease-out; }
+.notification-toast strong { font-size: 12px; }
+.notification-toast span { grid-column: 1; color: #9ebfd3; font-size: 11px; }
+.notification-toast span:empty { display: none; }
+.notification-toast button { grid-column: 2; grid-row: 1; border: 0; background: none; color: inherit; font-size: 18px; cursor: pointer; }
+html[data-theme="light"] .notification-toast { color: #17384f; background: #f7fcff; box-shadow: 0 8px 28px rgba(20,55,75,.18); }
+html[data-theme="light"] .notification-toast span { color: #466b82; }
 .preference-select:hover,.preference-button:hover { border-color: var(--cyan); color: #fff; }
 .awaiting-roadmap .connection-status { display: inline-flex; }
 
@@ -1455,6 +1476,8 @@ html[data-theme="light"] .tracker-bar--provisional { color: #16364d; text-shadow
 html[data-theme="light"] .timeline-signal--active { color: #fff; background: #007ea8; border-color: #007ea8; }
 html[data-theme="light"] .hud-card__context-line #now-eta { color: #16364d; }
 html[data-theme="light"] .subnav-controls .search-input { background: #fff; color: #16364d; border-color: #cadce5; }
+html[data-theme="light"] .timeline-guide,html[data-theme="light"] .timeline-empty { color: #365a73; }
+html[data-theme="light"] .timeline-guide__range { color: #17384f; }
 html[data-theme="light"] .hud-card__now-tick { background: #16364d; }
 html[data-booting] *, html[data-booting] *::before, html[data-booting] *::after { transition: none !important; }
 .rail__btn-label { font-size: 8px; letter-spacing: .03em; max-width: 100%; overflow: hidden; }
@@ -1481,6 +1504,52 @@ html[data-theme="light"] .shot-mark { background: #007ea8; border-color: #fff; }
 .lightbox__caption { color: #cfe3f3; font-size: 12px; }
 html[data-theme="light"] .task-log__row { color: #2b4a60; }
 html[data-theme="light"] .task-log__caption { color: #16364d; }
+
+/* Timeline: readable task column on the left, bars only on the right */
+.tracker-table { --tl-label-width: clamp(300px, 36%, 560px); }
+.tracker-left { width: var(--tl-label-width); min-width: 200px; flex: none; }
+.tracker-resizer { flex: none; width: 5px; margin: 0 -2px; position: relative; z-index: 12; cursor: col-resize; background: transparent; transition: background var(--dur); }
+.tracker-resizer:hover, .tracker-resizer--active { background: rgba(0, 212, 255, .45); }
+.task-label-row, .phase-head-row, .group-head-row { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 0 10px; white-space: nowrap; }
+.task-label-row { color: #c9dbec; }
+.tl-chevron { flex: none; width: 12px; color: var(--cyan); font-weight: 800; }
+.tl-phase-code { flex: none; font: 700 10px 'JetBrains Mono', monospace; color: var(--cyan); letter-spacing: .04em; }
+.tl-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.phase-head-row .tl-name { font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; }
+.tl-count { flex: none; font: 700 10px 'JetBrains Mono', monospace; color: #6b8ba9; }
+.tl-glyph { flex: none; width: 14px; text-align: center; font-size: 10px; color: #4e6a88; }
+.tl-glyph--done { color: var(--cyan); }
+.tl-glyph--active { color: var(--neon-orange); text-shadow: 0 0 6px var(--neon-orange); }
+.tl-glyph--paused { color: #d9a43f; }
+.tl-glyph--blocked, .tl-glyph--risk { color: var(--danger-2); }
+.tl-code { flex: none; font: 700 11px 'JetBrains Mono', monospace; color: #8faec9; }
+.task-label-row--now .tl-code { color: var(--neon-orange); }
+.task-label-row--now .tl-name { color: #fff; font-weight: 700; }
+.task-label-row--done .tl-name { color: #8ea6bc; }
+.tl-chip { flex: none; padding: 0 5px; border-radius: 8px; font: 700 9px 'JetBrains Mono', monospace; line-height: 15px; border: 1px solid; }
+.tl-chip--progress { color: var(--neon-orange); border-color: rgba(255, 122, 0, .5); }
+.tl-chip--slip { color: #ffcb48; border-color: rgba(255, 203, 72, .5); }
+.shot-badge { flex: none; margin-left: 0; }
+/* Subgroups (#### headings inside a release) */
+.group-head-row, .group-bar-row { height: 30px; min-height: 30px; background: #050d1a; border-bottom: 1px solid rgba(0, 180, 255, .1); position: relative; }
+.group-head-row { padding-left: 24px; cursor: pointer; user-select: none; font-size: 11px; font-weight: 700; color: #a9c4dc; }
+.group-head-row:hover { background: #0a182e; }
+.group-head-row:focus-visible, .phase-head-row:focus-visible { outline: 1px solid var(--cyan); outline-offset: -2px; }
+.task-label-row--nested { padding-left: 40px; }
+.phase-summary-bar--group { top: 11px; height: 8px; opacity: .8; }
+/* Bars carry no text: the label lives in the left column */
+.tracker-bar { padding: 0; min-width: 4px; }
+.tracker-bar__fill { position: absolute; inset: 0 auto 0 0; background: rgba(255, 255, 255, .22); pointer-events: none; }
+html[data-theme="light"] .group-head-row, html[data-theme="light"] .group-bar-row { background: #f1f7fa; border-color: #d9e5eb; }
+html[data-theme="light"] .group-head-row { color: #2b4a60; }
+html[data-theme="light"] .task-label-row { color: #24465c; }
+html[data-theme="light"] .phase-head-row .tl-name, html[data-theme="light"] .task-label-row--now .tl-name { color: #0f2c40; }
+html[data-theme="light"] .task-label-row--done .tl-name { color: #6a8698; }
+html[data-theme="light"] .tl-code { color: #3d6680; }
+html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
+@media (max-width: 680px) { .tracker-table { --tl-label-width: 62%; } .tracker-left { min-width: 150px; } .task-label-row--nested { padding-left: 22px; } .group-head-row { padding-left: 14px; } }
+.task-label-row--blocked .tl-name { color: var(--danger-2); }
+.task-label-row--paused .tl-name { color: #d9a43f; font-weight: 700; }
 
 
 </style>
@@ -1531,20 +1600,6 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
       </button>
     </nav>
 
-    <!-- Bottom Rail item (Notas / Log) -->
-    <div class="rail__bottom">
-      <button class="rail__btn" data-view="log" id="btn-nav-log" title="Notes and decisions">
-        <div class="rail__btn-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-          </svg>
-        </div>
-        <span class="rail__btn-label" data-i18n="notes">NOTES</span>
-      </button>
-    </div>
   </aside>
 
   <!-- ── 2. Main Workspace ─────────────────────────────── -->
@@ -1564,7 +1619,13 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
           <span class="hud-header__updated" id="header-updated"></span>
           <span class="hud-header__filename" id="file-name" title="Archivo activo"></span>
           <select id="language-select" class="preference-select" aria-label="Interface language"><option value="en">EN</option><option value="es">ES</option></select>
-          <button id="notify-toggle" class="preference-button" type="button" aria-pressed="false" hidden>🔕</button>
+          <button id="notify-toggle" class="preference-button notification-toggle" type="button" aria-pressed="false" aria-label="Enable notifications">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"></path>
+              <path d="M10 21h4"></path>
+              <path class="notification-toggle__slash" d="M3 3l18 18"></path>
+            </svg>
+          </button>
           <button id="theme-toggle" class="preference-button" type="button" aria-label="Toggle color theme">☀</button>
           <button class="btn-pick" id="btn-pick" title="Open local ROADMAP.md"><span data-i18n="open">Open</span></button>
         </div>
@@ -1649,7 +1710,6 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
         <div class="hud-card__head-label" data-i18n="recentChanges">RECENT CHANGES</div>
         <div class="hud-card__changes-list" id="changes-list"></div>
         <div id="estimate-history" hidden></div>
-        <button id="changes-more" class="changes-more" type="button" data-i18n-title="moreChanges">⋯</button>
       </div>
     </section>
 
@@ -2635,18 +2695,18 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
   'use strict';
   const copy = {
     en: {
-      roadmap:'ROADMAP', tracking:'TRACKING', versions:'VERSIONS', notes:'NOTES', progress:'PROGRESS TRACKER',
+      roadmap:'ROADMAP', tracking:'TRACKING', versions:'VERSIONS', progress:'PROGRESS TRACKER',
       open:'Open', pick:'Open ROADMAP.md', choose:'Select ROADMAP.md to start tracking',
       connected:'Synced', connecting:'Connecting', disconnected:'Disconnected', snapshot:'Snapshot', updatedAgo:'Updated {time} ago', unknownUpdate:'Update time unknown',
       version:'Version', phase:'Phase', of:'of', tasks:'tasks', decisions:'decisions', lines:'lines', lastCommit:'last commit',
-      now:'CURRENT TASK', noTask:'No active task', markActive:'Waiting for the agent to start a task', expected:'Expected', elapsed:'Elapsed', agentEta:'Agent ETA', revisedEta:'Revised ETA', onTrack:'On track', shots:'screenshots', shotsServeOnly:'Screenshots are available with visual-roadmap live', activity:'ACTIVITY', started:'Started', noActivity:'No activity recorded yet', collapseOverview:'Collapse overview', expandOverview:'Expand overview', moreChanges:'View all changes in Notes',
+      now:'CURRENT TASK', noTask:'No active task', markActive:'Waiting for the agent to start a task', expected:'Expected', elapsed:'Elapsed', agentEta:'Agent ETA', revisedEta:'Revised ETA', onTrack:'On track', shots:'screenshots', shotsServeOnly:'Screenshots are available with visual-roadmap live', activity:'ACTIVITY', started:'Started', noActivity:'No activity recorded yet', collapseOverview:'Collapse overview', expandOverview:'Expand overview',
       delayed:'Delayed', provisional:'provisional', etaExtended:'ETA extended by', noEstimate:'No estimate',
       phasesDone:'Phases completed', calculatedDelivery:'Projected delivery', pace:'Observed pace', since:'In development since', perTask:'per task',
       recentChanges:'RECENT CHANGES', etaChanges:'ETA CHANGES', noChanges:'No changes recorded in ROADMAP.md', noRevisions:'No ETA revisions recorded',
       missingEffort:'task(s) lack effort estimates; the project ETA may be incomplete.', reviewEta:'The active task has passed its ETA. The agent should revise it.',
       calibrated:'Forecast adjusted using {count} completed task(s) and capacity {capacity}.', basedOnEffort:'Forecast based on remaining effort and declared capacity.',
       range:'Indicative window', confidence:'confidence', low:'low', medium:'medium', high:'high',
-      deliverables:'DELIVERABLES', search:'Search deliverables', expand:'Expand all', collapse:'Collapse all', nowButton:'NOW',
+      deliverables:'DELIVERABLES', search:'Search deliverables', searchTask:'Find task code or name', result:'result', results:'results', noTimelineMatches:'No matching tasks. Try another code or word.', resizeColumn:'Drag to resize · double-click to reset', fitSchedule:'FIT', fitScheduleHint:'Show the full schedule', earlier:'Earlier', later:'Later', goToday:'Go to today', todayLine:'Current time', completedBlock:'Completed', currentBlock:'In progress', projectedBlock:'Forecast in progress', expand:'Expand all', collapse:'Collapse all', nowButton:'NOW',
       pending:'Pending', blocked:'Blocked', overdue:'Overdue', undated:'No fixed dates',
       versionDone:'VERSION · DONE', noPhases:'No phases or tasks in ROADMAP.md.', fixedDate:'task(s) without fixed dates', declared:'Solid: declared dates', projection:'Striped: projection', dayPrecision:'Day precision; add HH:mm to Start and End for exact timing',
       status:'Status', taskProgress:'Progress', owner:'Owner', estimatedEffort:'Estimated effort', actualDuration:'Actual duration', pendingDuration:'Pending',
@@ -2657,21 +2717,21 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
       logEmpty:'The log is empty. Add entries under ## Log in ROADMAP.md.', completed:'completed', cancelled:'cancelled', noDate:'No date',
       planned:'Planned', active:'Active', paused:'Paused', slip:'Slipped', blockedStatus:'Blocked', risk:'At risk', cancelledStatus:'Cancelled', calculated:'calculated', plannedLabel:'planned',
       health:'ROADMAP HEALTH', health_error:'error(s)', health_warn:'warning(s)', health_info:'suggestion(s)', parseError:'Could not read ROADMAP.md',
-      ago:'{time} ago', commits:'COMMITS', notifyOn:'Notifications on (task done, blocked or stuck)', notifyOff:'Enable desktop notifications', allDone:'All tasks done'
+      ago:'{time} ago', commits:'COMMITS', notifyOn:'Turn off notifications', notifyOff:'Turn on notifications', notifyRequesting:'Allow notifications in your browser', notifyPermissionPending:'No permission prompt? Open the viewer in Chrome or Edge.', notifyEnabled:'Notifications are on', notifyDisabled:'Notifications are off', notifyDenied:'Notifications blocked. Allow them in your browser settings.', notifyUnavailable:'Browser notifications need localhost or HTTPS.', allDone:'All tasks done'
     },
     es: {
-      roadmap:'HOJA DE RUTA', tracking:'SEGUIMIENTO', versions:'VERSIONES', notes:'NOTAS', progress:'SEGUIMIENTO DEL PROGRESO',
+      roadmap:'HOJA DE RUTA', tracking:'SEGUIMIENTO', versions:'VERSIONES', progress:'SEGUIMIENTO DEL PROGRESO',
       open:'Abrir', pick:'Abrir ROADMAP.md', choose:'Selecciona ROADMAP.md para comenzar el seguimiento',
       connected:'Sincronizado', connecting:'Conectando', disconnected:'Sin conexión', snapshot:'Vista puntual', updatedAgo:'Actualizado hace {time}', unknownUpdate:'Fecha de actualización desconocida',
       version:'Versión', phase:'Fase', of:'de', tasks:'tareas', decisions:'decisiones', lines:'líneas', lastCommit:'último commit',
-      now:'TAREA ACTUAL', noTask:'Sin tarea en curso', markActive:'Esperando a que el agente inicie una tarea', expected:'Esperado', elapsed:'Transcurrido', agentEta:'ETA del agente', revisedEta:'ETA revisada', onTrack:'A tiempo', shots:'capturas', shotsServeOnly:'Las capturas están disponibles con visual-roadmap live', activity:'ACTIVIDAD', started:'Inicio', noActivity:'Sin actividad registrada', collapseOverview:'Contraer resumen', expandOverview:'Expandir resumen', moreChanges:'Ver todos los cambios en Notas',
+      now:'TAREA ACTUAL', noTask:'Sin tarea en curso', markActive:'Esperando a que el agente inicie una tarea', expected:'Esperado', elapsed:'Transcurrido', agentEta:'ETA del agente', revisedEta:'ETA revisada', onTrack:'A tiempo', shots:'capturas', shotsServeOnly:'Las capturas están disponibles con visual-roadmap live', activity:'ACTIVIDAD', started:'Inicio', noActivity:'Sin actividad registrada', collapseOverview:'Contraer resumen', expandOverview:'Expandir resumen',
       delayed:'Retraso', provisional:'provisional', etaExtended:'ETA ampliada', noEstimate:'Sin estimación',
       phasesDone:'Fases completadas', calculatedDelivery:'Entrega calculada', pace:'Ritmo observado', since:'En desarrollo desde', perTask:'por tarea',
       recentChanges:'ÚLTIMOS CAMBIOS', etaChanges:'CAMBIOS DE ETA', noChanges:'Sin cambios registrados en ROADMAP.md', noRevisions:'Sin revisiones de ETA registradas',
       missingEffort:'tarea(s) sin esfuerzo estimado; la ETA global puede estar incompleta.', reviewEta:'La tarea activa superó su ETA. El agente debe revisarla.',
       calibrated:'Proyección ajustada con {count} tarea(s) terminadas y capacidad {capacity}.', basedOnEffort:'Proyección según esfuerzo pendiente y capacidad declarada.',
       range:'Ventana orientativa', confidence:'confianza', low:'baja', medium:'media', high:'alta',
-      deliverables:'ENTREGABLES', search:'Buscar entregables', expand:'Expandir todo', collapse:'Colapsar todo', nowButton:'AHORA',
+      deliverables:'ENTREGABLES', search:'Buscar entregables', searchTask:'Buscar código o tarea', result:'resultado', results:'resultados', noTimelineMatches:'No hay tareas que coincidan. Prueba otro código o palabra.', resizeColumn:'Arrastra para ajustar · doble clic para restablecer', fitSchedule:'TODO', fitScheduleHint:'Ver todo el cronograma', earlier:'Anterior', later:'Siguiente', goToday:'Ir a hoy', todayLine:'Hora actual', completedBlock:'Terminado', currentBlock:'En curso', projectedBlock:'Plan en construcción', expand:'Expandir todo', collapse:'Colapsar todo', nowButton:'AHORA',
       pending:'Pendientes', blocked:'Bloqueadas', overdue:'Vencidas', undated:'Sin fechas fijas',
       versionDone:'VERSIÓN · HECHAS', noPhases:'No hay fases ni tareas en ROADMAP.md.', fixedDate:'tarea(s) sin fecha fija', declared:'Sólido: fecha declarada', projection:'Rayas: proyección', dayPrecision:'Precisión de día; añade HH:mm a Inicio y Fin para ubicarla exactamente',
       status:'Estado', taskProgress:'Progreso', owner:'Responsable', estimatedEffort:'Esfuerzo estimado', actualDuration:'Duración real', pendingDuration:'Pendiente',
@@ -2682,7 +2742,7 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
       logEmpty:'El log está vacío. Agrega entradas a ## Log en ROADMAP.md.', completed:'completados', cancelled:'cancelados', noDate:'Sin fecha',
       planned:'Planeado', active:'En curso', paused:'Pausada', slip:'Desplazada', blockedStatus:'Bloqueado', risk:'En riesgo', cancelledStatus:'Descartado', calculated:'calculada', plannedLabel:'planificada',
       health:'SALUD DEL ROADMAP', health_error:'error(es)', health_warn:'aviso(s)', health_info:'sugerencia(s)', parseError:'No se pudo leer ROADMAP.md',
-      ago:'hace {time}', commits:'COMMITS', notifyOn:'Notificaciones activas (tarea hecha, bloqueada o atascada)', notifyOff:'Activar notificaciones de escritorio', allDone:'Todas las tareas terminadas'
+      ago:'hace {time}', commits:'COMMITS', notifyOn:'Desactivar notificaciones', notifyOff:'Activar notificaciones', notifyRequesting:'Permite las notificaciones en el navegador', notifyPermissionPending:'¿No aparece el permiso? Abre el visor en Chrome o Edge.', notifyEnabled:'Notificaciones activadas', notifyDisabled:'Notificaciones desactivadas', notifyDenied:'Notificaciones bloqueadas. Permítelas en los ajustes del navegador.', notifyUnavailable:'Las notificaciones requieren localhost o HTTPS.', allDone:'Todas las tareas terminadas'
     }
   };
   function saved(key, fallback) { try { return localStorage.getItem(key) || fallback; } catch { return fallback; } }
@@ -3080,15 +3140,141 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
+  /* notifications.js */
+  /* Browser and in-app notifications for meaningful roadmap changes. */
+(function (global) {
+  'use strict';
+  const storageKey = 'visual-roadmap-notify';
+  const delivered = new Set();
+  let enabled = false;
+  const t = key => global.UI.t(key);
+  const available = () => 'Notification' in global && global.isSecureContext;
+
+  function eventsForTransition(prev, doc) {
+    if (!prev) return [];
+    const before = new Map(prev.items.map(item => [item.taskId || item.id, item.status]));
+    const events = [];
+    for (const item of doc.items) {
+      const prior = before.get(item.taskId || item.id);
+      if (!prior || prior === item.status) continue;
+      if (item.status === 'done' || item.status === 'blocked') events.push({ type: item.status, item });
+    }
+    if (doc.stats.total && doc.stats.done === doc.stats.total && prev.stats.done !== prev.stats.total) {
+      events.push({ type: 'complete', title: doc.title });
+    }
+    return events;
+  }
+
+  function toast(title, body) {
+    let host = document.getElementById('notification-toasts');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'notification-toasts';
+      host.className = 'notification-toasts';
+      host.setAttribute('aria-live', 'polite');
+      document.body.appendChild(host);
+    }
+    const card = document.createElement('div');
+    card.className = 'notification-toast';
+    const heading = document.createElement('strong'); heading.textContent = title;
+    const detail = document.createElement('span'); detail.textContent = body || '';
+    const close = document.createElement('button'); close.type = 'button'; close.textContent = '×'; close.setAttribute('aria-label', t('close'));
+    close.addEventListener('click', () => card.remove());
+    card.append(heading, detail, close); host.appendChild(card);
+    if (host.children.length > 3) host.firstChild.remove();
+    setTimeout(() => card.remove(), 6000);
+  }
+
+  function paint() {
+    const button = document.getElementById('notify-toggle');
+    if (!button) return;
+    const supported = available();
+    if (!supported || global.Notification.permission !== 'granted') enabled = false;
+    button.disabled = !supported;
+    button.classList.toggle('notification-toggle--on', enabled);
+    button.setAttribute('aria-pressed', String(enabled));
+    const key = !supported ? 'notifyUnavailable' : global.Notification.permission === 'denied' ? 'notifyDenied' : enabled ? 'notifyOn' : 'notifyOff';
+    button.title = t(key);
+    button.setAttribute('aria-label', t(key));
+  }
+
+  function setEnabled(on) {
+    enabled = on;
+    try { localStorage.setItem(storageKey, on ? 'on' : 'off'); } catch {}
+    paint();
+  }
+
+  async function toggle() {
+    if (!available()) { toast(t('notifyUnavailable'), ''); return; }
+    if (enabled) { setEnabled(false); toast(t('notifyDisabled'), ''); return; }
+    if (global.Notification.permission === 'denied') { toast(t('notifyDenied'), ''); return; }
+    if (global.Notification.permission === 'granted') {
+      setEnabled(true); toast(t('notifyEnabled'), ''); return;
+    }
+    toast(t('notifyRequesting'), '');
+    let waiting = true;
+    const reminder = setTimeout(() => { if (waiting) toast(t('notifyPermissionPending'), ''); }, 8000);
+    try {
+      const permission = await global.Notification.requestPermission();
+      setEnabled(permission === 'granted');
+      toast(t(permission === 'granted' ? 'notifyEnabled' : 'notifyDenied'), '');
+    } catch {
+      toast(t('notifyDenied'), '');
+    } finally {
+      waiting = false;
+      clearTimeout(reminder);
+    }
+  }
+
+  function send(key, title, body) {
+    if (!enabled || !available() || global.Notification.permission !== 'granted' || delivered.has(key)) return;
+    if (!document.hidden && document.hasFocus()) {
+      toast(title, body);
+      delivered.add(key);
+      return;
+    }
+    try {
+      new global.Notification(title, { body, tag: key });
+      delivered.add(key);
+    } catch {
+      toast(title, body);
+      delivered.add(key);
+    }
+  }
+
+  function transitions(prev, doc) {
+    for (const event of eventsForTransition(prev, doc)) {
+      if (event.type === 'complete') send(`complete:${doc.title}`, `✓ ${doc.title}`, t('allDone'));
+      else {
+        const item = event.item;
+        const label = `${item.taskId ? item.taskId + ' · ' : ''}${item.name}`;
+        send(`${event.type}:${label}`, `${event.type === 'done' ? '✓ ' + t('done') : '⚠ ' + t('blockedStatus')}: ${label}`, doc.title);
+      }
+    }
+  }
+
+  function init() {
+    try { enabled = available() && localStorage.getItem(storageKey) === 'on' && global.Notification.permission === 'granted'; } catch {}
+    document.getElementById('notify-toggle')?.addEventListener('click', toggle);
+    document.addEventListener('roadmap:preferences', paint);
+    document.addEventListener('visibilitychange', paint);
+    paint();
+  }
+
+  global.RoadmapNotifications = { init, send, transitions, eventsForTransition };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+
   /* timeline.js */
   /* Chronogram from declared dates and provisional effort projections. */
 (function (global) {
   'use strict';
   const DAY = 86400000;
   const scales = { '6h': [6*3600000,3600000], '1d': [DAY,2*3600000], '3d': [3*DAY,12*3600000], '1w': [7*DAY,DAY], '1m': [30*DAY,5*DAY] };
-  let zoom = '1d', offset = 0, search = '', filter = '';
-  let liveRange = null;
+  let zoom = '1d', offset = 0, search = '', filter = '', fitted = false, focusedWindow = null;
+  let liveRange = null, lastActive = '';
   const expanded = new Set();
+  const collapsedGroups = new Set();
   const t = key => global.UI.t(key);
   let initialized = false;
   function el(tag, cls, label) { const n = document.createElement(tag); n.className = cls; if (label != null) n.textContent = label; return n; }
@@ -3101,6 +3287,7 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
     const declaredStart = time(item.start, false), declaredEnd = time(item.end, true);
     const coarse = /^\d{4}-\d{2}-\d{2}$/.test(item.start || '') && /^\d{4}-\d{2}-\d{2}$/.test(item.end || '');
     const shortHours = item.actual || item.effort;
+    if (item.status === 'cancelled' && declaredEnd == null) return { start: null, end: null, coarse: false, estimated: false };   /* never ran to the end: nothing to draw */
     if (item.status !== 'done' && item.status !== 'cancelled' && prediction) return { start: prediction.start, end: prediction.end, coarse: false, estimated: true, slipMinutes: prediction.slipMinutes || 0 };
     if (item.status !== 'done' && item.status !== 'cancelled' && declaredStart != null && declaredStart < now) {
       const duration = declaredEnd != null && declaredEnd > declaredStart ? declaredEnd - declaredStart : Math.max(1, shortHours || 0) * 3600000;
@@ -3119,11 +3306,45 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
     return { start: declaredStart, end: declaredEnd, coarse: false, estimated: false };
   }
   function clockLabel(now) { return new Intl.DateTimeFormat(global.UI.language,{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(now)); }
+  const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  function matchesTask(item, query) { return normalize(`${item.taskId || ''} ${item.name || ''}`).includes(normalize(query.trim())); }
+  function focusRange(window, span) {
+    const width = Math.max(span, window.end - window.start);
+    const center = (window.start + window.end) / 2;
+    return { start: center-width/2, end: center+width/2, span: width };
+  }
+  function fitRange(windows, now = Date.now()) {
+    const valid = windows.filter(w => Number.isFinite(w.start) && Number.isFinite(w.end));
+    if (!valid.length) return focusRange({ start: now, end: now }, DAY);
+    const first = Math.min(...valid.map(w => w.start)), last = Math.max(...valid.map(w => w.end));
+    const padding = Math.max(3600000, (last-first)*.06);
+    return { start: first-padding, end: last+padding, span: last-first+padding*2 };
+  }
+  /* Consecutive runs of `#### Subgroup` inside a release; one unnamed group when the release has none */
+  function groupItems(items) {
+    const groups = [];
+    for (const it of items) {
+      const name = it.category || '';
+      const last = groups[groups.length - 1];
+      if (last && last.name === name) last.items.push(it);
+      else groups.push({ name, items: [it] });
+    }
+    return groups;
+  }
+  const LABEL_KEY = 'vr.timelineLabelWidth';
+  function storedLabelWidth() { try { const v = Number(localStorage.getItem(LABEL_KEY)); return v >= 200 && v <= 1200 ? v : null; } catch { return null; } }
+  function saveLabelWidth(v) { try { localStorage.setItem(LABEL_KEY, String(Math.round(v))); } catch {} }
+  const glyph = status => status==='done'?'■':status==='active'?'▶':status==='paused'?'Ⅱ':status==='blocked'?'⛔':status==='risk'?'⚠':status==='cancelled'?'✕':'□';
   function render(doc, container) {
     container.replaceChildren();
     document.querySelector('.shot-preview')?.remove();
     if (!doc?.releases?.length) { container.appendChild(el('div','empty-state',t('noPhases'))); return; }
     const forecast = global.Forecast.calculate(doc);
+    /* Follow the agent: open the release of the active task whenever the active task changes */
+    const activeRelease = doc.releases.find(r => r.items.some(it => it.status === 'active'));
+    const activeKey = activeRelease ? `${activeRelease.id}::${activeRelease.items.find(it => it.status === 'active').taskId}` : '';
+    if (initialized && activeRelease && activeKey !== lastActive) expanded.add(activeRelease.id);
+    lastActive = activeKey;
     if (!initialized) {
       const current = doc.releases.find(r => r.items.some(it => it.status === 'active'));
       if (current) expanded.add(current.id);
@@ -3135,16 +3356,33 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
       else if (days <= .17) zoom = '6h';   /* a short agent session: under ~4h of work left */
       initialized = true;
     }
-    const now = Date.now(), span = scales[zoom][0], tick = scales[zoom][1], start = now + offset*span - span*.3, end = start+span;
+    const now = Date.now();
+    const windows = doc.items.map(it => windowForItem(it, forecast.projections.get(it.id), now));
+    const allRange = fitRange(windows, now);
+    const selectedRange = fitted ? allRange : focusedWindow || null;
+    const span = selectedRange?.span || scales[zoom][0];
+    const tick = fitted ? (span > 14*DAY ? 7*DAY : span > 3*DAY ? DAY : span > DAY ? 12*3600000 : span > 6*3600000 ? 3600000 : 30*60000) : scales[zoom][1];
+    const start = selectedRange ? selectedRange.start + offset*span*.5 : now + offset*span*.5 - span*.3;
+    const end = start+span;
     liveRange = { start, end, span, container, doc };
     const pos = ms => (ms-start)/span*100;
     const toolbar = el('div','subnav-bar'), controls = el('div','subnav-controls');
     toolbar.appendChild(el('strong','timeline-title',t('deliverables')));
-    const input = el('input','search-input'); input.placeholder = t('search'); input.value = search;
-    input.addEventListener('input', () => { search=input.value.toLowerCase().trim(); render(doc,container); container.querySelector('.search-input').focus(); });
+    const input = el('input','search-input'); input.type='search'; input.placeholder = t('searchTask'); input.setAttribute('aria-label',t('searchTask')); input.value = search;
+    const matching = doc.items.filter(it => matchesTask(it,search) && (!filter || (filter==='pending' ? it.status!=='done'&&it.status!=='cancelled' : filter==='blocked' ? it.status==='blocked' : filter==='overdue' ? it.status!=='done'&&it.status!=='cancelled'&&time(it.end,true)!=null&&time(it.end,true)<now : it.status!=='done'&&!it.start&&!it.end)));
+    input.addEventListener('input', () => {
+      const caret=input.selectionStart;
+      search=input.value.trim(); offset=0; fitted=false; filter='';
+      const hit=doc.items.find(it=>matchesTask(it,search));
+      const w=search&&hit ? windowForItem(hit,forecast.projections.get(hit.id),Date.now()) : null;
+      focusedWindow=w?.start!=null&&w?.end!=null ? focusRange(w,Math.max(scales[zoom][0],(w.end-w.start)*1.8)) : null;
+      render(doc,container);
+      const next=container.querySelector('.search-input'); next.focus(); next.setSelectionRange(caret,caret);
+    });
     controls.appendChild(input);
+    if(search) controls.appendChild(el('span','timeline-search-count',`${matching.length} ${matching.length===1?t('result'):t('results')}`));
     const expand=el('button','btn-icon-toggle','⊞'); expand.title=t('expand'); expand.setAttribute('aria-label',t('expand'));
-    expand.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.add(group.id));render(doc,container);});
+    expand.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.add(group.id));collapsedGroups.clear();render(doc,container);});
     const collapse=el('button','btn-icon-toggle','⊟'); collapse.title=t('collapse'); collapse.setAttribute('aria-label',t('collapse'));
     collapse.addEventListener('click',()=>{doc.releases.forEach(group=>expanded.delete(group.id));render(doc,container);});
     const late = doc.items.filter(it => it.status !== 'done' && it.status !== 'cancelled' && time(it.end,true) != null && time(it.end,true) < now).length;
@@ -3161,13 +3399,23 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
     controls.append(signals,expand,collapse);
     for (const [key,label] of [['6h','6 H'],['1d',global.UI.language==='es'?'1 DÍA':'1 DAY'],['3d',global.UI.language==='es'?'3 DÍAS':'3 DAYS'],['1w',global.UI.language==='es'?'1 SEMANA':'1 WEEK'],['1m',global.UI.language==='es'?'1 MES':'1 MONTH']]) {
       const b=el('button','zoom-btn'+(zoom===key?' zoom-btn--active':''),label);
-      b.addEventListener('click',()=>{zoom=key;offset=0;render(doc,container);}); controls.appendChild(b);
+      b.addEventListener('click',()=>{zoom=key;offset=0;fitted=false;focusedWindow=null;render(doc,container);}); controls.appendChild(b);
     }
+    const fit=el('button','zoom-btn'+(fitted?' zoom-btn--active':''),t('fitSchedule'));
+    fit.title=t('fitScheduleHint'); fit.addEventListener('click',()=>{fitted=true;focusedWindow=null;offset=0;render(doc,container);});controls.appendChild(fit);
     for (const [label,delta] of [['‹',-1],[t('nowButton'),0],['›',1]]) {
       const b=el('button','btn-nav-now',label);
-      b.addEventListener('click',()=>{offset=delta?offset+delta:0;render(doc,container);}); controls.appendChild(b);
+      b.title=delta<0?t('earlier'):delta>0?t('later'):t('goToday');
+      b.setAttribute('aria-label',b.title);
+      b.addEventListener('click',()=>{if(delta){if(fitted){focusedWindow=allRange;fitted=false;}offset+=delta;}else{offset=0;fitted=false;focusedWindow=null;}render(doc,container);}); controls.appendChild(b);
     }
     toolbar.appendChild(controls); container.appendChild(toolbar);
+    const guide=el('div','timeline-guide');
+    guide.appendChild(el('span','timeline-guide__range',`${global.Forecast.dateTime(start)} → ${global.Forecast.dateTime(end)}`));
+    for(const [cls,key] of [['now','todayLine'],['done','completedBlock'],['active','currentBlock'],['projection','projectedBlock']]){
+      const item=el('span','timeline-guide__item');item.append(el('i',`timeline-guide__swatch timeline-guide__swatch--${cls}`),el('span','',t(key)));guide.appendChild(item);
+    }
+    container.appendChild(guide);
     const tracker=el('div','tracker-container'), table=el('div','tracker-table');
     const left=el('div','tracker-left'), right=el('div','tracker-right');
     left.appendChild(el('div','tracker-left__head',t('versionDone')));
@@ -3181,14 +3429,29 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
     }
     right.appendChild(head);
     const lRows=el('div','tracker-left__rows'), rRows=el('div','tracker-right__rows'); rRows.style.width='100%';
-    function row(label,bar,phase) {
-      const l=el('div',phase?'phase-head-row':'task-label-row',label), r=el('div',phase?'phase-bar-row':'tracker-bar-row');
-      if(bar) r.appendChild(bar); lRows.appendChild(l);rRows.appendChild(r);return l;
+    function row(parts,bar,kind) {
+      const l=el('div',kind==='phase'?'phase-head-row':kind==='group'?'group-head-row':'task-label-row');
+      const r=el('div',kind==='phase'?'phase-bar-row':kind==='group'?'group-bar-row':'tracker-bar-row');
+      l.append(...parts.filter(Boolean)); if(bar) r.appendChild(bar); lRows.appendChild(l);rRows.appendChild(r);return l;
     }
+    function summaryBar(list, progress) {
+      const ws=list.map(it=>windowForItem(it,forecast.projections.get(it.id),now)).filter(w=>w.start!=null&&w.end!=null);
+      if(!ws.length)return null;
+      const a=Math.min(...ws.map(w=>w.start)), b=Math.max(...ws.map(w=>w.end));
+      if(b<start||a>end)return null;
+      const bar=el('div','phase-summary-bar phase-summary-bar--group');
+      bar.style.left=`${Math.max(0,pos(a))}%`;
+      bar.style.width=`${Math.max(1.5,Math.min(100,pos(b))-Math.max(0,pos(a)))}%`;
+      const fill=el('div','phase-seg-done');fill.style.width=`${progress}%`;bar.appendChild(fill);
+      return bar;
+    }
+    const toggleRow=(l,onToggle)=>{
+      l.setAttribute('role','button');l.tabIndex=0;
+      l.addEventListener('click',onToggle);l.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onToggle();}});
+    };
     const preview = el('div', 'shot-preview'); preview.hidden = true; document.body.appendChild(preview);
-    let undated=0;
     doc.releases.forEach((rel,index)=>{
-      const items=(rel.items||[]).filter(it=>(!search||`${it.taskId||''} ${it.name}`.toLowerCase().includes(search)) && (!filter || (filter==='pending' ? it.status!=='done'&&it.status!=='cancelled' : filter==='blocked' ? it.status==='blocked' : filter==='overdue' ? it.status!=='done'&&it.status!=='cancelled'&&time(it.end,true)!=null&&time(it.end,true)<now : it.status!=='done'&&!it.start&&!it.end)));
+      const items=(rel.items||[]).filter(it=>(!search||matchesTask(it,search)) && (!filter || (filter==='pending' ? it.status!=='done'&&it.status!=='cancelled' : filter==='blocked' ? it.status==='blocked' : filter==='overdue' ? it.status!=='done'&&it.status!=='cancelled'&&time(it.end,true)!=null&&time(it.end,true)<now : it.status!=='done'&&!it.start&&!it.end)));
       if((search||filter)&&!items.length)return;
       const key=rel.id||String(index), done=rel.items.filter(it=>it.status==='done').length;
       let summary=null;
@@ -3205,12 +3468,26 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
         summary.appendChild(el('div','phase-seg-done'));
         summary.firstChild.style.width=`${rel.progress||0}%`;
       }
-      const phase=row(`${expanded.has(key)?'⌄':'›'}  ${rel.id} · ${rel.name}   ${done}/${rel.items.length}`,summary,true);
-      phase.setAttribute('role','button');phase.tabIndex=0;
-      const toggle=()=>{expanded.has(key)?expanded.delete(key):expanded.add(key);render(doc,container);};
-      phase.addEventListener('click',toggle);phase.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')toggle();});
-      if(!expanded.has(key)&&!search&&!filter)return;
-      items.forEach(it=>{
+      const open=expanded.has(key)||!!search||!!filter;
+      const phase=row([el('span','tl-chevron',open?'⌄':'›'),el('span','tl-phase-code',rel.id),el('span','tl-name',rel.name),el('span','tl-count',`${done}/${rel.items.filter(it=>it.status!=='cancelled').length}`)],summary,'phase');
+      phase.title=`${rel.id} · ${rel.name}`;
+      toggleRow(phase,()=>{expanded.has(key)?expanded.delete(key):expanded.add(key);render(doc,container);});
+      if(!open)return;
+      const groups=groupItems(items), named=groups.some(g=>g.name);
+      groups.forEach((group,gi)=>{
+      const nested=named&&!!group.name;
+      if(nested){
+        const gkey=`${key}::${gi}::${group.name}`;
+        const all=rel.items.filter(it=>(it.category||'')===group.name&&it.status!=='cancelled');
+        const gDone=all.filter(it=>it.status==='done').length;
+        const gOpen=!collapsedGroups.has(gkey)||!!search||!!filter;
+        const progress=all.length?Math.round(all.reduce((n,it)=>n+(it.status==='done'?100:it.progress||0),0)/all.length):0;
+        const gl=row([el('span','tl-chevron',gOpen?'⌄':'›'),el('span','tl-name',group.name),el('span','tl-count',`${gDone}/${all.length}`)],summaryBar(all,progress),'group');
+        gl.title=group.name;
+        toggleRow(gl,()=>{collapsedGroups.has(gkey)?collapsedGroups.delete(gkey):collapsedGroups.add(gkey);render(doc,container);});
+        if(!gOpen)return;
+      }
+      group.items.forEach(it=>{
         const predicted = forecast.projections.get(it.id);
         const window = windowForItem(it,predicted,now);
         const a=window.start, b=window.end;
@@ -3220,17 +3497,24 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
           const from=a??b,to=b??a;
           if(to>=start&&from<=end){
             const left=Math.max(0,pos(from)), right=Math.min(100,pos(to)), width=Math.max(0,right-left);
-            bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':it.status==='paused'?'paused':it.status==='blocked'?'blocked':'planned'}${provisional?' tracker-bar--provisional':''}${width<8?' tracker-bar--compact':''}`,width>=8?it.name:'');
-            bar.dataset.label=it.name;
+            bar=el('div',`tracker-bar tracker-bar--${it.status==='done'?'done':it.status==='active'?'now':it.status==='paused'?'paused':it.status==='blocked'?'blocked':'planned'}${provisional?' tracker-bar--provisional':''}${width<8?' tracker-bar--compact':''}${search?' tracker-bar--found':''}`);
+            bar.setAttribute('aria-label',`${it.taskId||''} ${it.name}`.trim());
+            if(it.status==='active'&&it.progress>0){const fill=el('i','tracker-bar__fill');fill.style.width=`${Math.min(100,it.progress)}%`;bar.appendChild(fill);}
             bar.style.left=`${left}%`;
             bar.style.width=`${width}%`;
             bar.title=window.coarse ? `${it.name} · ${t('dayPrecision')}` : provisional ? `${it.name} · ${t('projection')} · ${global.Forecast.dateTime(from)} → ${global.Forecast.dateTime(to)}` : `${it.name} · ${it.start||'?'} → ${it.end||'?'} · ${it.status}`;
             if(window.slipMinutes > 0) { bar.classList.add('tracker-bar--slipped'); bar.title += ` · ${t('slip')} +${global.Forecast.duration(window.slipMinutes)}`; }
           }
         }
-        if(!it.start&&!it.end)undated++;
-        const l=row(`${it.status==='done'?'■':it.status==='active'?'▰':it.status==='paused'?'Ⅱ':'□'}  ${it.taskId||''} ${it.name}${window.slipMinutes>0?` · ${t('slip')} +${global.Forecast.duration(window.slipMinutes)}`:''}`,bar,false);
-        if(!it.start&&!it.end)l.title=provisional?t('projection'):t('undated');
+        const chips=[];
+        if(it.status==='active'&&it.progress>0)chips.push(el('span','tl-chip tl-chip--progress',`${it.progress}%`));
+        if(window.slipMinutes>0){const chip=el('span','tl-chip tl-chip--slip',`+${global.Forecast.duration(window.slipMinutes)}`);chip.title=t('slip');chips.push(chip);}
+        const l=row([el('span',`tl-glyph tl-glyph--${it.status}`,glyph(it.status)),it.taskId?el('span','tl-code',`${it.taskId}:`):null,el('span','tl-name',it.name),...chips],bar,'task');
+        if(nested)l.classList.add('task-label-row--nested');
+        if(it.status==='active')l.classList.add('task-label-row--now');
+        l.title=`${it.taskId?it.taskId+': ':''}${it.name}${window.slipMinutes>0?` · ${t('slip')} +${global.Forecast.duration(window.slipMinutes)}`:''}`;
+        if(search)l.classList.add('task-label-row--found');
+        if(!it.start&&!it.end)l.title+=` · ${provisional?t('projection'):t('undated')}`;
         l.setAttribute('role','button'); l.tabIndex=0; l.classList.add('task-label-row--interactive');
         if(it.status==='cancelled')l.classList.add('task-label-row--cancelled');
         if(it.status==='blocked')l.classList.add('task-label-row--blocked');
@@ -3265,33 +3549,34 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
         }
         l.addEventListener('click',()=>showDetail(it,doc,forecast));
         l.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')showDetail(it,doc,forecast);});
-        if(bar)bar.addEventListener('click',()=>showDetail(it,doc,forecast));
+        if(bar){
+          bar.setAttribute('role','button');bar.tabIndex=0;
+          bar.addEventListener('click',()=>showDetail(it,doc,forecast));
+          bar.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();showDetail(it,doc,forecast);}});
+        }
+      });
       });
     });
     if(start<=now&&now<=end){
-      const line=el('div','vertical-now-line');line.style.left=`${pos(now)}%`;right.appendChild(line);
+      const line=el('div','vertical-now-line');line.style.left=`${pos(now)}%`;rRows.appendChild(line);
       const label=el('div','vertical-now-label',`${t('nowButton')} ${clockLabel(now)}`);
       label.style.left=`${Math.max(7,Math.min(93,pos(now)))}%`;head.appendChild(label);
     }
-    left.appendChild(lRows);right.appendChild(rRows);table.append(left,right);tracker.appendChild(table);
-    tracker.appendChild(el('div','timeline-legend',`${undated} ${t('fixedDate')} · ${t('declared')} · ${t('projection')}`));
-    container.appendChild(tracker);
-    placeBarLabels(rRows);
-    right.addEventListener('scroll',()=>{lRows.scrollTop=right.scrollTop;});
-  }
-  /* Labels that do not fit inside their bar move next to it, on the side with room */
-  function placeBarLabels(rows) {
-    rows.querySelectorAll('.tracker-bar[data-label]').forEach(bar=>{
-      if(bar.textContent && bar.scrollWidth<=bar.clientWidth+1)return;
-      bar.textContent='';
-      const label=el('span','tracker-bar__outside',bar.dataset.label);
-      label.title=bar.title;
-      const left=parseFloat(bar.style.left), width=parseFloat(bar.style.width);
-      if(left+width>70){label.style.right=`calc(${100-left}% + 6px)`;label.classList.add('tracker-bar__outside--before');}
-      else label.style.left=`calc(${left+width}% + 6px)`;
-      label.addEventListener('click',()=>bar.click());
-      bar.parentElement.appendChild(label);
+    left.appendChild(lRows);right.appendChild(rRows);
+    const width=storedLabelWidth(); if(width)table.style.setProperty('--tl-label-width',`${width}px`);
+    const handle=el('div','tracker-resizer');handle.setAttribute('role','separator');handle.setAttribute('aria-orientation','vertical');handle.title=t('resizeColumn');
+    handle.addEventListener('pointerdown',e=>{
+      e.preventDefault();handle.setPointerCapture(e.pointerId);handle.classList.add('tracker-resizer--active');
+      const x0=e.clientX,w0=left.getBoundingClientRect().width,max=table.getBoundingClientRect().width*.7;
+      const move=ev=>{const w=Math.max(200,Math.min(max,w0+ev.clientX-x0));table.style.setProperty('--tl-label-width',`${w}px`);};
+      const up=()=>{handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',up);handle.classList.remove('tracker-resizer--active');saveLabelWidth(left.getBoundingClientRect().width);};
+      handle.addEventListener('pointermove',move);handle.addEventListener('pointerup',up);
     });
+    handle.addEventListener('dblclick',()=>{table.style.removeProperty('--tl-label-width');try{localStorage.removeItem(LABEL_KEY);}catch{}});
+    table.append(left,handle,right);tracker.appendChild(table);
+    if((search||filter)&&!matching.length)rRows.appendChild(el('div','timeline-empty',t('noTimelineMatches')));
+    container.appendChild(tracker);
+    right.addEventListener('scroll',()=>{lRows.scrollTop=right.scrollTop;});
   }
   function openLightbox(shots, index) {
     document.querySelector('.lightbox')?.remove();
@@ -3388,7 +3673,7 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
     const label = container.querySelector('.vertical-now-label');
     if (label) { label.style.left = `${Math.max(7,Math.min(93,(now-start)/span*100))}%`; label.textContent = `${t('nowButton')} ${clockLabel(now)}`; }
   }
-  global.Timeline={render, tickNow, openTask:showDetail, windowForItem};
+  global.Timeline={render, tickNow, openTask:showDetail, windowForItem, matchesTask, focusRange, fitRange, groupItems};
 })(typeof window!=='undefined'?window:globalThis);
 
 
@@ -3486,139 +3771,6 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
 })(typeof window!=='undefined'?window:globalThis);
 
 
-  /* log.js */
-  /* log.js — Log & checklist view
-   window.Log = { render(doc, container) } */
-
-(function (global) {
-  'use strict';
-
-  const R = global.Roadmap;
-
-  function h(tag, attrs, ...children) {
-    const el = document.createElement(tag);
-    for (const [k, v] of Object.entries(attrs || {})) {
-      if (k === 'class') el.className = v;
-      else el.setAttribute(k, v);
-    }
-    for (const c of children.flat()) {
-      if (c == null) continue;
-      el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
-    }
-    return el;
-  }
-
-  /** Extraer fecha "YYYY-MM-DD" del texto si existe */
-  function extractDate(text) {
-    const m = /(\d{4}-\d{2}-\d{2})/.exec(text);
-    return m ? m[1] : null;
-  }
-
-  function stripDate(text) {
-    return text.replace(/^\d{4}-\d{2}-\d{2}\s*[—–-]\s*/, '').trim();
-  }
-
-  function render(doc, container) {
-    container.innerHTML = '';
-
-    const log = doc.log || [];
-
-    if (!log.length) {
-      container.appendChild(
-        h('div', { class: 'empty-state' },
-          h('div', { class: 'empty-state__icon' }, '📓'),
-          h('p', {}, global.UI.t('logEmpty'))
-        )
-      );
-      return;
-    }
-
-    /* Agrupar por fecha */
-    const groups = new Map();
-    for (const entry of log) {
-      const date = extractDate(entry.text) || global.UI.t('noDate');
-      if (!groups.has(date)) groups.set(date, []);
-      groups.get(date).push(entry);
-    }
-
-    /* Stats rápidos */
-    const total    = log.length;
-    const done     = log.filter(e => e.done).length;
-    const pending  = log.filter(e => !e.done && !e.cancelled).length;
-    const cancelled = log.filter(e => e.cancelled).length;
-
-    container.appendChild(
-      h('div', { class: 'log-stats' },
-        h('span', { class: 'log-stat log-stat--done' }, `✓ ${done} ${global.UI.t('completed')}`),
-        pending    ? h('span', { class: 'log-stat log-stat--pending' },   `◯ ${pending} ${global.UI.t('pending')}`)   : null,
-        cancelled  ? h('span', { class: 'log-stat log-stat--cancelled' }, `✗ ${cancelled} ${global.UI.t('cancelled')}`) : null
-      )
-    );
-
-    /* Grupos de fecha, más reciente primero */
-    const sortedDates = [...groups.keys()].sort((a, b) => b.localeCompare(a));
-
-    for (const date of sortedDates) {
-      const entries = groups.get(date);
-
-      let label = date;
-      if (date !== global.UI.t('noDate')) {
-        const d = R.toDate(date);
-        if (d) label = new Intl.DateTimeFormat(global.UI.language,{day:'numeric',month:'short',year:'numeric'}).format(d);
-      }
-
-      const group = h('div', { class: 'log-group' },
-        h('div', { class: 'log-group__date' }, label),
-        h('ul', { class: 'log-list' },
-          ...entries.map(entry => {
-            const cls = entry.done
-              ? 'log-item log-item--done'
-              : entry.cancelled
-                ? 'log-item log-item--cancelled'
-                : 'log-item log-item--pending';
-
-            const icon = entry.done ? '✓' : entry.cancelled ? '✗' : '◯';
-            const text = stripDate(entry.text);
-
-            return h('li', { class: cls },
-              h('span', { class: 'log-item__icon' }, icon),
-              h('span', { class: 'log-item__text' },
-                ...parseInlineMarkdown(text)
-              )
-            );
-          })
-        )
-      );
-
-      container.appendChild(group);
-    }
-  }
-
-  /** Minimal inline markdown → DOM nodes */
-  function parseInlineMarkdown(text) {
-    const nodes = [];
-    const re = /`([^`]+)`|\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)]+)\)/g;
-    let last = 0, m;
-    while ((m = re.exec(text)) !== null) {
-      if (m.index > last) nodes.push(document.createTextNode(text.slice(last, m.index)));
-      if (m[1]) { const c = document.createElement('code'); c.textContent = m[1]; nodes.push(c); }
-      else if (m[2]) { const s = document.createElement('strong'); s.textContent = m[2]; nodes.push(s); }
-      else if (m[3]) {
-        const a = document.createElement('a');
-        a.href = m[4]; a.textContent = m[3]; a.target = '_blank'; a.rel = 'noreferrer';
-        nodes.push(a);
-      }
-      last = re.lastIndex;
-    }
-    if (last < text.length) nodes.push(document.createTextNode(text.slice(last)));
-    return nodes;
-  }
-
-  global.Log = { render };
-
-})(typeof window !== 'undefined' ? window : globalThis);
-
-
   /* app.js */
   /* app.js — Main Controller for Visual Roadmap
    Orchestrates: Watcher → md.js → HUD Mission Control & Views
@@ -3629,7 +3781,7 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
 
   /* ── State ───────────────────────────────────────────── */
   let _doc = null;
-  let _view = 'timeline';  /* timeline | board | log */
+  let _view = 'timeline';  /* timeline | board */
   let _source = 'manual';
 
   const $ = id => document.getElementById(id);
@@ -3760,49 +3912,6 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
     }).catch(() => {});
   }
 
-  /* ── Desktop notifications: task done / blocked, ETA stuck, all done ── */
-  const canNotify = 'Notification' in global && global.isSecureContext;
-  let _notify = false;
-  try { _notify = canNotify && localStorage.getItem('visual-roadmap-notify') === 'on' && Notification.permission === 'granted'; } catch {}
-  const _notified = new Set();
-  function paintNotify() {
-    const b = $('notify-toggle');
-    if (!b) return;
-    b.hidden = !canNotify;
-    b.textContent = _notify ? '🔔' : '🔕';
-    b.setAttribute('aria-pressed', String(_notify));
-    b.title = t(_notify ? 'notifyOn' : 'notifyOff');
-  }
-  function setNotify(on) {
-    _notify = on;
-    try { localStorage.setItem('visual-roadmap-notify', on ? 'on' : 'off'); } catch {}
-    paintNotify();
-  }
-  function toggleNotify() {
-    if (_notify) { setNotify(false); return; }
-    Notification.requestPermission().then(p => setNotify(p === 'granted'));
-  }
-  function notify(key, title, body) {
-    if (!_notify || _notified.has(key)) return;
-    _notified.add(key);
-    if (!document.hidden && document.hasFocus()) return;   /* the user is already looking */
-    try { new Notification(title, { body, tag: key }); } catch {}
-  }
-  function notifyTransitions(prev, doc) {
-    if (!prev) return;
-    const before = new Map(prev.items.map(i => [i.taskId || i.id, i.status]));
-    for (const it of doc.items) {
-      const was = before.get(it.taskId || it.id);
-      if (!was || was === it.status) continue;
-      const label = `${it.taskId ? it.taskId + ' · ' : ''}${it.name}`;
-      if (it.status === 'done') notify(`done:${label}`, `✓ ${t('done')}: ${label}`, doc.title);
-      if (it.status === 'blocked') notify(`blocked:${label}`, `⚠ ${t('blockedStatus')}: ${label}`, doc.title);
-    }
-    if (doc.stats.total && doc.stats.done === doc.stats.total && prev.stats.done !== prev.stats.total) {
-      notify(`complete:${doc.title}`, `✓ ${doc.title}`, t('allDone'));
-    }
-  }
-
   /* ── Roadmap health: consistency problems the agent should fix ── */
   let _healthOpen = false;
   function renderHealth(doc, forecast) {
@@ -3813,7 +3922,7 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
     if (forecast.overdue && forecast.ageMinutes != null && forecast.ageMinutes >= forecast.overdueMinutes && forecast.overdueMinutes >= 10) {
       issues.unshift({ level: 'warn', code: 'stale', vars: { minutes: forecast.overdueMinutes } });
       const a = forecast.active;
-      notify(`stale:${a.taskId || a.id}:${doc.meta.updated}`, `⏱ ${a.taskId || ''} ${a.name}`, global.Roadmap.formatIssue(issues[0], global.UI.language));
+      global.RoadmapNotifications?.send(`stale:${a.taskId || a.id}:${doc.meta.updated}`, `⏱ ${a.taskId || ''} ${a.name}`, global.Roadmap.formatIssue(issues[0], global.UI.language));
     }
     box.replaceChildren();
     box.hidden = !issues.length;
@@ -3886,7 +3995,6 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
     } else {
       list.textContent = t('noChanges');
     }
-    if ($('changes-more')) $('changes-more').hidden = events.length <= 4;
   }
 
   function escapeHtml(s) {
@@ -3897,7 +4005,7 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
   function setView(view) {
     _view = view;
     $('app').dataset.view = view;
-    $('page-title').dataset.i18n = view === 'board' ? 'versionsTitle' : view === 'log' ? 'notes' : 'progress';
+    $('page-title').dataset.i18n = view === 'board' ? 'versionsTitle' : 'progress';
     global.UI.apply();
 
     qa('.rail__btn').forEach(btn => {
@@ -3930,8 +4038,6 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
       if (global.Timeline) global.Timeline.render(_doc, main);
     } else if (_view === 'board') {
       if (global.Board) global.Board.render(_doc, main);
-    } else if (_view === 'log') {
-      if (global.Log) global.Log.render(_doc, main);
     }
   }
 
@@ -3943,7 +4049,7 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
       const prev = _doc;
       _doc = global.Roadmap.parse(text);
       _source = e.detail.source || 'manual';
-      notifyTransitions(prev, _doc);
+      global.RoadmapNotifications?.transitions(prev, _doc);
       refreshGit();
       $('app').classList.remove('awaiting-roadmap');
       $('app').classList.add('has-roadmap');
@@ -3979,9 +4085,8 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
     if (badge) { badge.dataset.state = 'snapshot'; $('connection-text').textContent = t('snapshot'); }
   });
   document.addEventListener('roadmap:preferences', () => {
-    $('page-title').dataset.i18n = _view === 'board' ? 'versionsTitle' : _view === 'log' ? 'notes' : 'progress';
+    $('page-title').dataset.i18n = _view === 'board' ? 'versionsTitle' : 'progress';
     global.UI.apply();
-    paintNotify();
     if (_doc) { updateHUD(_doc); renderCurrentView(); }
     else renderCurrentView();
     const badge = $('live-indicator');
@@ -3990,12 +4095,12 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
 
   /* ── Initialize ───────────────────────────────────────── */
   function init() {
-    /* Shareable links: ?view=board|log|timeline&theme=light&lang=es */
+    /* Shareable links: ?view=board|timeline&theme=light&lang=es */
     const params = new URLSearchParams(location.search);
     if (params.get('lang')) global.UI.setLanguage(params.get('lang'));
     if (params.get('theme')) global.UI.setTheme(params.get('theme'));
-    if (['timeline', 'board', 'log'].includes(params.get('view'))) _view = params.get('view');
-    $('page-title').dataset.i18n = _view === 'board' ? 'versionsTitle' : _view === 'log' ? 'notes' : 'progress';
+    if (['timeline', 'board'].includes(params.get('view'))) _view = params.get('view');
+    $('page-title').dataset.i18n = _view === 'board' ? 'versionsTitle' : 'progress';
     qa('.rail__btn').forEach(btn => btn.classList.toggle('rail__btn--active', btn.dataset.view === _view));
     global.UI.apply();
     $('app').dataset.view = _view;
@@ -4012,7 +4117,7 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
     if (pickBtn) pickBtn.addEventListener('click', () => global.Watcher.pickFile());
     $('language-select')?.addEventListener('change', e => global.UI.setLanguage(e.target.value));
     $('theme-toggle')?.addEventListener('click', () => global.UI.setTheme(global.UI.theme === 'dark' ? 'light' : 'dark'));
-    $('notify-toggle')?.addEventListener('click', toggleNotify);
+    global.RoadmapNotifications?.init();
     let hudCollapsed = false;
     try { hudCollapsed = localStorage.getItem('visual-roadmap-hud-collapsed') === 'true'; } catch {}
     const toggleHud = () => {
@@ -4024,10 +4129,8 @@ html[data-theme="light"] .task-log__caption { color: #16364d; }
     };
     toggleHud();
     $('hud-toggle')?.addEventListener('click', () => { hudCollapsed = !hudCollapsed; try { localStorage.setItem('visual-roadmap-hud-collapsed', String(hudCollapsed)); } catch {} toggleHud(); });
-    $('changes-more')?.addEventListener('click', () => setView('log'));
     global.RoadmapShots?.init();
     document.addEventListener('roadmap:shots-updated', () => { if (_doc) renderCurrentView(); });
-    paintNotify();
     setInterval(refreshGit, 60000);
 
     /* Setup drag & drop on the whole body */

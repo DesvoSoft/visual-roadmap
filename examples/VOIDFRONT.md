@@ -44,13 +44,18 @@ El agente autónomo actualiza este archivo en cada commit o cambio de tarea sin 
 ### Fase 11 · Resto de assets
 `2026-09-25 → 2026-09-28` · **active** · 82%
 
-#### Arte procedural y combate
+#### Combate
 
 | Item | Estado | Progreso | Owner | Esfuerzo | Inicio | Fin | Depende | Prio |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | T041 Proyectiles y armas | done | 100% | @desvosoft | 6h | 2026-09-25 | 2026-09-25 | — | P0 |
 | T042 Escudos y daño por pieza | done | 100% | @desvosoft | 8h | 2026-09-25 | 2026-09-26 | T041 | P0 |
 | T043 Órdenes de ataque | done | 100% | @desvosoft | 5h | 2026-09-26 | 2026-09-26 | T042 | P1 |
+
+#### Arte procedural
+
+| Item | Estado | Progreso | Owner | Esfuerzo | Inicio | Fin | Depende | Prio |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | T109 Props del mundo | active | 65% | @desvosoft | 8h | 2026-09-26 | 2026-09-27 | — | P0 |
 | T110 Shaders de atmósfera planetaria | planned | 0% | @desvosoft | 6h | 2026-09-27 | 2026-09-28 | T109 | P1 |
 | T111 Optimización de drawcalls | planned | 0% | @desvosoft | 4h | 2026-09-28 | 2026-09-28 | T110 | P0 |

@@ -63,9 +63,9 @@ Web app to plan meals from a shared pantry.
   add('Recipe list renders from the API', '35m', 'v0.1 · Browse recipes');
   add('Search filters recipes by ingredient', '40m', 'v0.1 · Browse recipes', { after: 'T001' });
   add('Recipe detail page with steps', '30m', 'v0.1 · Browse recipes');
-  add('Pantry items persist per user', '45m', 'v0.2 · Pantry & planner');
-  add('Weekly planner drag and drop', '3h', 'v0.2 · Pantry & planner', { after: 'T004' });
-  add('Shopping list from missing ingredients', '40m', 'v0.2 · Pantry & planner', { after: 'T005' });
+  add('Pantry items persist per user', '45m', 'v0.2 · Pantry & planner', { group: 'Pantry' });
+  add('Weekly planner drag and drop', '3h', 'v0.2 · Pantry & planner', { group: 'Planner', after: 'T004' });
+  add('Shopping list from missing ingredients', '40m', 'v0.2 · Pantry & planner', { group: 'Shopping list', after: 'T005' });
   add('Sign in with email link', '50m', 'v0.3 · Accounts');
   add('Share a pantry with family', '1h', 'v0.3 · Accounts', { after: 'T007' });
   add('Account settings page', '25m', 'v0.3 · Accounts', { after: 'T007' });

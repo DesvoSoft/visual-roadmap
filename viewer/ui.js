@@ -3,18 +3,18 @@
   'use strict';
   const copy = {
     en: {
-      roadmap:'ROADMAP', tracking:'TRACKING', versions:'VERSIONS', notes:'NOTES', progress:'PROGRESS TRACKER',
+      roadmap:'ROADMAP', tracking:'TRACKING', versions:'VERSIONS', progress:'PROGRESS TRACKER',
       open:'Open', pick:'Open ROADMAP.md', choose:'Select ROADMAP.md to start tracking',
       connected:'Synced', connecting:'Connecting', disconnected:'Disconnected', snapshot:'Snapshot', updatedAgo:'Updated {time} ago', unknownUpdate:'Update time unknown',
       version:'Version', phase:'Phase', of:'of', tasks:'tasks', decisions:'decisions', lines:'lines', lastCommit:'last commit',
-      now:'CURRENT TASK', noTask:'No active task', markActive:'Waiting for the agent to start a task', expected:'Expected', elapsed:'Elapsed', agentEta:'Agent ETA', revisedEta:'Revised ETA', onTrack:'On track', shots:'screenshots', shotsServeOnly:'Screenshots are available with visual-roadmap live', activity:'ACTIVITY', started:'Started', noActivity:'No activity recorded yet', collapseOverview:'Collapse overview', expandOverview:'Expand overview', moreChanges:'View all changes in Notes',
+      now:'CURRENT TASK', noTask:'No active task', markActive:'Waiting for the agent to start a task', expected:'Expected', elapsed:'Elapsed', agentEta:'Agent ETA', revisedEta:'Revised ETA', onTrack:'On track', shots:'screenshots', shotsServeOnly:'Screenshots are available with visual-roadmap live', activity:'ACTIVITY', started:'Started', noActivity:'No activity recorded yet', collapseOverview:'Collapse overview', expandOverview:'Expand overview',
       delayed:'Delayed', provisional:'provisional', etaExtended:'ETA extended by', noEstimate:'No estimate',
       phasesDone:'Phases completed', calculatedDelivery:'Projected delivery', pace:'Observed pace', since:'In development since', perTask:'per task',
       recentChanges:'RECENT CHANGES', etaChanges:'ETA CHANGES', noChanges:'No changes recorded in ROADMAP.md', noRevisions:'No ETA revisions recorded',
       missingEffort:'task(s) lack effort estimates; the project ETA may be incomplete.', reviewEta:'The active task has passed its ETA. The agent should revise it.',
       calibrated:'Forecast adjusted using {count} completed task(s) and capacity {capacity}.', basedOnEffort:'Forecast based on remaining effort and declared capacity.',
       range:'Indicative window', confidence:'confidence', low:'low', medium:'medium', high:'high',
-      deliverables:'DELIVERABLES', search:'Search deliverables', expand:'Expand all', collapse:'Collapse all', nowButton:'NOW',
+      deliverables:'DELIVERABLES', search:'Search deliverables', searchTask:'Find task code or name', result:'result', results:'results', noTimelineMatches:'No matching tasks. Try another code or word.', resizeColumn:'Drag to resize · double-click to reset', fitSchedule:'FIT', fitScheduleHint:'Show the full schedule', earlier:'Earlier', later:'Later', goToday:'Go to today', todayLine:'Current time', completedBlock:'Completed', currentBlock:'In progress', projectedBlock:'Forecast in progress', expand:'Expand all', collapse:'Collapse all', nowButton:'NOW',
       pending:'Pending', blocked:'Blocked', overdue:'Overdue', undated:'No fixed dates',
       versionDone:'VERSION · DONE', noPhases:'No phases or tasks in ROADMAP.md.', fixedDate:'task(s) without fixed dates', declared:'Solid: declared dates', projection:'Striped: projection', dayPrecision:'Day precision; add HH:mm to Start and End for exact timing',
       status:'Status', taskProgress:'Progress', owner:'Owner', estimatedEffort:'Estimated effort', actualDuration:'Actual duration', pendingDuration:'Pending',
@@ -25,21 +25,21 @@
       logEmpty:'The log is empty. Add entries under ## Log in ROADMAP.md.', completed:'completed', cancelled:'cancelled', noDate:'No date',
       planned:'Planned', active:'Active', paused:'Paused', slip:'Slipped', blockedStatus:'Blocked', risk:'At risk', cancelledStatus:'Cancelled', calculated:'calculated', plannedLabel:'planned',
       health:'ROADMAP HEALTH', health_error:'error(s)', health_warn:'warning(s)', health_info:'suggestion(s)', parseError:'Could not read ROADMAP.md',
-      ago:'{time} ago', commits:'COMMITS', notifyOn:'Notifications on (task done, blocked or stuck)', notifyOff:'Enable desktop notifications', allDone:'All tasks done'
+      ago:'{time} ago', commits:'COMMITS', notifyOn:'Turn off notifications', notifyOff:'Turn on notifications', notifyRequesting:'Allow notifications in your browser', notifyPermissionPending:'No permission prompt? Open the viewer in Chrome or Edge.', notifyEnabled:'Notifications are on', notifyDisabled:'Notifications are off', notifyDenied:'Notifications blocked. Allow them in your browser settings.', notifyUnavailable:'Browser notifications need localhost or HTTPS.', allDone:'All tasks done'
     },
     es: {
-      roadmap:'HOJA DE RUTA', tracking:'SEGUIMIENTO', versions:'VERSIONES', notes:'NOTAS', progress:'SEGUIMIENTO DEL PROGRESO',
+      roadmap:'HOJA DE RUTA', tracking:'SEGUIMIENTO', versions:'VERSIONES', progress:'SEGUIMIENTO DEL PROGRESO',
       open:'Abrir', pick:'Abrir ROADMAP.md', choose:'Selecciona ROADMAP.md para comenzar el seguimiento',
       connected:'Sincronizado', connecting:'Conectando', disconnected:'Sin conexión', snapshot:'Vista puntual', updatedAgo:'Actualizado hace {time}', unknownUpdate:'Fecha de actualización desconocida',
       version:'Versión', phase:'Fase', of:'de', tasks:'tareas', decisions:'decisiones', lines:'líneas', lastCommit:'último commit',
-      now:'TAREA ACTUAL', noTask:'Sin tarea en curso', markActive:'Esperando a que el agente inicie una tarea', expected:'Esperado', elapsed:'Transcurrido', agentEta:'ETA del agente', revisedEta:'ETA revisada', onTrack:'A tiempo', shots:'capturas', shotsServeOnly:'Las capturas están disponibles con visual-roadmap live', activity:'ACTIVIDAD', started:'Inicio', noActivity:'Sin actividad registrada', collapseOverview:'Contraer resumen', expandOverview:'Expandir resumen', moreChanges:'Ver todos los cambios en Notas',
+      now:'TAREA ACTUAL', noTask:'Sin tarea en curso', markActive:'Esperando a que el agente inicie una tarea', expected:'Esperado', elapsed:'Transcurrido', agentEta:'ETA del agente', revisedEta:'ETA revisada', onTrack:'A tiempo', shots:'capturas', shotsServeOnly:'Las capturas están disponibles con visual-roadmap live', activity:'ACTIVIDAD', started:'Inicio', noActivity:'Sin actividad registrada', collapseOverview:'Contraer resumen', expandOverview:'Expandir resumen',
       delayed:'Retraso', provisional:'provisional', etaExtended:'ETA ampliada', noEstimate:'Sin estimación',
       phasesDone:'Fases completadas', calculatedDelivery:'Entrega calculada', pace:'Ritmo observado', since:'En desarrollo desde', perTask:'por tarea',
       recentChanges:'ÚLTIMOS CAMBIOS', etaChanges:'CAMBIOS DE ETA', noChanges:'Sin cambios registrados en ROADMAP.md', noRevisions:'Sin revisiones de ETA registradas',
       missingEffort:'tarea(s) sin esfuerzo estimado; la ETA global puede estar incompleta.', reviewEta:'La tarea activa superó su ETA. El agente debe revisarla.',
       calibrated:'Proyección ajustada con {count} tarea(s) terminadas y capacidad {capacity}.', basedOnEffort:'Proyección según esfuerzo pendiente y capacidad declarada.',
       range:'Ventana orientativa', confidence:'confianza', low:'baja', medium:'media', high:'alta',
-      deliverables:'ENTREGABLES', search:'Buscar entregables', expand:'Expandir todo', collapse:'Colapsar todo', nowButton:'AHORA',
+      deliverables:'ENTREGABLES', search:'Buscar entregables', searchTask:'Buscar código o tarea', result:'resultado', results:'resultados', noTimelineMatches:'No hay tareas que coincidan. Prueba otro código o palabra.', resizeColumn:'Arrastra para ajustar · doble clic para restablecer', fitSchedule:'TODO', fitScheduleHint:'Ver todo el cronograma', earlier:'Anterior', later:'Siguiente', goToday:'Ir a hoy', todayLine:'Hora actual', completedBlock:'Terminado', currentBlock:'En curso', projectedBlock:'Plan en construcción', expand:'Expandir todo', collapse:'Colapsar todo', nowButton:'AHORA',
       pending:'Pendientes', blocked:'Bloqueadas', overdue:'Vencidas', undated:'Sin fechas fijas',
       versionDone:'VERSIÓN · HECHAS', noPhases:'No hay fases ni tareas en ROADMAP.md.', fixedDate:'tarea(s) sin fecha fija', declared:'Sólido: fecha declarada', projection:'Rayas: proyección', dayPrecision:'Precisión de día; añade HH:mm a Inicio y Fin para ubicarla exactamente',
       status:'Estado', taskProgress:'Progreso', owner:'Responsable', estimatedEffort:'Esfuerzo estimado', actualDuration:'Duración real', pendingDuration:'Pendiente',
@@ -50,7 +50,7 @@
       logEmpty:'El log está vacío. Agrega entradas a ## Log en ROADMAP.md.', completed:'completados', cancelled:'cancelados', noDate:'Sin fecha',
       planned:'Planeado', active:'En curso', paused:'Pausada', slip:'Desplazada', blockedStatus:'Bloqueado', risk:'En riesgo', cancelledStatus:'Descartado', calculated:'calculada', plannedLabel:'planificada',
       health:'SALUD DEL ROADMAP', health_error:'error(es)', health_warn:'aviso(s)', health_info:'sugerencia(s)', parseError:'No se pudo leer ROADMAP.md',
-      ago:'hace {time}', commits:'COMMITS', notifyOn:'Notificaciones activas (tarea hecha, bloqueada o atascada)', notifyOff:'Activar notificaciones de escritorio', allDone:'Todas las tareas terminadas'
+      ago:'hace {time}', commits:'COMMITS', notifyOn:'Desactivar notificaciones', notifyOff:'Activar notificaciones', notifyRequesting:'Permite las notificaciones en el navegador', notifyPermissionPending:'¿No aparece el permiso? Abre el visor en Chrome o Edge.', notifyEnabled:'Notificaciones activadas', notifyDisabled:'Notificaciones desactivadas', notifyDenied:'Notificaciones bloqueadas. Permítelas en los ajustes del navegador.', notifyUnavailable:'Las notificaciones requieren localhost o HTTPS.', allDone:'Todas las tareas terminadas'
     }
   };
   function saved(key, fallback) { try { return localStorage.getItem(key) || fallback; } catch { return fallback; } }
