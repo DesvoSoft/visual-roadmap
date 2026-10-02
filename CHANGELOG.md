@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-02
+
 ### Added
 - Task screenshots: `shot` / `shots` commands and a Claude Code PostToolUse capture that keeps the agent's own screenshots on the active task.
 - Screenshots stored in `.roadmap/shots/` (self-ignored by git), deduplicated, pruned per task and by `shots_max_mb`, and compressed to WebP by the viewer.
@@ -78,7 +80,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - Local server with SSE updates and a portable single-file `roadmap.html`.
 - `init`, `live`, `serve`, `open` and `skill` commands.
 
-[Unreleased]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/DesvoSoft/visual-roadmap/compare/a98c45a...v0.2.0
