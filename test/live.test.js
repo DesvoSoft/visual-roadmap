@@ -114,6 +114,53 @@ test('post-tool hook starts a ready task after code changes', () => {
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('user-prompt hook never blocks the prompt: it tells the agent instead', () => {
+  const { spawnSync } = require('node:child_process');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'visual-roadmap-prompt-'));
+  const cli = path.join(__dirname, '../bin/visual-roadmap.js');
+  const run = (bin, args, input) => spawnSync(bin, args, { cwd: dir, input, encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
+  try {
+    fs.writeFileSync(path.join(dir, 'ROADMAP.md'), '---\ntitle: Done\nupdated: 2026-09-26 09:00\n---\n## Releases\n### v1 · Work\n| Item | Estado | Esfuerzo |\n| --- | --- | --- |\n| T001 Finished | done | 30m |\n');
+    fs.writeFileSync(path.join(dir, 'code.js'), 'const x = 1;\n');
+    assert.equal(run('git', ['init']).status, 0);
+    assert.equal(run('git', ['add', '.']).status, 0);
+    assert.equal(run('git', ['-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', 'commit', '-m', 'initial']).status, 0);
+    fs.writeFileSync(path.join(dir, 'code.js'), 'const x = 2;\n');
+    const prompt = run(process.execPath, [cli, 'hook', 'user-prompt-submit'], '{}');
+    assert.equal(prompt.status, 0);
+    assert.equal(prompt.stderr, '');
+    assert.match(prompt.stdout, /^\[visual-roadmap\] Code changed .* with no active task/);
+    assert.equal(run(process.execPath, [cli, 'hook', 'stop'], '{}').status, 2);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('only the stop hook can block: no other event or internal failure exits non-zero', () => {
+  const { spawnSync } = require('node:child_process');
+  const cli = path.join(__dirname, '../bin/visual-roadmap.js');
+  const events = ['session-start', 'user-prompt-submit', 'post-tool-use', 'stop', 'unknown-event'];
+  const run = (dir, event, input) => spawnSync(process.execPath, [cli, 'hook', event], { cwd: dir, input, encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
+  const broken = fs.mkdtempSync(path.join(os.tmpdir(), 'visual-roadmap-broken-'));
+  const crash = fs.mkdtempSync(path.join(os.tmpdir(), 'visual-roadmap-crash-'));
+  try {
+    /* A roadmap with errors reaches the agent, but only `stop` blocks. */
+    fs.writeFileSync(path.join(broken, 'ROADMAP.md'), '---\ntitle: H\n---\n\n## Releases\n### v0.1 · A\n| Item | Estado | Esfuerzo | Depende |\n| --- | --- | --- | --- |\n| T001 Uno | planned | 10m | T404 |\n');
+    const prompt = run(broken, 'user-prompt-submit', 'not json');
+    assert.equal(prompt.status, 0);
+    assert.match(prompt.stdout, /T404/);
+    assert.equal(run(broken, 'stop', '{}').status, 2);
+    /* ROADMAP.md cannot be read (it is a directory): the hook stays silent. */
+    fs.mkdirSync(path.join(crash, 'ROADMAP.md'));
+    for (const event of events) {
+      const r = run(crash, event, '{}');
+      assert.equal(r.status, 0, event);
+      assert.equal(r.stderr, '', event);
+    }
+  } finally {
+    fs.rmSync(broken, { recursive: true, force: true });
+    fs.rmSync(crash, { recursive: true, force: true });
+  }
+});
+
 test('serves screenshots safely and streams index changes', { timeout: 12000 }, async () => {
   const Shots = require('../lib/shots.js');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'visual-roadmap-'));

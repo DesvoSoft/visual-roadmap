@@ -68,7 +68,7 @@ Todos se ejecutan con `npx visual-roadmap …` y responden en una línea. `statu
 - Si la ETA venció: `done` si terminaste; si no, `eta` con el tiempo restante y la razón. Ir lento no es un problema; dejar una ETA vieja sí.
 - No edites a mano `updated`, `now_task`, `Inicio`, `Fin` ni `Real`: los comandos los mantienen.
 - Edita el archivo a mano solo para reordenar, renombrar o cancelar, y luego ejecuta `check`.
-- Si al terminar un turno recibes un mensaje `[visual-roadmap] …` (hook de Claude Code), resuélvelo con el comando que indica y continúa.
+- Si al terminar un turno o junto al mensaje del usuario recibes un mensaje `[visual-roadmap] …` (hook de Claude Code), resuélvelo con el comando que indica y continúa.
 
 ## Formato, por si editas a mano
 

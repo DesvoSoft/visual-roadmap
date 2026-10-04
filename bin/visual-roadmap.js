@@ -409,7 +409,8 @@ function cmdCheck() {
 
 /* SessionStart: print the brief (Claude Code adds stdout to the context).
    Stop: exit 2 with a one-line reason when the roadmap needs attention; Claude
-   Code feeds stderr back to the agent. `stop_hook_active` prevents loops. */
+   Code feeds stderr back to the agent. `stop_hook_active` prevents loops.
+   UserPromptSubmit: same checks, but it never blocks the prompt. */
 /* PostToolUse: keep screenshots the agent takes while a task is active.
    Never interrupts the agent: every failure is ignored. */
 function captureShot(input, base, file, text, Agent) {
@@ -427,7 +428,13 @@ function captureShot(input, base, file, text, Agent) {
   } catch {}
 }
 
+/* A hook runs inside someone else's session: whatever goes wrong here (unreadable
+   roadmap, git missing, a bug) must never surface as a failed or blocking hook. */
 function cmdHook() {
+  try { runHook(); } catch { process.exitCode = 0; }
+}
+
+function runHook() {
   let input = {};
   try { if (!process.stdin.isTTY) input = JSON.parse(fs.readFileSync(0, 'utf8') || '{}'); } catch {}
   const base = process.env.CLAUDE_PROJECT_DIR || input.cwd || CWD;
@@ -463,6 +470,9 @@ function cmdHook() {
     }
   }
   if (!problems.length) return;
+  /* UserPromptSubmit: exit 2 would erase the user's prompt and lock them out, so the
+     reminder goes to stdout, which Claude Code adds to the agent's context. */
+  if (event === 'user-prompt-submit') { log('[visual-roadmap] ' + problems.join(' · ')); return; }
   process.stderr.write('[visual-roadmap] ' + problems.join(' · ') + '\n');
   process.exitCode = 2;
 }

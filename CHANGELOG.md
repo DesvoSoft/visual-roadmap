@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+- The `UserPromptSubmit` hook no longer blocks the user's prompt when code changed with no active task, the roadmap has errors or an ETA has passed: the reminder is added to the agent's context instead.
+- Hooks never fail on an internal error (unreadable `ROADMAP.md`, git unavailable): they exit 0 silently. Only the `Stop` hook can hold the agent, once.
+
 ## [0.5.0] - 2026-10-02
 
 ### Added
