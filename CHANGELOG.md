@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-03
+
 ### Fixed
 - The `UserPromptSubmit` hook no longer blocks the user's prompt when code changed with no active task, the roadmap has errors or an ETA has passed: the reminder is added to the agent's context instead.
 - Hooks never fail on an internal error (unreadable `ROADMAP.md`, git unavailable): they exit 0 silently. Only the `Stop` hook can hold the agent, once.
@@ -84,7 +86,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - Local server with SSE updates and a portable single-file `roadmap.html`.
 - `init`, `live`, `serve`, `open` and `skill` commands.
 
-[Unreleased]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.2.0...v0.3.0
