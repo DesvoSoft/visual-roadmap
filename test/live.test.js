@@ -131,6 +131,32 @@ test('user-prompt hook never blocks the prompt: it tells the agent instead', () 
     assert.equal(prompt.stderr, '');
     assert.match(prompt.stdout, /^\[visual-roadmap\] Code changed .* with no active task/);
     assert.equal(run(process.execPath, [cli, 'hook', 'stop'], '{}').status, 2);
+    /* After every tool call the hook stays quiet: the reminder would repeat on each one. */
+    const tool = run(process.execPath, [cli, 'hook', 'post-tool-use'], '{"tool_name":"Edit"}');
+    assert.deepEqual([tool.status, tool.stdout, tool.stderr], [0, '', '']);
+    /* Any roadmap change after the code change settles it: nothing left to remind. */
+    fs.appendFileSync(path.join(dir, 'ROADMAP.md'), '\n');
+    assert.equal(run(process.execPath, [cli, 'hook', 'user-prompt-submit'], '{}').stdout, '');
+    assert.equal(run(process.execPath, [cli, 'hook', 'stop'], '{}').status, 0);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('post-tool hook only reacts to tools that write code, and init limits it to them', () => {
+  const { spawnSync } = require('node:child_process');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'visual-roadmap-tools-'));
+  const cli = path.join(__dirname, '../bin/visual-roadmap.js');
+  const run = (bin, args, input) => spawnSync(bin, args, { cwd: dir, input, encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
+  try {
+    fs.writeFileSync(path.join(dir, 'ROADMAP.md'), '---\ntitle: Auto\n---\n## Releases\n### v1 · Work\n| Item | Estado | Esfuerzo |\n| --- | --- | --- |\n| T001 Ready | planned | 30m |\n');
+    assert.equal(run('git', ['init']).status, 0);
+    fs.writeFileSync(path.join(dir, 'code.js'), 'const x = 1;\n');
+    assert.equal(run(process.execPath, [cli, 'hook', 'post-tool-use'], '{"tool_name":"Grep"}').stdout, '');
+    assert.match(fs.readFileSync(path.join(dir, 'ROADMAP.md'), 'utf8'), /\| T001 Ready \| planned \|/);
+    assert.match(run(process.execPath, [cli, 'hook', 'post-tool-use'], '{"tool_name":"Write"}').stdout, /T001 started automatically/);
+    assert.equal(run(process.execPath, [cli, 'hooks', '--install']).status, 0);
+    const hooks = JSON.parse(fs.readFileSync(path.join(dir, '.claude/settings.json'), 'utf8')).hooks;
+    assert.match(hooks.PostToolUse[0].matcher, /^Edit\|Write\|.*mcp__/);
+    assert.equal(hooks.Stop[0].matcher, undefined);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 

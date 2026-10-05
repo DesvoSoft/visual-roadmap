@@ -2,9 +2,10 @@
 (function (global) {
   'use strict';
   const DAY = 86400000;
-  const scales = { '6h': [6*3600000,3600000], '1d': [DAY,2*3600000], '3d': [3*DAY,12*3600000], '1w': [7*DAY,DAY], '1m': [30*DAY,5*DAY] };
+  const scales = { '3h': [3*3600000,30*60000], '6h': [6*3600000,3600000], '1d': [DAY,2*3600000], '3d': [3*DAY,12*3600000], '1w': [7*DAY,DAY], '1m': [30*DAY,5*DAY] };
   let zoom = '1d', offset = 0, search = '', filter = '', fitted = false, focusedWindow = null;
   let liveRange = null, lastActive = '';
+  let scrollTop = 0;   /* every update rebuilds the rows: the reader keeps their place */
   const expanded = new Set();
   const collapsedGroups = new Set();
   const t = key => global.UI.t(key);
@@ -129,7 +130,7 @@
       signals.appendChild(signal);
     }
     controls.append(signals,expand,collapse);
-    for (const [key,label] of [['6h','6 H'],['1d',global.UI.language==='es'?'1 DÍA':'1 DAY'],['3d',global.UI.language==='es'?'3 DÍAS':'3 DAYS'],['1w',global.UI.language==='es'?'1 SEMANA':'1 WEEK'],['1m',global.UI.language==='es'?'1 MES':'1 MONTH']]) {
+    for (const [key,label] of [['3h','3 H'],['6h','6 H'],['1d',global.UI.language==='es'?'1 DÍA':'1 DAY'],['3d',global.UI.language==='es'?'3 DÍAS':'3 DAYS'],['1w',global.UI.language==='es'?'1 SEMANA':'1 WEEK'],['1m',global.UI.language==='es'?'1 MES':'1 MONTH']]) {
       const b=el('button','zoom-btn'+(zoom===key?' zoom-btn--active':''),label);
       b.addEventListener('click',()=>{zoom=key;offset=0;fitted=false;focusedWindow=null;render(doc,container);}); controls.appendChild(b);
     }
@@ -257,7 +258,7 @@
           badge.title = `${shots.length} ${t('shots')}`;
           l.appendChild(badge);
         }
-        if (bar && shots.length && (zoom === '6h' || zoom === '1d')) {
+        if (bar && shots.length && (zoom === '3h' || zoom === '6h' || zoom === '1d')) {
           shots.forEach(s => {
             const at = Date.parse(s.at);
             if (at < start || at > end) return;
@@ -308,7 +309,8 @@
     table.append(left,handle,right);tracker.appendChild(table);
     if((search||filter)&&!matching.length)rRows.appendChild(el('div','timeline-empty',t('noTimelineMatches')));
     container.appendChild(tracker);
-    right.addEventListener('scroll',()=>{lRows.scrollTop=right.scrollTop;});
+    right.addEventListener('scroll',()=>{lRows.scrollTop=scrollTop=right.scrollTop;});
+    right.scrollTop=scrollTop;lRows.scrollTop=right.scrollTop;
   }
   function openLightbox(shots, index) {
     document.querySelector('.lightbox')?.remove();

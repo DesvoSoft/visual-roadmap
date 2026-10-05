@@ -177,12 +177,11 @@ function agentSnippet(skillPath = 'SKILL.md') {
     SNIPPET_START,
     '## Roadmap en vivo (visual-roadmap)',
     '',
-    `El usuario sigue tu trabajo en \`ROADMAP.md\`. Protocolo: \`${skillPath}\`. Mínimo:`,
+    `El usuario sigue tu trabajo en \`ROADMAP.md\`: mantenlo al día tú, sin que te lo pidan. Protocolo: \`${skillPath}\`.`,
     '',
-    '- Petición nueva: divídela en tareas verificables de 15–90 min con `npx visual-roadmap add "Resultado" --effort 30m`.',
-    '- Obligatorio e implícito: tú ejecutas `start T00X` antes de editar código, `progress T00X 60` al verificar avance y `done T00X --note "evidencia" --next` al terminar. No esperes que el usuario lo pida.',
-    '- Bloqueo: `block T00X "causa"`. Pausa: `pause T00X "motivo"` / `resume T00X`. ETA irreal: `eta T00X 20m "razón"`. Al retomar: `status`.',
-    '- Commits con el ID (`T00X: …`). Nunca `done` sin evidencia.',
+    '- Antes de editar código: `npx visual-roadmap start T00X`. Si la petición no está en el roadmap, primero `add "Resultado" --effort 30m`.',
+    '- Al terminar, con evidencia: `done T00X --note "evidencia" --next`. Atasco: `block T00X "causa"`. ETA irreal: `eta T00X 20m "razón"`.',
+    '- Al retomar: `status`. Commits con el ID (`T00X: …`).',
     SNIPPET_END
   ].join('\n');
 }
@@ -410,9 +409,14 @@ function cmdCheck() {
 /* SessionStart: print the brief (Claude Code adds stdout to the context).
    Stop: exit 2 with a one-line reason when the roadmap needs attention; Claude
    Code feeds stderr back to the agent. `stop_hook_active` prevents loops.
-   UserPromptSubmit: same checks, but it never blocks the prompt. */
-/* PostToolUse: keep screenshots the agent takes while a task is active.
-   Never interrupts the agent: every failure is ignored. */
+   UserPromptSubmit: same checks, but it never blocks the prompt.
+   PostToolUse: runs after every matched tool call, so it never reports problems
+   (they would repeat on each call): it keeps screenshots and starts the next
+   ready task when the agent writes code with nothing active. */
+const CODE_TOOLS = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'Bash', 'PowerShell'];
+const POST_TOOL_MATCHER = [...CODE_TOOLS, 'Read', 'mcp__.*'].join('|');
+
+/* Never interrupts the agent: every failure is ignored. */
 function captureShot(input, base, file, text, Agent) {
   try {
     if (process.env.VISUAL_ROADMAP_HOOK_DUMP) {
@@ -437,37 +441,38 @@ function cmdHook() {
 function runHook() {
   let input = {};
   try { if (!process.stdin.isTTY) input = JSON.parse(fs.readFileSync(0, 'utf8') || '{}'); } catch {}
+  const event = POS[0];
+  if (!['session-start', 'stop', 'post-tool-use', 'user-prompt-submit'].includes(event) || (event === 'stop' && input.stop_hook_active)) return;
   const base = process.env.CLAUDE_PROJECT_DIR || input.cwd || CWD;
   const file = FLAGS.file ? path.resolve(base, FLAGS.file) : path.join(base, 'ROADMAP.md');
   if (!fs.existsSync(file)) return;
   const Agent = require('../lib/agent.js');
   const text = fs.readFileSync(file, 'utf8');
-  const event = POS[0];
-  if (event === 'post-tool-use') captureShot(input, base, file, text, Agent);
-
   if (event === 'session-start') { log(Agent.brief(text, Date.now(), lang())); return; }
-  if (!['stop', 'post-tool-use', 'user-prompt-submit'].includes(event) || (event === 'stop' && input.stop_hook_active)) return;
+  if (event === 'post-tool-use') {
+    captureShot(input, base, file, text, Agent);
+    if (input.tool_name && !CODE_TOOLS.includes(input.tool_name)) return;
+  }
 
   const problems = [];
-  Agent.check(text, lang()).filter(i => i.level === 'error').forEach(i => problems.push(i.text));
-  const s = Agent.status(text);
-  if (s.active && s.active.overdue) {
-    problems.push(`${s.active.id} passed its ETA. If finished: visual-roadmap done ${s.active.id} --next. Otherwise: visual-roadmap eta ${s.active.id} <remaining> "reason".`);
-  }
+  const s = Agent.status(text, Date.now(), lang());
   if (!s.active && s.total) {
-    /* Code changed but no task is active: the user sees a stale roadmap. Remind once per roadmap update. */
-    const updated = globalThis.Forecast.timestamp(globalThis.Roadmap.parse(text).meta.updated);
-    const changed = require('../lib/git.js').changesSince(base, updated);
-    if (changed.add + changed.del > 0 && s.next.length) {
+    /* Files written after the roadmap's last change, with no active task: the user sees
+       a stale roadmap. Any roadmap command moves that mark, so the reminder stops. */
+    const touched = require('../lib/git.js').touchedSince(base, fs.statSync(file).mtimeMs);
+    if (touched && s.next.length) {
       const next = s.next[0].id;
       const started = Agent.start(text, next);
       fs.writeFileSync(file, started.text);
       log(`[visual-roadmap] ${next} started automatically after code changes.`);
       return;
     }
-    if (changed.add + changed.del > 0) {
-      problems.push(`Code changed (+${changed.add} -${changed.del}) with no active task. Add a task and start it.`);
-    }
+    if (touched) problems.push(`Code changed (${touched} file${touched === 1 ? '' : 's'}) with no active task. Add a task and start it.`);
+  }
+  if (event === 'post-tool-use') return;
+  problems.unshift(...s.issues.filter(i => i.level === 'error').map(i => i.text));
+  if (s.active && s.active.overdue) {
+    problems.push(`${s.active.id} passed its ETA. If finished: visual-roadmap done ${s.active.id} --next. Otherwise: visual-roadmap eta ${s.active.id} <remaining> "reason".`);
   }
   if (!problems.length) return;
   /* UserPromptSubmit: exit 2 would erase the user's prompt and lock them out, so the
@@ -497,9 +502,17 @@ function installHooks() {
   for (const [event, arg] of [['SessionStart', 'session-start'], ['Stop', 'stop'], ['PostToolUse', 'post-tool-use'], ['UserPromptSubmit', 'user-prompt-submit']]) {
     const groups = settings.hooks[event] = settings.hooks[event] || [];
     const command = `${cmd} hook ${arg}`;
-    const existing = groups.flatMap(g => g.hooks || []).find(h => /visual-roadmap|cli\.js"? hook /.test(h.command || '') && h.command.endsWith(` hook ${arg}`));
-    if (existing) { if (existing.command !== command) { existing.command = command; changed = true; } continue; }
-    groups.push({ hooks: [{ type: 'command', command, timeout: 15 }] });
+    const ours = h => /visual-roadmap|cli\.js"? hook /.test(h.command || '') && h.command.endsWith(` hook ${arg}`);
+    /* Only tools that write code or return images: the hook is not even spawned for the rest */
+    const matcher = event === 'PostToolUse' ? POST_TOOL_MATCHER : undefined;
+    const group = groups.find(g => (g.hooks || []).some(ours));
+    if (group) {
+      const existing = group.hooks.find(ours);
+      if (existing.command !== command) { existing.command = command; changed = true; }
+      if (matcher && group.hooks.length === 1 && group.matcher !== matcher) { group.matcher = matcher; changed = true; }
+      continue;
+    }
+    groups.push({ ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command, timeout: 15 }] });
     changed = true;
   }
   if (!changed) return;
@@ -512,7 +525,7 @@ function cmdHooks() {
   if (FLAGS.install) { installHooks(); return; }
   log(`SessionStart: ${selfCommand()} hook session-start`);
   log(`Stop:         ${selfCommand()} hook stop`);
-  log(`PostToolUse:  ${selfCommand()} hook post-tool-use`);
+  log(`PostToolUse:  ${selfCommand()} hook post-tool-use  (matcher: ${POST_TOOL_MATCHER})`);
   log(`UserPromptSubmit: ${selfCommand()} hook user-prompt-submit`);
   info('Install into .claude/settings.json with  visual-roadmap hooks --install');
 }

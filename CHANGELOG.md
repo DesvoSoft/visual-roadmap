@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Timeline: `3 H` zoom, with 30-minute ticks and capture marks.
+
+### Changed
+- `SKILL.md` is about 40% shorter and the snippet for `CLAUDE.md` / `AGENTS.md` drops to three bullets: same protocol, fewer tokens per session.
+- The `PostToolUse` hook is installed with a matcher (tools that write code or return images) so it is not spawned after every tool call. Run `visual-roadmap hooks --install` to update an existing project.
+- "Code changed with no active task" now means files written after the last roadmap change, instead of any uncommitted or recently committed diff: finishing the last task with uncommitted work no longer triggers the reminder or starts the next task.
+
+### Fixed
+- Timeline: the list no longer jumps back to the top when the roadmap or the screenshots update while you are scrolled down.
+- The `PostToolUse` hook no longer feeds roadmap errors or a passed ETA back to the agent after every tool call; those wait for `Stop` and `UserPromptSubmit`.
+- The viewer no longer repaints the timeline when a screenshot is only recompressed.
+
 ## [0.5.1] - 2026-10-03
 
 ### Fixed

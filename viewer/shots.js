@@ -23,9 +23,13 @@
     try {
       const res = await fetch('/shots', { cache: 'no-store' });
       if (!res.ok) return;
-      entries = ((await res.json()).shots || []).sort((a, b) => a.at.localeCompare(b.at));
+      const next = ((await res.json()).shots || []).sort((a, b) => a.at.localeCompare(b.at));
+      /* Compressing a shot re-announces the index: only repaint when what is drawn changed */
+      const drawn = list => JSON.stringify(list.map(s => [s.id, s.task, s.file, s.kind, s.caption]));
+      const changed = !api.available || drawn(next) !== drawn(entries);
+      entries = next;
       api.available = true;
-      document.dispatchEvent(new CustomEvent('roadmap:shots-updated'));
+      if (changed) document.dispatchEvent(new CustomEvent('roadmap:shots-updated'));
       entries.filter(s => !s.compressed && !failed.has(s.id) && !pending.has(s.id)).forEach(s => {
         pending.add(s.id);
         queue = queue.then(() => compress(s)).finally(() => pending.delete(s.id));
