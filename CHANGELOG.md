@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- One command to start: `npx visual-roadmap` (or `visual-roadmap up`) adds the package as a dev dependency with the project's package manager (picked from the lockfile), runs `init` when there is no `ROADMAP.md`, and opens the live viewer. Piped, as an agent would run it, the bare command still prints help. `--no-install` and `--no-open` skip those steps.
+- Published on npm as `visual-roadmap`; a `Release` workflow publishes each `v*` tag.
+
+### Changed
+- When the CLI runs from the npx cache, hooks call a pinned `npx -y visual-roadmap@<version>` instead of a path that npm may clean up.
+
 ## [0.6.0] - 2026-10-04
 
 ### Added

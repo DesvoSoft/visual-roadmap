@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* bin/visual-roadmap.js — visual-roadmap CLI
-   Viewer:  init · live · serve · open · skill · agents
+   Viewer:  up (bare command) · init · live · serve · open · skill · agents
    Agent:   status · check · start · done · block · progress · eta · log · shot · shots
    Agent commands edit ROADMAP.md deterministically (see lib/agent.js). */
 
@@ -8,17 +8,21 @@
 
 const fs   = require('fs');
 const path = require('path');
-const { execSync, spawn } = require('child_process');
+const { execSync, spawn, spawnSync } = require('child_process');
+const Setup = require('../lib/setup.js');
 
 const PKG     = require('../package.json');
 const CWD     = process.cwd();
 const SELF    = path.join(__dirname, '..');   /* package root */
 
 const ARGS    = process.argv.slice(2);
-const CMD     = ARGS[0] || 'help';
+/* Bare `visual-roadmap` (or only flags) sets everything up for a person at a terminal;
+   piped, as an agent would run it, it stays the harmless help. */
+const BARE    = !ARGS[0] || (ARGS[0].startsWith('-') && !['--help', '-h', '--version', '-v'].includes(ARGS[0]));
+const CMD     = BARE ? (process.stdout.isTTY ? 'up' : 'help') : ARGS[0];
 const POS     = [];
-const BOOLEAN_FLAGS = new Set(['force', 'modular', 'json', 'strict', 'no-agents', 'install', 'hooks', 'no-hooks', 'brief', 'final']);
-const FLAGS   = parseFlags(ARGS.slice(1));
+const BOOLEAN_FLAGS = new Set(['force', 'modular', 'json', 'strict', 'no-agents', 'install', 'hooks', 'no-hooks', 'brief', 'final', 'no-install', 'no-open']);
+const FLAGS   = parseFlags(BARE ? ARGS : ARGS.slice(1));
 
 /* ── utils ───────────────────────────────────────────── */
 
@@ -84,7 +88,7 @@ function copyViewer(destDir) {
 
 /* ── commands ─────────────────────────────────────────── */
 
-function cmdInit() {
+function cmdInit({ quiet = false } = {}) {
   const projectName = FLAGS.project || path.basename(CWD);
   const owner       = FLAGS.owner   || 'you';
   const localNow    = new Date();
@@ -136,6 +140,7 @@ function cmdInit() {
   /* 6. Claude Code hooks: automatic brief at session start, check at stop */
   if (!FLAGS['no-hooks'] && usesClaude) installHooks();
 
+  if (quiet) return;
   log('');
   log(bold('  ¡Listo para usar!'));
   log(`  Ejecuta ${bold('visual-roadmap live')} para ver ${bold(path.relative(CWD, roadmapFile))} en vivo.`);
@@ -245,7 +250,27 @@ function cmdLive() {
     return;
   }
   const server = require('../lib/server.js').serve({ file, port });
-  server.once('listening', () => openUrl(`http://127.0.0.1:${port}/`));
+  if (!FLAGS['no-open']) server.once('listening', () => openUrl(`http://127.0.0.1:${port}/`));
+}
+
+/* One command from nothing to the live viewer: add the package to a JS project,
+   init when there is no roadmap yet, then live. */
+function cmdUp() {
+  if (!FLAGS['no-install'] && Setup.needsInstall(CWD)) {
+    const [bin, ...args] = Setup.installCommand(CWD);
+    info(`Adding visual-roadmap to the project: ${bin} ${args.join(' ')}`);
+    const r = spawnSync(bin, args, { cwd: CWD, stdio: 'inherit', shell: process.platform === 'win32' });
+    if (r.status !== 0) warn('Install failed — continuing anyway; hooks will call visual-roadmap through npx.');
+  }
+  const file = path.resolve(CWD, FLAGS.file || 'ROADMAP.md');
+  if (!fs.existsSync(file)) {
+    cmdInit({ quiet: true });
+    log('');
+    log(bold('  Last step — tell your agent once:'));
+    log(`  ${gold('"Follow the visual-roadmap protocol. Split what is left in this project into releases and verifiable tasks, then work task by task."')}`);
+    log('');
+  }
+  cmdLive();
 }
 
 function cmdOpen() {
@@ -277,6 +302,7 @@ function cmdHelp() {
   log('');
   log(bold('  Commands:'));
   log('');
+  log('  ' + bold('up') + '             Set up and open the live viewer (also: bare visual-roadmap)');
   log('  ' + bold('init') + '           Bootstrap ROADMAP.md + viewer in the current directory');
   log('  ' + bold('serve') + '          Start SSE server for live updates without File System API');
   log('  ' + bold('live') + '           Start server and open the live viewer');
@@ -484,9 +510,7 @@ function runHook() {
 
 /** How hooks should call this CLI: the local install if present, else this file. */
 function selfCommand() {
-  const local = path.join(CWD, 'node_modules', 'visual-roadmap', 'bin', 'visual-roadmap.js');
-  if (fs.existsSync(local)) return 'npx --no visual-roadmap';
-  return `node "${path.join(SELF, 'bin', 'visual-roadmap.js').replace(/\\/g, '/')}"`;
+  return Setup.selfCommand(CWD, SELF, PKG.version);
 }
 
 function installHooks() {
@@ -581,7 +605,8 @@ function cmdShots() {
 /* ── router ───────────────────────────────────────────── */
 
 const CMDS = {
-  init:    cmdInit,
+  up:      cmdUp,
+  init:    () => cmdInit(),
   serve:   cmdServe,
   live:    cmdLive,
   server:  cmdServe,

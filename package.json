@@ -40,7 +40,8 @@
     "start": "node bin/visual-roadmap.js serve --file examples/VOIDFRONT.md",
     "test": "node --test",
     "demo": "node scripts/simulate.js",
-    "screenshots": "node scripts/screenshots.js"
+    "screenshots": "node scripts/screenshots.js",
+    "prepublishOnly": "node scripts/build.js && node --test"
   },
   "repository": {
     "type": "git",
@@ -49,5 +50,8 @@
   "bugs": {
     "url": "https://github.com/DesvoSoft/visual-roadmap/issues"
   },
-  "homepage": "https://github.com/DesvoSoft/visual-roadmap#readme"
+  "homepage": "https://github.com/DesvoSoft/visual-roadmap#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }

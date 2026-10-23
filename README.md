@@ -45,47 +45,39 @@ That is the agent's whole side of it. Yours is the screenshot above, updating as
 
 You need Node.js 18+. Git is optional, and adds commit links and line counts.
 
-**1. Add it to the project you want to track**
+**1. In the project you want to track, run one command**
 
 ```bash
-npm install --save-dev github:DesvoSoft/visual-roadmap
+npx visual-roadmap
 ```
 
-<details>
-<summary>pnpm · bun · pinning a version</summary>
+It adds itself as a dev dependency with the package manager the project already uses (npm, pnpm, yarn or bun; skipped when there is no `package.json`), writes `ROADMAP.md` and the agent instructions, and opens the live viewer at `http://127.0.0.1:3579`. Run it again any time to reopen the viewer: an existing `ROADMAP.md` is never touched.
 
-```bash
-pnpm add -D github:DesvoSoft/visual-roadmap      # add -w at a workspace root
-bun add -d github:DesvoSoft/visual-roadmap
-```
-
-Append a tag to pin a release: `github:DesvoSoft/visual-roadmap#v0.6.0`.
-
-Use the package manager the project already uses. Running `npm install` in a pnpm project fails with errors that look like a broken lockfile.
-
-</details>
-
-**2. Set it up and open the viewer**
-
-```bash
-npx visual-roadmap init --project "My App"
-npx visual-roadmap live
-```
-
-`init` writes `ROADMAP.md`, the agent instructions and, for Claude Code, the hooks. It does not overwrite files you already have. `live` opens `http://127.0.0.1:3579` and follows the file from then on.
-
-**3. Tell your agent once**
+**2. Tell your agent once**
 
 > Follow the visual-roadmap protocol. Split what is left in this project into releases and verifiable tasks, then work task by task.
 
 From here on, new requests are planned and tracked the same way without you asking.
 
 <details>
-<summary>Or let the agent do all three steps</summary>
+<summary>Step by step, or with flags</summary>
+
+```bash
+npm install --save-dev visual-roadmap     # or: pnpm add -D · yarn add -D · bun add -d
+npx visual-roadmap init --project "My App"
+npx visual-roadmap live
+```
+
+`npx visual-roadmap --no-install` skips the dependency, `--no-open` keeps the browser closed, `--port 3580` changes the port. The latest unreleased code installs with `github:DesvoSoft/visual-roadmap`.
+
+</details>
+
+<details>
+<summary>Or let the agent do it</summary>
 
 Paste this into any agent that has a shell:
 
-> Install visual-roadmap in this project with the package manager it already uses (`github:DesvoSoft/visual-roadmap` as a dev dependency), then run `npx visual-roadmap init --project "<name>"`. Read the generated skill (`.claude/skills/visual-roadmap/SKILL.md` or `SKILL.md`), plan the remaining work with `npx visual-roadmap add`, and follow the protocol from now on.
+> Add `visual-roadmap` as a dev dependency with the package manager this project uses (skip if there is no `package.json`), then run `npx visual-roadmap init --project "<name>"`. Read the generated skill (`.claude/skills/visual-roadmap/SKILL.md` or `SKILL.md`), plan the remaining work with `npx visual-roadmap add`, and follow the protocol from now on.
 
 </details>
 
@@ -159,6 +151,7 @@ The agent's commands edit the nearest `ROADMAP.md` (or `--file`) and answer in o
 
 | Command | Purpose |
 | --- | --- |
+| *(none)* or `up` | Set up what is missing and open the live viewer. Prints help when piped. |
 | `init --project "Name"` | Create the roadmap, the viewer and the agent setup. |
 | `live [--port 3579]` | Serve the viewer, watch `ROADMAP.md` and open the browser. |
 | `serve --file path/ROADMAP.md` | Serve without opening the browser. |
@@ -183,7 +176,7 @@ All of them are run as `npx visual-roadmap <command>`.
 
 ## Updating
 
-Install again with the same command you used, then refresh the agent setup:
+Update the dev dependency (`npm install --save-dev visual-roadmap@latest`, or your manager's equivalent), then refresh the agent setup:
 
 ```bash
 npx visual-roadmap init
@@ -195,7 +188,7 @@ Your `ROADMAP.md` is left as it is; the skill, the instructions block and the ho
 
 | Symptom | Fix |
 | --- | --- |
-| `npm install` fails with `ERESOLVE`, "damaged lockfile" or `Cannot destructure property 'package'` | The project uses pnpm or another manager. Install with that one (see Quick start). |
+| `npm install` fails with `ERESOLVE`, "damaged lockfile" or `Cannot destructure property 'package'` | The project uses pnpm or another manager. Install with that one, or let `npx visual-roadmap` pick it from the lockfile. |
 | Port 3579 is taken | `npx visual-roadmap live --port 3580` |
 | The agent stopped updating the roadmap | Ask it to run `npx visual-roadmap status`. With Claude Code, reinstall the hooks: `npx visual-roadmap hooks --install`. |
 | Codex or Cursor ignores the protocol | `npx visual-roadmap agents --install` puts the block back in `AGENTS.md` / `.cursorrules`. |

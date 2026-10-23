@@ -1,0 +1,32 @@
+name: Release
+
+# Push a tag like v0.7.0 (matching package.json) to publish to npm.
+# Auth: npm trusted publishing (configure DesvoSoft/visual-roadmap + release.yml
+# on npmjs.com), or an NPM_TOKEN repository secret as a fallback.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@latest
+      - name: Tag matches package.json
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - run: npm test
+      - name: dist/roadmap.html matches viewer/
+        run: npm run build && git diff --exit-code -- dist/roadmap.html
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
