@@ -36,10 +36,10 @@ Edita las fuentes de `viewer/` y vuelve a ejecutar `npm run build` antes de dist
 
 La sincronización usa un servidor en `127.0.0.1` y eventos SSE. El visor portátil también permite seleccionar un archivo manualmente. No requiere cuenta ni servicio remoto.
 
-## Releasing
+## Publicar una versión
 
-1. Move `## [Unreleased]` in `CHANGELOG.md` under the new version and set `"version"` in `package.json`.
-2. `npm publish` from a clean `main` (runs the build and the tests first; npm asks for 2FA in the browser).
-3. Commit `chore(release): vX.Y.Z`, tag `vX.Y.Z`, push both, and create the GitHub release from the changelog section.
+1. Pasa `## [Unreleased]` de `CHANGELOG.md` a la nueva versión y actualiza `"version"` en `package.json`.
+2. `npm publish` desde `main` limpio (compila y corre los tests antes; npm pide 2FA en el navegador).
+3. Commit `chore(release): vX.Y.Z`, tag `vX.Y.Z`, push de ambos y release en GitHub con la sección del changelog.
 
-The `Release` workflow runs on the tag: it checks that the tag matches `package.json`, runs the tests and publishes only if that version is not on npm yet. Once trusted publishing is set up for `release.yml` on npmjs.com, step 2 can be skipped and the tag publishes.
+El workflow `Release` corre con el tag: comprueba que coincida con `package.json`, corre los tests y publica solo si esa versión no está en npm. Cuando trusted publishing quede configurado para `release.yml` en npmjs.com, el paso 2 sobra y el tag publica solo.
