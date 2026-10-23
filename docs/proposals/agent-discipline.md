@@ -2,7 +2,7 @@
 
 Fecha: 2026-10-23.
 
-**Estado: propuesta. Nada de esto está implementado.**
+**Estado: implementado en la v0.7 (propuestas 1–6).** El indicador de frescura, la detección de sesión muerta, la métrica de cobertura, el hook `commit-msg`, el arranque automático con criterio y los hooks de Codex y Cursor ya están en el CLI y el viewer. Lo que sigue: medir con la cobertura cuánto mejora cada uno.
 
 ## Problema
 

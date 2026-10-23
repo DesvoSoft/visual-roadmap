@@ -107,24 +107,26 @@ Skip parts with `--no-agents` or `--no-hooks`. `--force` overwrites existing fil
 
 **Next.** A timeline of every deliverable, from a 3-hour window to a month. Projections respect dependencies and are calibrated with how long finished tasks really took, not with how long the agent hoped they would.
 
+**Honest.** Next to the current task, a pulse shows what the working tree and git say, whatever the agent reports: *active now*, *quiet 15 min*, *no activity 45 min* when a session died with a task still open, or *off-roadmap* when code changes with nothing active. The header shows how many commits landed on a task.
+
 **Wrong.** Missing dependencies, two tasks active at once, an ETA nobody updated, a task too big to verify. Each warning opens the task it is about.
 
-**Proof.** Commits that mention a task ID show up on that task. With Claude Code, the screenshots the agent takes to check its own work are kept there too, with a thumbnail on the timeline.
+**Proof.** Commits that mention a task ID show up on that task; a git `commit-msg` hook adds the ID for the agent when it forgets. With Claude Code, the screenshots the agent takes to check its own work are kept there too, with a thumbnail on the timeline.
 
 Also in the box: desktop notifications when a task finishes or blocks, a versions view, search and filters, dark and light themes, English and Spanish, and a portable `roadmap.html` that works by double-click, without a server.
 
-## With Claude Code it runs itself
+## It runs itself
 
-`init` installs four hooks, so the protocol holds even when the agent forgets:
+`init` installs hooks for the agents the project uses (Claude Code, Codex, Cursor), so the protocol holds even when the agent forgets:
 
 | Hook | What it does |
 | --- | --- |
 | `SessionStart` | Hands the agent a four-line brief: current task, next ready tasks, anything to fix. |
-| `PostToolUse` | Starts the next ready task if the agent begins writing code with nothing active, and keeps its screenshots. Silent otherwise. |
+| `PostToolUse` | If the agent writes code with nothing active, starts the task those files point at (or the only ready one) and keeps its screenshots. When it is not clear, it does not guess. |
 | `Stop` | Holds the agent once if it is about to stop with roadmap errors, a passed ETA or untracked work. |
 | `UserPromptSubmit` | Passes the same reminders along with your message. It never blocks your prompt. |
 
-Other agents follow the same protocol from `SKILL.md`; they just are not reminded.
+Codex gets the same four (`.codex/hooks.json`; trust them once with `/hooks`). Cursor gets the brief, the stop reminder and the silent task start (`.cursor/hooks.json`). Every agent gets the git `commit-msg` hook, which links each commit to the active task with a `Roadmap-Task:` trailer and never blocks a commit.
 
 ## Commands
 
@@ -157,7 +159,8 @@ The agent's commands edit the nearest `ROADMAP.md` (or `--file`) and answer in o
 | `serve --file path/ROADMAP.md` | Serve without opening the browser. |
 | `open` | Open the portable `roadmap.html`. |
 | `agents [--install]` | Print or install the block for `CLAUDE.md` / `AGENTS.md`. |
-| `hooks [--install]` | Print or install the Claude Code hooks. |
+| `hooks [--install] [--agent codex|cursor]` | Print or install the agent hooks (Claude Code by default). |
+| `githook [--install]` | Print or install the git `commit-msg` hook. `init --no-git-hook` skips it. |
 
 </details>
 

@@ -7,8 +7,15 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Added
 - One command to start: `npx visual-roadmap` (or `visual-roadmap up`) adds the package as a dev dependency with the project's package manager (picked from the lockfile), runs `init` when there is no `ROADMAP.md`, and opens the live viewer. Piped, as an agent would run it, the bare command still prints help. `--no-install` and `--no-open` skip those steps.
 - Published on npm as `visual-roadmap`; a `Release` workflow publishes each `v*` tag.
+- Activity pulse next to the current task, from the working tree and git rather than from what the agent reports: active, quiet, no activity (the session probably ended with the task open) or off-roadmap (code changing with nothing active). The last two also appear under roadmap health.
+- Coverage in the header: share of commits since the roadmap started that name a task or were made while one was active. Also in `status`.
+- `status` and the session brief flag an active task with no file changes for 30 minutes or more.
+- Git `commit-msg` hook (`githook --install`, installed by `init`; `--no-git-hook` to skip): adds a `Roadmap-Task:` trailer naming the active task when the message names none, and warns without blocking when code is committed with nothing active. Commits linked by trailer show up on their task.
+- Hooks for Codex (`.codex/hooks.json`) and Cursor (`.cursor/hooks.json`), installed by `init` when the project has `.codex/`, `.cursor/` or `.cursorrules`, or with `hooks --install --agent codex|cursor`.
+- Server: `GET /activity` and an SSE `activity` event.
 
 ### Changed
+- Hooks start a task automatically only when it is the only ready one or the touched files clearly point at it; otherwise they list the candidates instead of guessing.
 - When the CLI runs from the npx cache, hooks call a pinned `npx -y visual-roadmap@<version>` instead of a path that npm may clean up.
 
 ## [0.6.0] - 2026-10-04

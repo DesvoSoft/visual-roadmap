@@ -11,8 +11,11 @@ This file is for agents that **change this repository**. To *use* Visual Roadmap
 | How `ROADMAP.md` is read | `viewer/md.js` (parser shared by the viewer and the CLI) | `docs/ROADMAP_FORMAT.md` |
 | Viewer UI | `viewer/*.js`, `viewer/viewer.css`, `viewer/ui.js` (strings in English **and** Spanish) | `npm run build` — `dist/roadmap.html` is committed and CI fails if it is stale |
 | Forecasts and ETAs | `viewer/forecast.js` | `test/forecast.test.js` |
+| Observed vs declared (pulse, coverage, stale) | `viewer/trust.js`, `lib/activity.js`, `lib/git.js` | `test/trust.test.js` |
 | Local server, SSE, screenshots | `lib/server.js`, `lib/shots.js`, `lib/shot-hook.js` | `test/live.test.js`, `test/shots*.test.js` |
-| Claude Code hooks | `cmdHook` / `cmdHooks` in `bin/visual-roadmap.js`, `lib/shot-hook.js` | `test/shot-hook.test.js` |
+| Agent hooks (Claude Code, Codex, Cursor) | `reactToHook`, `HOOK_TARGETS`, `installHooks` in `bin/visual-roadmap.js`, `lib/shot-hook.js` | `test/agent-hooks.test.js`, `test/shot-hook.test.js` |
+| Git commit-msg hook | `lib/githook.js`, `commitMsgHook` in `bin/visual-roadmap.js` | `test/githook.test.js` |
+| One-command setup | `lib/setup.js`, `cmdUp` | `test/setup.test.js` |
 
 ## Rules
 

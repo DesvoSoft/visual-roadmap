@@ -3,7 +3,7 @@ title: Visual Roadmap
 subtitle: HOJA DE RUTA
 owner: DesvoSoft
 started: 2026-10-23 01:05
-updated: 2026-10-23 01:45
+updated: 2026-10-23 01:48
 capacity: 1
 version: "0.1"
 ---
@@ -31,7 +31,7 @@ Hoja de ruta del propio proyecto: lo que falta para que más gente lo pruebe y c
 | T006 Detección de sesión muerta en viewer y brief | done | 100% | 1h | 2026-10-23 01:40 | 2026-10-23 01:42 | — | 25m | brief/status avisan stale; 71 tests |
 | T007 Hook de git commit-msg para todos los agentes | done | 100% | 1.5h | 2026-10-23 01:42 | 2026-10-23 01:44 | — | 35m | githook.test.js: trailer e2e verde |
 | T008 Arranque automático que no elige la tarea equivocada | done | 100% | 2h | 2026-10-23 01:44 | 2026-10-23 01:45 | — | 30m | pickForFiles + e2e; 76 tests |
-| T009 Hooks para Cursor y Codex | planned | 0% | 2h | — | — | — | — | — |
+| T009 Hooks para Cursor y Codex | done | 100% | 2h | 2026-10-23 01:46 | 2026-10-23 01:48 | — | 50m | agent-hooks.test.js: Cursor JSON + Codex stop/apply_patch |
 
 ### v0.9 · Distribución
 
@@ -45,6 +45,8 @@ Hoja de ruta del propio proyecto: lo que falta para que más gente lo pruebe y c
 
 ## Últimos cambios
 
+- 01:48 | ✓ | T009 · Hooks para Cursor y Codex — agent-hooks.test.js: Cursor JSON + Codex stop/apply_patch | +346 -44
+- 01:46 | ▶ | T009 · Hooks para Cursor y Codex
 - 01:45 | ✓ | T008 · Arranque automático que no elige la tarea equivocada — pickForFiles + e2e; 76 tests | +111 -10
 - 01:44 | ▶ | T008 · Arranque automático que no elige la tarea equivocada
 - 01:44 | ✓ | T007 · Hook de git commit-msg para todos los agentes — githook.test.js: trailer e2e verde | +513 -32

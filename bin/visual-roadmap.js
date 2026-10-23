@@ -140,7 +140,10 @@ function cmdInit({ quiet = false } = {}) {
   if (!FLAGS['no-agents']) installAgentSnippet(skillPath);
 
   /* 6. Claude Code hooks: automatic brief at session start, check at stop */
-  if (!FLAGS['no-hooks'] && usesClaude) installHooks();
+  if (!FLAGS['no-hooks'] && usesClaude) installHooks('claude');
+  /* Same brief and reminders for Codex and Cursor when the project uses them */
+  if (!FLAGS['no-hooks'] && fs.existsSync(path.join(CWD, '.codex'))) installHooks('codex');
+  if (!FLAGS['no-hooks'] && (fs.existsSync(path.join(CWD, '.cursor')) || fs.existsSync(path.join(CWD, '.cursorrules')))) installHooks('cursor');
 
   /* 7. Git commit-msg hook: links commits to the active task, for every agent */
   if (!FLAGS['no-git-hook']) installGitHook();
@@ -454,7 +457,7 @@ function cmdCheck() {
    PostToolUse: runs after every matched tool call, so it never reports problems
    (they would repeat on each call): it keeps screenshots and starts the next
    ready task when the agent writes code with nothing active. */
-const CODE_TOOLS = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'Bash', 'PowerShell'];
+const CODE_TOOLS = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'Bash', 'PowerShell', 'apply_patch'];   /* apply_patch: Codex */
 const POST_TOOL_MATCHER = [...CODE_TOOLS, 'Read', 'mcp__.*'].join('|');
 
 /* Never interrupts the agent: every failure is ignored. */
@@ -505,17 +508,44 @@ function cmdGitHook() {
   info('Install into the repository with  visual-roadmap githook --install');
 }
 
+/* Each agent reads hook output its own way. Claude Code and Codex: plain stdout is
+   context, exit 2 + stderr asks the agent to continue. Cursor: JSON on stdout,
+   `followup_message` to continue, `additional_context` for context. */
+const AGENT = ['cursor', 'codex'].includes(FLAGS.agent) ? FLAGS.agent : 'claude';
+let hookSaid = false;
+function hookSay(event, text) {
+  hookSaid = true;
+  if (AGENT === 'cursor') log(JSON.stringify(event === 'stop' ? { followup_message: text } : { additional_context: text }));
+  else if (AGENT === 'codex' && event === 'post-tool-use') log(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: text } }));
+  else log(text);
+}
+function hookContinue(text) {
+  hookSaid = true;
+  if (AGENT === 'cursor') { log(JSON.stringify({ followup_message: text })); return; }
+  process.stderr.write(text + '\n');
+  process.exitCode = 2;
+}
+
 function runHook() {
   let input = {};
   try { if (!process.stdin.isTTY) input = JSON.parse(fs.readFileSync(0, 'utf8') || '{}'); } catch {}
   const event = POS[0];
-  if (!['session-start', 'stop', 'post-tool-use', 'user-prompt-submit'].includes(event) || (event === 'stop' && input.stop_hook_active)) return;
-  const base = process.env.CLAUDE_PROJECT_DIR || input.cwd || CWD;
+  try { reactToHook(event, input); }
+  finally {
+    /* Codex reads a Stop hook that exits 0 as JSON: an empty answer must still be JSON. */
+    if (AGENT === 'codex' && event === 'stop' && !hookSaid) log('{}');
+  }
+}
+
+function reactToHook(event, input) {
+  /* stop_hook_active (Claude Code, Codex) / loop_count (Cursor): we already asked once */
+  if (!['session-start', 'stop', 'post-tool-use', 'user-prompt-submit'].includes(event) || (event === 'stop' && (input.stop_hook_active || input.loop_count > 0))) return;
+  const base = process.env.CLAUDE_PROJECT_DIR || (Array.isArray(input.workspace_roots) && input.workspace_roots[0]) || input.cwd || CWD;
   const file = FLAGS.file ? path.resolve(base, FLAGS.file) : path.join(base, 'ROADMAP.md');
   if (!fs.existsSync(file)) return;
   const Agent = require('../lib/agent.js');
   const text = fs.readFileSync(file, 'utf8');
-  if (event === 'session-start') { log(Agent.brief(text, Date.now(), lang(), observed(file))); return; }
+  if (event === 'session-start') { hookSay(event, Agent.brief(text, Date.now(), lang(), observed(file))); return; }
   if (event === 'post-tool-use') {
     captureShot(input, base, file, text, Agent);
     if (input.tool_name && !CODE_TOOLS.includes(input.tool_name)) return;
@@ -533,7 +563,7 @@ function runHook() {
     const pick = touched ? Agent.pickForFiles(text, paths) : null;
     if (pick) {
       fs.writeFileSync(file, Agent.start(text, pick.id).text);
-      log(`[visual-roadmap] ${pick.id} started automatically after code changes${pick.matched.length ? ` (files mention: ${pick.matched.slice(0, 3).join(', ')})` : ''}. Wrong task? visual-roadmap start <ID>.`);
+      hookSay(event, `[visual-roadmap] ${pick.id} started automatically after code changes${pick.matched.length ? ` (files mention: ${pick.matched.slice(0, 3).join(', ')})` : ''}. Wrong task? visual-roadmap start <ID>.`);
       return;
     }
     if (touched) {
@@ -548,10 +578,9 @@ function runHook() {
   }
   if (!problems.length) return;
   /* UserPromptSubmit: exit 2 would erase the user's prompt and lock them out, so the
-     reminder goes to stdout, which Claude Code adds to the agent's context. */
-  if (event === 'user-prompt-submit') { log('[visual-roadmap] ' + problems.join(' · ')); return; }
-  process.stderr.write('[visual-roadmap] ' + problems.join(' · ') + '\n');
-  process.exitCode = 2;
+     reminder goes to stdout, which the agent adds to its context. */
+  if (event === 'user-prompt-submit') { hookSay(event, '[visual-roadmap] ' + problems.join(' · ')); return; }
+  hookContinue('[visual-roadmap] ' + problems.join(' · '));
 }
 
 /** How hooks should call this CLI: the local install if present, else this file. */
@@ -559,45 +588,64 @@ function selfCommand() {
   return Setup.selfCommand(CWD, SELF, PKG.version);
 }
 
-function installHooks() {
-  const file = path.join(CWD, '.claude', 'settings.json');
+/* Where each agent keeps project hooks, and which of our events it gets.
+   Cursor's afterFileEdit has no output: there the hook only starts a task silently. */
+const HOOK_TARGETS = {
+  claude: { file: '.claude/settings.json', events: [['SessionStart', 'session-start'], ['Stop', 'stop'], ['PostToolUse', 'post-tool-use'], ['UserPromptSubmit', 'user-prompt-submit']] },
+  codex:  { file: '.codex/hooks.json',     events: [['SessionStart', 'session-start'], ['Stop', 'stop'], ['PostToolUse', 'post-tool-use'], ['UserPromptSubmit', 'user-prompt-submit']] },
+  cursor: { file: '.cursor/hooks.json',    events: [['sessionStart', 'session-start'], ['stop', 'stop'], ['afterFileEdit', 'post-tool-use']] }
+};
+
+function hookCommand(agent, arg) {
+  return `${selfCommand()} hook ${arg}${agent === 'claude' ? '' : ' --agent ' + agent}`;
+}
+
+function installHooks(agent = AGENT) {
+  const target = HOOK_TARGETS[agent];
+  const file = path.join(CWD, target.file);
   let settings = {};
   if (fs.existsSync(file)) {
     try { settings = JSON.parse(fs.readFileSync(file, 'utf8')); }
-    catch { warn(`${path.relative(CWD, file)} is not valid JSON — hooks not installed`); return; }
+    catch { warn(`${target.file} is not valid JSON — hooks not installed`); return; }
   }
-  const cmd = selfCommand();
+  if (agent === 'cursor') settings.version = settings.version || 1;
   settings.hooks = settings.hooks || {};
   let changed = false;
-  for (const [event, arg] of [['SessionStart', 'session-start'], ['Stop', 'stop'], ['PostToolUse', 'post-tool-use'], ['UserPromptSubmit', 'user-prompt-submit']]) {
-    const groups = settings.hooks[event] = settings.hooks[event] || [];
-    const command = `${cmd} hook ${arg}`;
-    const ours = h => /visual-roadmap|cli\.js"? hook /.test(h.command || '') && h.command.endsWith(` hook ${arg}`);
+  for (const [event, arg] of target.events) {
+    const entries = settings.hooks[event] = settings.hooks[event] || [];
+    const command = hookCommand(agent, arg);
+    const ours = h => /visual-roadmap|cli\.js"? hook /.test(h.command || '') && new RegExp(` hook ${arg}( |$)`).test(h.command);
+    if (agent === 'cursor') {   /* flat list of handlers */
+      const existing = entries.find(ours);
+      if (existing) { if (existing.command !== command) { existing.command = command; changed = true; } continue; }
+      entries.push({ command, timeout: 15 });
+      changed = true;
+      continue;
+    }
     /* Only tools that write code or return images: the hook is not even spawned for the rest */
     const matcher = event === 'PostToolUse' ? POST_TOOL_MATCHER : undefined;
-    const group = groups.find(g => (g.hooks || []).some(ours));
+    const group = entries.find(g => (g.hooks || []).some(ours));
     if (group) {
       const existing = group.hooks.find(ours);
       if (existing.command !== command) { existing.command = command; changed = true; }
       if (matcher && group.hooks.length === 1 && group.matcher !== matcher) { group.matcher = matcher; changed = true; }
       continue;
     }
-    groups.push({ ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command, timeout: 15 }] });
+    entries.push({ ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command, timeout: 15 }] });
     changed = true;
   }
   if (!changed) return;
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
-  ok(`Hooks    → ${path.relative(CWD, file)} (SessionStart, Stop, PostToolUse, UserPromptSubmit)`);
+  ok(`Hooks    → ${target.file} (${target.events.map(e => e[0]).join(', ')})`);
+  if (agent === 'codex') info('Codex runs project hooks once you trust them: open Codex and review them with /hooks.');
 }
 
 function cmdHooks() {
   if (FLAGS.install) { installHooks(); return; }
-  log(`SessionStart: ${selfCommand()} hook session-start`);
-  log(`Stop:         ${selfCommand()} hook stop`);
-  log(`PostToolUse:  ${selfCommand()} hook post-tool-use  (matcher: ${POST_TOOL_MATCHER})`);
-  log(`UserPromptSubmit: ${selfCommand()} hook user-prompt-submit`);
-  info('Install into .claude/settings.json with  visual-roadmap hooks --install');
+  const target = HOOK_TARGETS[AGENT];
+  for (const [event, arg] of target.events) log(`${(event + ':').padEnd(18)}${hookCommand(AGENT, arg)}${event === 'PostToolUse' ? `  (matcher: ${POST_TOOL_MATCHER})` : ''}`);
+  info(`Install into ${target.file} with  visual-roadmap hooks --install${AGENT === 'claude' ? '' : ' --agent ' + AGENT}`);
 }
 
 const rest = from => POS.slice(from).join(' ') || (typeof FLAGS.reason === 'string' ? FLAGS.reason : '');
