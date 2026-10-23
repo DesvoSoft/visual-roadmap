@@ -1,6 +1,6 @@
 {
   "name": "visual-roadmap",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Live roadmap for vibecoding: your coding agent keeps ROADMAP.md current with one-line commands and you watch progress, ETAs and problems in the browser.",
   "author": "DesvoSoft",
   "license": "MIT",
@@ -18,7 +18,7 @@
     "devtools"
   ],
   "bin": {
-    "visual-roadmap": "./bin/visual-roadmap.js"
+    "visual-roadmap": "bin/visual-roadmap.js"
   },
   "main": "./lib/agent.js",
   "files": [
@@ -45,7 +45,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/DesvoSoft/visual-roadmap.git"
+    "url": "git+https://github.com/DesvoSoft/visual-roadmap.git"
   },
   "bugs": {
     "url": "https://github.com/DesvoSoft/visual-roadmap/issues"

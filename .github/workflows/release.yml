@@ -27,6 +27,11 @@ jobs:
       - run: npm test
       - name: dist/roadmap.html matches viewer/
         run: npm run build && git diff --exit-code -- dist/roadmap.html
+      - name: Skip versions already on npm (first release is published by hand)
+        id: published
+        run: |
+          if npm view "visual-roadmap@$(node -p "require('./package.json').version")" version >/dev/null 2>&1; then echo skip=true >> "$GITHUB_OUTPUT"; fi
       - run: npm publish
+        if: steps.published.outputs.skip != 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

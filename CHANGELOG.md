@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-23
+
 ### Added
 - One command to start: `npx visual-roadmap` (or `visual-roadmap up`) adds the package as a dev dependency with the project's package manager (picked from the lockfile), runs `init` when there is no `ROADMAP.md`, and opens the live viewer. Piped, as an agent would run it, the bare command still prints help. `--no-install` and `--no-open` skip those steps.
 - Published on npm as `visual-roadmap`; a `Release` workflow publishes each `v*` tag.
@@ -17,6 +19,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Changed
 - Hooks start a task automatically only when it is the only ready one or the touched files clearly point at it; otherwise they list the candidates instead of guessing.
 - When the CLI runs from the npx cache, hooks call a pinned `npx -y visual-roadmap@<version>` instead of a path that npm may clean up.
+
+### Fixed
+- The `visual-roadmap` command survives `npm publish` (npm dropped the `./bin/…` entry).
+- `init --modular` copies `notifications.js` and `trust.js` with the rest of the viewer.
 
 ## [0.6.0] - 2026-10-04
 
@@ -115,7 +121,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - Local server with SSE updates and a portable single-file `roadmap.html`.
 - `init`, `live`, `serve`, `open` and `skill` commands.
 
-[Unreleased]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/DesvoSoft/visual-roadmap/compare/v0.4.0...v0.5.0
