@@ -156,6 +156,18 @@ test('brief is a few plain lines an agent can act on', () => {
   assert.match(Agent.brief('---\ntitle: X\n---\n'), /No tasks yet/);
 });
 
+test('brief flags an active task with no observed activity, and status reports coverage', () => {
+  const text = Agent.start(base, 'T001', {}, at('10:00')).text;
+  const quietSince = { lastWrite: at('10:05'), roadmapAt: at('10:00'), touched: 0 };
+  const lines = Agent.brief(text, at('11:40'), 'en', { activity: quietSince, commits: [] }).split('\n');
+  assert.ok(lines.some(l => /^stale: T001 .*1h 35m.*pause T001/.test(l)), lines.join('\n'));
+  assert.ok(!Agent.brief(text, at('10:10'), 'en', { activity: quietSince, commits: [] }).includes('stale:'));
+  assert.ok(!Agent.brief(text, at('11:40')).includes('stale:'), 'no observations, no verdict');
+  const s = Agent.status(text, at('10:30'), 'en', { activity: quietSince, commits: [{ time: at('10:15'), tasks: [] }, { time: at('09:00'), tasks: [] }] });
+  assert.equal(s.activity.state, 'quiet');
+  assert.equal(s.coverage.covered, 1);
+});
+
 test('pause and resume exclude paused time from actual work', () => {
   let text = Agent.start(base, 'T001', {}, at('10:00')).text;
   text = Agent.pause(text, 'T001', 'break', at('10:10')).text;

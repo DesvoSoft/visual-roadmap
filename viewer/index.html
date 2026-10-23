@@ -98,6 +98,7 @@
         <span class="m-item"><span data-i18n="version">Version</span> <strong id="m-version"></strong></span>
         <span class="m-item"><span data-i18n="phase">Phase</span> <strong id="m-phase"></strong> <span data-i18n="of">of</span> <span id="m-phase-total"></span></span>
         <span class="m-item"><strong id="m-tasks-done"></strong>/<span id="m-tasks-total"></span> <span data-i18n="tasks">tasks</span></span>
+        <span class="m-item" id="m-coverage-item" data-i18n-title="coverageHint"><strong id="m-coverage"></strong> <span data-i18n="coverage">commits on a task</span></span>
         <span class="m-item"><strong id="m-tests"></strong> tests</span>
         <span class="m-item"><strong id="m-e2e"></strong> e2e</span>
         <span class="m-item"><strong id="m-decisions"></strong> <span data-i18n="decisions">decisions</span></span>
@@ -121,6 +122,7 @@
           <span class="hud-card__now-id" id="now-id"></span>
           <span class="hud-card__now-name" id="now-name"></span>
           <span class="hud-card__now-warn" id="now-warn"></span>
+          <span class="hud-card__pulse" id="now-pulse" hidden><i aria-hidden="true"></i><span id="now-pulse-text"></span></span>
         </div>
         <div class="hud-card__progress-row">
           <div class="hud-card__now-track">
@@ -189,6 +191,7 @@
 <script src="md.js"></script>
 <script src="ui.js"></script>
 <script src="forecast.js"></script>
+<script src="trust.js"></script>
 <script src="shots.js"></script>
 <script src="watcher.js"></script>
 <script src="notifications.js"></script>

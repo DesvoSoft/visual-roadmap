@@ -117,6 +117,7 @@
     }
 
     /* ── Card 3: ÚLTIMOS CAMBIOS ── */
+    renderPulse(doc, forecast);
     renderRecentChanges(doc, forecast);
     renderHealth(doc, forecast);
 
@@ -125,6 +126,26 @@
       ? `${forecast.overdue ? '⚠' : '▶'} ${active.taskId || active.name} · ${global.Forecast.duration(forecast.elapsed)} · ${brandName}`
       : `${s.pct}% · ${brandName}`;
     if (document.title !== tab) document.title = tab;
+  }
+
+  /* ── Observed vs declared: working-tree activity next to the roadmap (live server only) ── */
+  global.RoadmapActivity = null;
+  const freshness = (doc, forecast) => global.Trust.freshness(doc, forecast, global.RoadmapActivity, global.RoadmapGit);
+  function renderPulse(doc, forecast) {
+    const pulse = $('now-pulse');
+    const fresh = freshness(doc, forecast);
+    const shown = fresh && ['live', 'quiet', 'stale', 'untracked'].includes(fresh.state);
+    if (pulse) {
+      pulse.hidden = !shown;
+      if (shown) {
+        pulse.dataset.state = fresh.state;
+        pulse.title = t('pulse_hint');
+        $('now-pulse-text').textContent = t(fresh.state === 'live' && !fresh.minutes ? 'pulse_now' : 'pulse_' + fresh.state, { time: global.Forecast.duration(fresh.minutes || 0), files: fresh.touched });
+      }
+    }
+    const cover = global.RoadmapGit.length ? global.Trust.coverage(doc, global.RoadmapGit) : null;
+    if ($('m-coverage')) $('m-coverage').textContent = cover ? `${cover.pct}%` : '';
+    if ($('m-coverage-item')) $('m-coverage-item').hidden = !cover;
   }
 
   /* ── Git: commits linked to tasks by ID (live server only) ── */
@@ -144,8 +165,14 @@
     const box = $('health');
     if (!box) return;
     const issues = [...(doc.issues || [])];
+    const fresh = freshness(doc, forecast);
+    if (fresh?.state === 'stale') {
+      issues.unshift({ level: 'warn', code: 'inactive', vars: { task: fresh.task, time: global.Forecast.duration(fresh.minutes ?? 0) }, refs: [fresh.task] });
+      global.RoadmapNotifications?.send(`inactive:${fresh.task}:${global.RoadmapActivity?.lastWrite}`, `⏸ ${fresh.task}`, global.Roadmap.formatIssue(issues[0], global.UI.language));
+    }
+    if (fresh?.state === 'untracked') issues.unshift({ level: 'warn', code: 'untracked', vars: { files: fresh.touched } });
     /* The file has not changed since the ETA passed: the agent may be stuck. */
-    if (forecast.overdue && forecast.ageMinutes != null && forecast.ageMinutes >= forecast.overdueMinutes && forecast.overdueMinutes >= 10) {
+    if (fresh?.state !== 'stale' && forecast.overdue && forecast.ageMinutes != null && forecast.ageMinutes >= forecast.overdueMinutes && forecast.overdueMinutes >= 10) {
       issues.unshift({ level: 'warn', code: 'stale', vars: { minutes: forecast.overdueMinutes } });
       const a = forecast.active;
       global.RoadmapNotifications?.send(`stale:${a.taskId || a.id}:${doc.meta.updated}`, `⏱ ${a.taskId || ''} ${a.name}`, global.Roadmap.formatIssue(issues[0], global.UI.language));
@@ -358,6 +385,12 @@
     global.RoadmapShots?.init();
     document.addEventListener('roadmap:shots-updated', () => { if (_doc) renderCurrentView(); });
     setInterval(refreshGit, 60000);
+    document.addEventListener('roadmap:activity', e => {
+      const head = e.detail?.head?.hash;
+      global.RoadmapActivity = e.detail || null;
+      if (head && head !== global.RoadmapGit[0]?.hash) refreshGit();
+      else if (_doc) updateHUD(_doc);
+    });
 
     /* Setup drag & drop on the whole body */
     global.Watcher.setupDragDrop(document.body);

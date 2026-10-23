@@ -127,6 +127,9 @@
       } catch (error) { console.error('[Watcher] invalid SSE content', error); }
     });
     _sse.addEventListener('shots', () => document.dispatchEvent(new CustomEvent('roadmap:shots')));
+    _sse.addEventListener('activity', e => {
+      try { document.dispatchEvent(new CustomEvent('roadmap:activity', { detail: JSON.parse(e.data) })); } catch {}
+    });
     _sse.addEventListener('error', () => {
       connection('connecting');
     });

@@ -3,7 +3,7 @@ title: Visual Roadmap
 subtitle: HOJA DE RUTA
 owner: DesvoSoft
 started: 2026-10-23 01:05
-updated: 2026-10-23 01:06
+updated: 2026-10-23 01:42
 capacity: 1
 version: "0.1"
 ---
@@ -24,14 +24,14 @@ Hoja de ruta del propio proyecto: lo que falta para que más gente lo pruebe y c
 
 ### v0.8 · Un roadmap que no miente
 
-| Item | Estado | Progreso | Esfuerzo | Inicio | Fin | Depende | Real |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| T004 Métrica de cobertura: tiempo con cambios dentro de una tarea activa | planned | 0% | 1.5h | — | — | — | — |
-| T005 Indicador de frescura: actividad observada vs. último comando | planned | 0% | 2h | — | — | — | — |
-| T006 Detección de sesión muerta en viewer y brief | planned | 0% | 1h | — | — | — | — |
-| T007 Hook de git commit-msg para todos los agentes | planned | 0% | 1.5h | — | — | — | — |
-| T008 Arranque automático que no elige la tarea equivocada | planned | 0% | 2h | — | — | — | — |
-| T009 Hooks para Cursor y Codex | planned | 0% | 2h | — | — | — | — |
+| Item | Estado | Progreso | Esfuerzo | Inicio | Fin | Depende | Real | Nota |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| T004 Métrica de cobertura: tiempo con cambios dentro de una tarea activa | done | 100% | 1.5h | 2026-10-23 01:36 | 2026-10-23 01:37 | — | 40m | trust.coverage + tests |
+| T005 Indicador de frescura: actividad observada vs. último comando | done | 100% | 2h | 2026-10-23 01:37 | 2026-10-23 01:40 | — | 45m | pulse visto en navegador: live/stale + aviso de salud |
+| T006 Detección de sesión muerta en viewer y brief | done | 100% | 1h | 2026-10-23 01:40 | 2026-10-23 01:42 | — | 25m | brief/status avisan stale; 71 tests |
+| T007 Hook de git commit-msg para todos los agentes | planned | 0% | 1.5h | — | — | — | — | — |
+| T008 Arranque automático que no elige la tarea equivocada | planned | 0% | 2h | — | — | — | — | — |
+| T009 Hooks para Cursor y Codex | planned | 0% | 2h | — | — | — | — | — |
 
 ### v0.9 · Distribución
 
@@ -45,6 +45,12 @@ Hoja de ruta del propio proyecto: lo que falta para que más gente lo pruebe y c
 
 ## Últimos cambios
 
+- 01:42 | ✓ | T006 · Detección de sesión muerta en viewer y brief — brief/status avisan stale; 71 tests | +282 -30
+- 01:40 | ▶ | T006 · Detección de sesión muerta en viewer y brief
+- 01:40 | ✓ | T005 · Indicador de frescura: actividad observada vs. último comando — pulse visto en navegador: live/stale + aviso de salud | +245 -23
+- 01:37 | ▶ | T005 · Indicador de frescura: actividad observada vs. último comando
+- 01:37 | ✓ | T004 · Métrica de cobertura: tiempo con cambios dentro de una tarea activa — trust.coverage + tests | +360 -49
+- 01:36 | ▶ | T004 · Métrica de cobertura: tiempo con cambios dentro de una tarea activa
 - 01:06 | ✓ | T002 · Paquete listo para npm y workflow de release por tag — npm pack ok, 63/63 tests | +65 -36
 - 01:06 | ▶ | T002 · Paquete listo para npm y workflow de release por tag
 - 01:06 | ✓ | T001 · npx visual-roadmap instala, inicializa y abre el viewer — test/setup.test.js verde | +65 -36

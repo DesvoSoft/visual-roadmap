@@ -1240,6 +1240,15 @@ html[data-theme="light"] .tracker-bar--slipped { outline-color: #a66100; }
 .hud-card__now-name { font-size: 13px; flex: 1; min-width: 0; }
 .hud-card__now-warn { flex: none; margin: 0; padding: 2px 6px; border: 1px solid var(--ok); border-radius: 8px; color: var(--ok); font-size: 10px; text-shadow: none; }
 .hud-card__now-warn--late { border-color: var(--neon-orange); color: var(--neon-orange); }
+/* Observed activity, independent of what the agent reports */
+.hud-card__pulse { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 2px 6px; border: 1px solid var(--border); border-radius: 8px; color: var(--idle); font-size: 10px; white-space: nowrap; cursor: help; }
+.hud-card__pulse[hidden] { display: none; }
+.hud-card__pulse i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.hud-card__pulse[data-state="live"] { color: var(--ok); border-color: var(--ok-dim); }
+.hud-card__pulse[data-state="live"] i { animation: pulse-live 1.8s ease-in-out infinite; }
+.hud-card__pulse[data-state="stale"],
+.hud-card__pulse[data-state="untracked"] { color: var(--neon-orange); border-color: var(--neon-orange-dim); }
+@media (prefers-reduced-motion: reduce) { .hud-card__pulse i { animation: none !important; } }
 .hud-card__progress-row { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
 .hud-card__now-track { position: relative; flex: 1; overflow: visible; background: rgba(0,212,255,.12); }
 .hud-card__now-fill { background: var(--cyan); box-shadow: 0 0 8px var(--cyan-glow); }
@@ -1638,6 +1647,7 @@ html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
         <span class="m-item"><span data-i18n="version">Version</span> <strong id="m-version"></strong></span>
         <span class="m-item"><span data-i18n="phase">Phase</span> <strong id="m-phase"></strong> <span data-i18n="of">of</span> <span id="m-phase-total"></span></span>
         <span class="m-item"><strong id="m-tasks-done"></strong>/<span id="m-tasks-total"></span> <span data-i18n="tasks">tasks</span></span>
+        <span class="m-item" id="m-coverage-item" data-i18n-title="coverageHint"><strong id="m-coverage"></strong> <span data-i18n="coverage">commits on a task</span></span>
         <span class="m-item"><strong id="m-tests"></strong> tests</span>
         <span class="m-item"><strong id="m-e2e"></strong> e2e</span>
         <span class="m-item"><strong id="m-decisions"></strong> <span data-i18n="decisions">decisions</span></span>
@@ -1661,6 +1671,7 @@ html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
           <span class="hud-card__now-id" id="now-id"></span>
           <span class="hud-card__now-name" id="now-name"></span>
           <span class="hud-card__now-warn" id="now-warn"></span>
+          <span class="hud-card__pulse" id="now-pulse" hidden><i aria-hidden="true"></i><span id="now-pulse-text"></span></span>
         </div>
         <div class="hud-card__progress-row">
           <div class="hud-card__now-track">
@@ -1726,6 +1737,7 @@ html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
 </div><!-- /#app -->
 
 <!-- Scripts -->
+
 
 
 
@@ -2528,7 +2540,9 @@ html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
       missingEffort: '{count} open task(s) without effort: {ids}. Project ETA stays unknown.',
       bigTask: '{task} is estimated at {effort}. Split it into verifiable steps under 2h.',
       overload: '{owner} is over capacity on {days} day(s), peak +{peak}h.',
-      stale: 'Active task ETA passed {minutes} min ago and the file has not changed since. Revise the ETA or mark progress.'
+      stale: 'Active task ETA passed {minutes} min ago and the file has not changed since. Revise the ETA or mark progress.',
+      inactive: '{task} is active but nothing has changed for {time}. The session may have ended: resume it or pause the task.',
+      untracked: 'Code is changing outside the roadmap: {files} file(s) with no active task.'
     },
     es: {
       duplicateId: 'El ID {id} aparece en {count} filas.',
@@ -2547,7 +2561,9 @@ html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
       missingEffort: '{count} tarea(s) abiertas sin esfuerzo: {ids}. La ETA del proyecto queda desconocida.',
       bigTask: '{task} está estimada en {effort}. Divídela en pasos verificables de menos de 2h.',
       overload: '{owner} supera su capacidad {days} día(s), pico de +{peak}h.',
-      stale: 'La ETA de la tarea activa venció hace {minutes} min y el archivo no ha cambiado. Revisa la ETA o registra avance.'
+      stale: 'La ETA de la tarea activa venció hace {minutes} min y el archivo no ha cambiado. Revisa la ETA o registra avance.',
+      inactive: '{task} está activa pero nada ha cambiado en {time}. Puede que la sesión terminara: retómala o pausa la tarea.',
+      untracked: 'Se está cambiando código fuera del roadmap: {files} archivo(s) sin tarea activa.'
     }
   };
 
@@ -2698,7 +2714,8 @@ html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
       roadmap:'ROADMAP', tracking:'TRACKING', versions:'VERSIONS', progress:'PROGRESS TRACKER',
       open:'Open', pick:'Open ROADMAP.md', choose:'Select ROADMAP.md to start tracking',
       connected:'Synced', connecting:'Connecting', disconnected:'Disconnected', snapshot:'Snapshot', updatedAgo:'Updated {time} ago', unknownUpdate:'Update time unknown',
-      version:'Version', phase:'Phase', of:'of', tasks:'tasks', decisions:'decisions', lines:'lines', lastCommit:'last commit',
+      version:'Version', phase:'Phase', of:'of', tasks:'tasks', decisions:'decisions', lines:'lines', lastCommit:'last commit', coverage:'commits on a task', coverageHint:'Commits since the roadmap started that name a task or were made while one was active',
+      pulse_live:'active · {time} ago', pulse_now:'active · now', pulse_quiet:'quiet · {time}', pulse_stale:'no activity · {time}', pulse_untracked:'off-roadmap · {files} files', pulse_hint:'Last change seen in the working tree or git, independent of what the agent reports',
       now:'CURRENT TASK', noTask:'No active task', markActive:'Waiting for the agent to start a task', expected:'Expected', elapsed:'Elapsed', agentEta:'Agent ETA', revisedEta:'Revised ETA', onTrack:'On track', shots:'screenshots', shotsServeOnly:'Screenshots are available with visual-roadmap live', activity:'ACTIVITY', started:'Started', noActivity:'No activity recorded yet', collapseOverview:'Collapse overview', expandOverview:'Expand overview',
       delayed:'Delayed', provisional:'provisional', etaExtended:'ETA extended by', noEstimate:'No estimate',
       phasesDone:'Phases completed', calculatedDelivery:'Projected delivery', pace:'Observed pace', since:'In development since', perTask:'per task',
@@ -2723,7 +2740,8 @@ html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
       roadmap:'HOJA DE RUTA', tracking:'SEGUIMIENTO', versions:'VERSIONES', progress:'SEGUIMIENTO DEL PROGRESO',
       open:'Abrir', pick:'Abrir ROADMAP.md', choose:'Selecciona ROADMAP.md para comenzar el seguimiento',
       connected:'Sincronizado', connecting:'Conectando', disconnected:'Sin conexión', snapshot:'Vista puntual', updatedAgo:'Actualizado hace {time}', unknownUpdate:'Fecha de actualización desconocida',
-      version:'Versión', phase:'Fase', of:'de', tasks:'tareas', decisions:'decisiones', lines:'líneas', lastCommit:'último commit',
+      version:'Versión', phase:'Fase', of:'de', tasks:'tareas', decisions:'decisiones', lines:'líneas', lastCommit:'último commit', coverage:'commits en una tarea', coverageHint:'Commits desde el inicio del roadmap que nombran una tarea o se hicieron con una activa',
+      pulse_live:'activo · hace {time}', pulse_now:'activo · ahora', pulse_quiet:'en silencio · {time}', pulse_stale:'sin actividad · {time}', pulse_untracked:'fuera del roadmap · {files} archivos', pulse_hint:'Último cambio visto en el árbol de trabajo o git, independiente de lo que reporta el agente',
       now:'TAREA ACTUAL', noTask:'Sin tarea en curso', markActive:'Esperando a que el agente inicie una tarea', expected:'Esperado', elapsed:'Transcurrido', agentEta:'ETA del agente', revisedEta:'ETA revisada', onTrack:'A tiempo', shots:'capturas', shotsServeOnly:'Las capturas están disponibles con visual-roadmap live', activity:'ACTIVIDAD', started:'Inicio', noActivity:'Sin actividad registrada', collapseOverview:'Contraer resumen', expandOverview:'Expandir resumen',
       delayed:'Retraso', provisional:'provisional', etaExtended:'ETA ampliada', noEstimate:'Sin estimación',
       phasesDone:'Fases completadas', calculatedDelivery:'Entrega calculada', pace:'Ritmo observado', since:'En desarrollo desde', perTask:'por tarea',
@@ -2892,6 +2910,65 @@ html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
     return new Intl.DateTimeFormat(global.UI?.language || 'en', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
   }
   global.Forecast = { calculate, minutes, timestamp, duration, dateTime };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+
+  /* trust.js */
+  /* trust.js — how far the roadmap can be believed.
+   The roadmap is what the agent *declares*; the working tree and git are what is
+   *observed*. Comparing both tells the viewer (and the agent's brief) when the
+   declared state has drifted, without the agent spending a token on it.
+   Produces window.Trust = { freshness, coverage, lastSignal }. */
+(function (global) {
+  'use strict';
+  const MINUTE = 60000;
+  const QUIET = 10;       /* minutes without any signal before an active task looks quiet */
+  const STALE = 30;       /* … and before it looks abandoned */
+  const UNTRACKED = 30;   /* writes this recent with nothing active mean work outside the roadmap */
+  const AFTER_DONE = 10;  /* commits this long after `done` still belong to the task */
+
+  const ts = raw => global.Forecast.timestamp(raw);
+  const id = item => String(item?.taskId || '').toUpperCase();
+
+  /** Most recent observed or declared sign of life, in ms. */
+  function lastSignal(activity, commits = []) {
+    const times = [activity?.lastWrite, activity?.roadmapAt, activity?.head?.time, commits[0]?.time].filter(t => t > 0);
+    return times.length ? Math.max(...times) : null;
+  }
+
+  /** live | quiet | stale | paused (active task) · untracked | idle (none); null without observations. */
+  function freshness(doc, forecast, activity, commits = [], now = Date.now()) {
+    if (!activity) return null;
+    const last = lastSignal(activity, commits);
+    const minutes = last != null ? Math.max(0, Math.floor((now - last) / MINUTE)) : null;
+    const active = forecast?.active;
+    let state;
+    if (active?.status === 'paused') state = 'paused';
+    else if (active) state = minutes == null || minutes >= STALE ? 'stale' : minutes >= QUIET ? 'quiet' : 'live';
+    else state = activity.touched > 0 && activity.lastWrite && now - activity.lastWrite < UNTRACKED * MINUTE ? 'untracked' : 'idle';
+    return { state, minutes, touched: activity.touched || 0, task: active ? id(active) : null };
+  }
+
+  /** Share of commits since the roadmap started that name a task or fall inside one's work window. */
+  function coverage(doc, commits = [], now = Date.now()) {
+    const items = doc?.items || [];
+    const ids = new Set(items.map(id).filter(Boolean));
+    const windows = items.map(it => {
+      const start = ts(it.start);
+      if (start == null) return null;
+      if (it.status === 'active' || it.status === 'paused') return [start, now];
+      const end = ts(it.end);
+      return it.status === 'done' && end != null ? [start, end + AFTER_DONE * MINUTE] : null;
+    }).filter(Boolean);
+    const started = ts(doc?.meta?.started);
+    const relevant = commits.filter(c => started == null || c.time >= started - MINUTE);
+    if (!relevant.length) return null;
+    const covered = relevant.filter(c => (c.tasks || []).some(t => ids.has(t)) ||
+      windows.some(([a, b]) => c.time >= a - MINUTE && c.time <= b)).length;
+    return { covered, total: relevant.length, pct: Math.round(covered / relevant.length * 100) };
+  }
+
+  global.Trust = { freshness, coverage, lastSignal, QUIET, STALE };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
@@ -3093,6 +3170,9 @@ html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
       } catch (error) { console.error('[Watcher] invalid SSE content', error); }
     });
     _sse.addEventListener('shots', () => document.dispatchEvent(new CustomEvent('roadmap:shots')));
+    _sse.addEventListener('activity', e => {
+      try { document.dispatchEvent(new CustomEvent('roadmap:activity', { detail: JSON.parse(e.data) })); } catch {}
+    });
     _sse.addEventListener('error', () => {
       connection('connecting');
     });
@@ -3897,6 +3977,7 @@ html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
     }
 
     /* ── Card 3: ÚLTIMOS CAMBIOS ── */
+    renderPulse(doc, forecast);
     renderRecentChanges(doc, forecast);
     renderHealth(doc, forecast);
 
@@ -3905,6 +3986,26 @@ html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
       ? `${forecast.overdue ? '⚠' : '▶'} ${active.taskId || active.name} · ${global.Forecast.duration(forecast.elapsed)} · ${brandName}`
       : `${s.pct}% · ${brandName}`;
     if (document.title !== tab) document.title = tab;
+  }
+
+  /* ── Observed vs declared: working-tree activity next to the roadmap (live server only) ── */
+  global.RoadmapActivity = null;
+  const freshness = (doc, forecast) => global.Trust.freshness(doc, forecast, global.RoadmapActivity, global.RoadmapGit);
+  function renderPulse(doc, forecast) {
+    const pulse = $('now-pulse');
+    const fresh = freshness(doc, forecast);
+    const shown = fresh && ['live', 'quiet', 'stale', 'untracked'].includes(fresh.state);
+    if (pulse) {
+      pulse.hidden = !shown;
+      if (shown) {
+        pulse.dataset.state = fresh.state;
+        pulse.title = t('pulse_hint');
+        $('now-pulse-text').textContent = t(fresh.state === 'live' && !fresh.minutes ? 'pulse_now' : 'pulse_' + fresh.state, { time: global.Forecast.duration(fresh.minutes || 0), files: fresh.touched });
+      }
+    }
+    const cover = global.RoadmapGit.length ? global.Trust.coverage(doc, global.RoadmapGit) : null;
+    if ($('m-coverage')) $('m-coverage').textContent = cover ? `${cover.pct}%` : '';
+    if ($('m-coverage-item')) $('m-coverage-item').hidden = !cover;
   }
 
   /* ── Git: commits linked to tasks by ID (live server only) ── */
@@ -3924,8 +4025,14 @@ html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
     const box = $('health');
     if (!box) return;
     const issues = [...(doc.issues || [])];
+    const fresh = freshness(doc, forecast);
+    if (fresh?.state === 'stale') {
+      issues.unshift({ level: 'warn', code: 'inactive', vars: { task: fresh.task, time: global.Forecast.duration(fresh.minutes ?? 0) }, refs: [fresh.task] });
+      global.RoadmapNotifications?.send(`inactive:${fresh.task}:${global.RoadmapActivity?.lastWrite}`, `⏸ ${fresh.task}`, global.Roadmap.formatIssue(issues[0], global.UI.language));
+    }
+    if (fresh?.state === 'untracked') issues.unshift({ level: 'warn', code: 'untracked', vars: { files: fresh.touched } });
     /* The file has not changed since the ETA passed: the agent may be stuck. */
-    if (forecast.overdue && forecast.ageMinutes != null && forecast.ageMinutes >= forecast.overdueMinutes && forecast.overdueMinutes >= 10) {
+    if (fresh?.state !== 'stale' && forecast.overdue && forecast.ageMinutes != null && forecast.ageMinutes >= forecast.overdueMinutes && forecast.overdueMinutes >= 10) {
       issues.unshift({ level: 'warn', code: 'stale', vars: { minutes: forecast.overdueMinutes } });
       const a = forecast.active;
       global.RoadmapNotifications?.send(`stale:${a.taskId || a.id}:${doc.meta.updated}`, `⏱ ${a.taskId || ''} ${a.name}`, global.Roadmap.formatIssue(issues[0], global.UI.language));
@@ -4138,6 +4245,12 @@ html[data-theme="light"] .tl-chip--slip { color: #9a6a00; }
     global.RoadmapShots?.init();
     document.addEventListener('roadmap:shots-updated', () => { if (_doc) renderCurrentView(); });
     setInterval(refreshGit, 60000);
+    document.addEventListener('roadmap:activity', e => {
+      const head = e.detail?.head?.hash;
+      global.RoadmapActivity = e.detail || null;
+      if (head && head !== global.RoadmapGit[0]?.hash) refreshGit();
+      else if (_doc) updateHUD(_doc);
+    });
 
     /* Setup drag & drop on the whole body */
     global.Watcher.setupDragDrop(document.body);

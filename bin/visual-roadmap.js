@@ -58,6 +58,8 @@ const VIEWER_FILES = [
   'md.js',
   'ui.js',
   'forecast.js',
+  'trust.js',
+  'notifications.js',
   'shots.js',
   'watcher.js',
   'board.js',
@@ -402,15 +404,23 @@ function agentCommand(run) {
   }
 }
 
+/* What the working tree and git say, for the brief and status (fails soft without git). */
+function observed(file) {
+  const root = path.dirname(file);
+  try { return { activity: require('../lib/activity.js').snapshot(root, file), commits: require('../lib/git.js').recentCommits(root, 60) }; }
+  catch { return {}; }
+}
+
 function cmdStatus() {
   agentCommand((Agent, text) => {
-    const s = Agent.status(text, Date.now(), lang());
+    const s = Agent.status(text, Date.now(), lang(), observed(roadmapPath()));
     if (FLAGS.json) { log(JSON.stringify(s, null, 2)); return; }
-    log(`${bold(s.title)}  ${s.done}/${s.total} tasks · ${s.progress}%${s.projectEta ? ' · project ETA ' + s.projectEta : ''}`);
+    log(`${bold(s.title)}  ${s.done}/${s.total} tasks · ${s.progress}%${s.projectEta ? ' · project ETA ' + s.projectEta : ''}${s.coverage ? ' · ' + s.coverage.pct + '% commits on a task' : ''}`);
     if (s.active) {
       const a = s.active;
       log(`  now    ${bold(a.id || '—')} ${a.name} · ${a.elapsedMinutes ?? '?'}m elapsed${a.etaAt ? ' · ETA ' + a.etaAt : ''}`);
       if (a.overdue) log(gold(`         ETA passed — revise: visual-roadmap eta ${a.id} <remaining> "reason"`));
+      if (s.activity?.state === 'stale') log(gold(`         no file changes for ${s.activity.minutes}m — resume it, or: visual-roadmap pause ${a.id} "reason"`));
     } else log('  now    ' + dim('no active task — visual-roadmap start <ID> --expected 30m'));
     s.blocked.forEach(b => log(`  ${ICON.error} blocked ${b.id} ${b.name}`));
     s.next.forEach(n => log(`  next   ${n.id} ${n.name}${n.effort ? dim(' · ' + n.effort) : ''}`));
@@ -474,7 +484,7 @@ function runHook() {
   if (!fs.existsSync(file)) return;
   const Agent = require('../lib/agent.js');
   const text = fs.readFileSync(file, 'utf8');
-  if (event === 'session-start') { log(Agent.brief(text, Date.now(), lang())); return; }
+  if (event === 'session-start') { log(Agent.brief(text, Date.now(), lang(), observed(file))); return; }
   if (event === 'post-tool-use') {
     captureShot(input, base, file, text, Agent);
     if (input.tool_name && !CODE_TOOLS.includes(input.tool_name)) return;

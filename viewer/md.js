@@ -789,7 +789,9 @@
       missingEffort: '{count} open task(s) without effort: {ids}. Project ETA stays unknown.',
       bigTask: '{task} is estimated at {effort}. Split it into verifiable steps under 2h.',
       overload: '{owner} is over capacity on {days} day(s), peak +{peak}h.',
-      stale: 'Active task ETA passed {minutes} min ago and the file has not changed since. Revise the ETA or mark progress.'
+      stale: 'Active task ETA passed {minutes} min ago and the file has not changed since. Revise the ETA or mark progress.',
+      inactive: '{task} is active but nothing has changed for {time}. The session may have ended: resume it or pause the task.',
+      untracked: 'Code is changing outside the roadmap: {files} file(s) with no active task.'
     },
     es: {
       duplicateId: 'El ID {id} aparece en {count} filas.',
@@ -808,7 +810,9 @@
       missingEffort: '{count} tarea(s) abiertas sin esfuerzo: {ids}. La ETA del proyecto queda desconocida.',
       bigTask: '{task} está estimada en {effort}. Divídela en pasos verificables de menos de 2h.',
       overload: '{owner} supera su capacidad {days} día(s), pico de +{peak}h.',
-      stale: 'La ETA de la tarea activa venció hace {minutes} min y el archivo no ha cambiado. Revisa la ETA o registra avance.'
+      stale: 'La ETA de la tarea activa venció hace {minutes} min y el archivo no ha cambiado. Revisa la ETA o registra avance.',
+      inactive: '{task} está activa pero nada ha cambiado en {time}. Puede que la sesión terminara: retómala o pausa la tarea.',
+      untracked: 'Se está cambiando código fuera del roadmap: {files} archivo(s) sin tarea activa.'
     }
   };
 

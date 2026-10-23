@@ -1093,6 +1093,15 @@ html[data-theme="light"] .tracker-bar--slipped { outline-color: #a66100; }
 .hud-card__now-name { font-size: 13px; flex: 1; min-width: 0; }
 .hud-card__now-warn { flex: none; margin: 0; padding: 2px 6px; border: 1px solid var(--ok); border-radius: 8px; color: var(--ok); font-size: 10px; text-shadow: none; }
 .hud-card__now-warn--late { border-color: var(--neon-orange); color: var(--neon-orange); }
+/* Observed activity, independent of what the agent reports */
+.hud-card__pulse { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 2px 6px; border: 1px solid var(--border); border-radius: 8px; color: var(--idle); font-size: 10px; white-space: nowrap; cursor: help; }
+.hud-card__pulse[hidden] { display: none; }
+.hud-card__pulse i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.hud-card__pulse[data-state="live"] { color: var(--ok); border-color: var(--ok-dim); }
+.hud-card__pulse[data-state="live"] i { animation: pulse-live 1.8s ease-in-out infinite; }
+.hud-card__pulse[data-state="stale"],
+.hud-card__pulse[data-state="untracked"] { color: var(--neon-orange); border-color: var(--neon-orange-dim); }
+@media (prefers-reduced-motion: reduce) { .hud-card__pulse i { animation: none !important; } }
 .hud-card__progress-row { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
 .hud-card__now-track { position: relative; flex: 1; overflow: visible; background: rgba(0,212,255,.12); }
 .hud-card__now-fill { background: var(--cyan); box-shadow: 0 0 8px var(--cyan-glow); }
