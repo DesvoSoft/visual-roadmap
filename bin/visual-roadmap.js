@@ -21,7 +21,7 @@ const ARGS    = process.argv.slice(2);
 const BARE    = !ARGS[0] || (ARGS[0].startsWith('-') && !['--help', '-h', '--version', '-v'].includes(ARGS[0]));
 const CMD     = BARE ? (process.stdout.isTTY ? 'up' : 'help') : ARGS[0];
 const POS     = [];
-const BOOLEAN_FLAGS = new Set(['force', 'modular', 'json', 'strict', 'no-agents', 'install', 'hooks', 'no-hooks', 'brief', 'final', 'no-install', 'no-open']);
+const BOOLEAN_FLAGS = new Set(['force', 'modular', 'json', 'strict', 'no-agents', 'install', 'hooks', 'no-hooks', 'brief', 'final', 'no-install', 'no-open', 'no-git-hook']);
 const FLAGS   = parseFlags(BARE ? ARGS : ARGS.slice(1));
 
 /* ── utils ───────────────────────────────────────────── */
@@ -141,6 +141,9 @@ function cmdInit({ quiet = false } = {}) {
 
   /* 6. Claude Code hooks: automatic brief at session start, check at stop */
   if (!FLAGS['no-hooks'] && usesClaude) installHooks();
+
+  /* 7. Git commit-msg hook: links commits to the active task, for every agent */
+  if (!FLAGS['no-git-hook']) installGitHook();
 
   if (quiet) return;
   log('');
@@ -312,6 +315,7 @@ function cmdHelp() {
   log('  ' + bold('skill') + '          Print the SKILL.md path for AI agent configuration');
   log('  ' + bold('agents') + '         Print (or --install) the CLAUDE.md / AGENTS.md snippet');
   log('  ' + bold('hooks') + '          Print (or --install) the Claude Code hooks');
+  log('  ' + bold('githook') + '        Print (or --install) the git commit-msg hook (every agent)');
   log('');
   log(bold('  Agent commands') + dim('  (nearest ROADMAP.md upwards; --file to override)'));
   log('');
@@ -340,6 +344,7 @@ function cmdHelp() {
   log('    --force                  Overwrite existing files');
   log('    --no-agents              Do not touch CLAUDE.md / AGENTS.md');
   log('    --hooks / --no-hooks     Force / skip Claude Code skill + hooks (auto if CLAUDE.md or .claude/)');
+  log('    --no-git-hook            Do not install the git commit-msg hook');
   log('');
   log('  ' + bold('serve') + ':');
   log('    --file  ROADMAP.md       File to watch  (default: ./ROADMAP.md)');
@@ -471,7 +476,33 @@ function captureShot(input, base, file, text, Agent) {
 /* A hook runs inside someone else's session: whatever goes wrong here (unreadable
    roadmap, git missing, a bug) must never surface as a failed or blocking hook. */
 function cmdHook() {
-  try { runHook(); } catch { process.exitCode = 0; }
+  try { if (POS[0] === 'commit-msg') commitMsgHook(POS[1]); else runHook(); } catch { process.exitCode = 0; }
+}
+
+/* git commit-msg: name the active task in a trailer when the message names none;
+   with nothing active, say so once. Always exits 0: a commit is never blocked. */
+function commitMsgHook(msgFile) {
+  const GitHook = require('../lib/githook.js');
+  const msgPath = msgFile && path.resolve(CWD, msgFile);
+  const file = roadmapPath();
+  if (!msgPath || !fs.existsSync(msgPath) || !fs.existsSync(file)) return;
+  if (GitHook.skip(fs.readFileSync(msgPath, 'utf8'))) return;
+  const s = require('../lib/agent.js').status(fs.readFileSync(file, 'utf8'));
+  if (s.active?.id) { GitHook.addTrailer(CWD, msgPath, s.active.id); return; }
+  if (s.total) process.stderr.write('[visual-roadmap] Committed with no active task: the roadmap will not show this work. Next time: visual-roadmap start <ID> (or add "Task" first).\n');
+}
+
+function installGitHook() {
+  const r = require('../lib/githook.js').install(CWD, selfCommand());
+  const rel = p => path.relative(CWD, p).replace(/\\/g, '/');
+  if (r.status === 'installed' || r.status === 'updated') ok(`Git hook → ${rel(r.file)} (commit-msg)`);
+  else if (r.status === 'foreign' || r.status === 'managed') warn(`${rel(r.file)} is not ours — add this line to it: ${r.line}`);
+}
+
+function cmdGitHook() {
+  if (FLAGS.install) { installGitHook(); return; }
+  log(require('../lib/githook.js').script(selfCommand()).trimEnd());
+  info('Install into the repository with  visual-roadmap githook --install');
 }
 
 function runHook() {
@@ -495,15 +526,20 @@ function runHook() {
   if (!s.active && s.total) {
     /* Files written after the roadmap's last change, with no active task: the user sees
        a stale roadmap. Any roadmap command moves that mark, so the reminder stops. */
-    const touched = require('../lib/git.js').touchedSince(base, fs.statSync(file).mtimeMs);
-    if (touched && s.next.length) {
-      const next = s.next[0].id;
-      const started = Agent.start(text, next);
-      fs.writeFileSync(file, started.text);
-      log(`[visual-roadmap] ${next} started automatically after code changes.`);
+    const since = fs.statSync(file).mtimeMs;
+    const paths = require('../lib/git.js').uncommitted(base).filter(f => f.mtime > since).map(f => f.path);
+    const touched = paths.length;
+    /* Start a task only when the files clearly point at it: a wrong guess makes the roadmap lie. */
+    const pick = touched ? Agent.pickForFiles(text, paths) : null;
+    if (pick) {
+      fs.writeFileSync(file, Agent.start(text, pick.id).text);
+      log(`[visual-roadmap] ${pick.id} started automatically after code changes${pick.matched.length ? ` (files mention: ${pick.matched.slice(0, 3).join(', ')})` : ''}. Wrong task? visual-roadmap start <ID>.`);
       return;
     }
-    if (touched) problems.push(`Code changed (${touched} file${touched === 1 ? '' : 's'}) with no active task. Add a task and start it.`);
+    if (touched) {
+      const options = s.next.length ? `Start the one it belongs to (${s.next.map(n => n.id).join(', ')}) or add it` : 'Add a task and start it';
+      problems.push(`Code changed (${touched} file${touched === 1 ? '' : 's'}) with no active task. ${options}.`);
+    }
   }
   if (event === 'post-tool-use') return;
   problems.unshift(...s.issues.filter(i => i.level === 'error').map(i => i.text));
@@ -628,6 +664,7 @@ const CMDS = {
   agents:  cmdAgents,
   hook:    cmdHook,
   hooks:   cmdHooks,
+  githook: cmdGitHook,
   add:     cmdAdd,
   split:   cmdSplit,
   status:  cmdStatus,

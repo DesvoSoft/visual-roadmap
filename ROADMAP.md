@@ -3,7 +3,7 @@ title: Visual Roadmap
 subtitle: HOJA DE RUTA
 owner: DesvoSoft
 started: 2026-10-23 01:05
-updated: 2026-10-23 01:42
+updated: 2026-10-23 01:45
 capacity: 1
 version: "0.1"
 ---
@@ -29,8 +29,8 @@ Hoja de ruta del propio proyecto: lo que falta para que más gente lo pruebe y c
 | T004 Métrica de cobertura: tiempo con cambios dentro de una tarea activa | done | 100% | 1.5h | 2026-10-23 01:36 | 2026-10-23 01:37 | — | 40m | trust.coverage + tests |
 | T005 Indicador de frescura: actividad observada vs. último comando | done | 100% | 2h | 2026-10-23 01:37 | 2026-10-23 01:40 | — | 45m | pulse visto en navegador: live/stale + aviso de salud |
 | T006 Detección de sesión muerta en viewer y brief | done | 100% | 1h | 2026-10-23 01:40 | 2026-10-23 01:42 | — | 25m | brief/status avisan stale; 71 tests |
-| T007 Hook de git commit-msg para todos los agentes | planned | 0% | 1.5h | — | — | — | — | — |
-| T008 Arranque automático que no elige la tarea equivocada | planned | 0% | 2h | — | — | — | — | — |
+| T007 Hook de git commit-msg para todos los agentes | done | 100% | 1.5h | 2026-10-23 01:42 | 2026-10-23 01:44 | — | 35m | githook.test.js: trailer e2e verde |
+| T008 Arranque automático que no elige la tarea equivocada | done | 100% | 2h | 2026-10-23 01:44 | 2026-10-23 01:45 | — | 30m | pickForFiles + e2e; 76 tests |
 | T009 Hooks para Cursor y Codex | planned | 0% | 2h | — | — | — | — | — |
 
 ### v0.9 · Distribución
@@ -45,6 +45,10 @@ Hoja de ruta del propio proyecto: lo que falta para que más gente lo pruebe y c
 
 ## Últimos cambios
 
+- 01:45 | ✓ | T008 · Arranque automático que no elige la tarea equivocada — pickForFiles + e2e; 76 tests | +111 -10
+- 01:44 | ▶ | T008 · Arranque automático que no elige la tarea equivocada
+- 01:44 | ✓ | T007 · Hook de git commit-msg para todos los agentes — githook.test.js: trailer e2e verde | +513 -32
+- 01:42 | ▶ | T007 · Hook de git commit-msg para todos los agentes
 - 01:42 | ✓ | T006 · Detección de sesión muerta en viewer y brief — brief/status avisan stale; 71 tests | +282 -30
 - 01:40 | ▶ | T006 · Detección de sesión muerta en viewer y brief
 - 01:40 | ✓ | T005 · Indicador de frescura: actividad observada vs. último comando — pulse visto en navegador: live/stale + aviso de salud | +245 -23

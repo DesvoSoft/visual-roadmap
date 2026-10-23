@@ -233,3 +233,21 @@ test('announces the first screenshot when the index did not exist at startup', {
     sse.cancel();
   } finally { child.kill(); }
 });
+
+test('hooks do not guess between ready tasks the files do not point at', () => {
+  const { spawnSync } = require('node:child_process');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'visual-roadmap-pick-'));
+  const cli = path.join(__dirname, '../bin/visual-roadmap.js');
+  const run = (bin, args, input) => spawnSync(bin, args, { cwd: dir, input, encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
+  try {
+    fs.writeFileSync(path.join(dir, 'ROADMAP.md'), '---\ntitle: Pick\n---\n## Releases\n### v1 · Work\n| Item | Estado | Esfuerzo |\n| --- | --- | --- |\n| T001 Search filters | planned | 30m |\n| T002 Export to PDF | planned | 30m |\n');
+    assert.equal(run('git', ['init']).status, 0);
+    fs.writeFileSync(path.join(dir, 'utils.js'), 'x\n');
+    assert.equal(run(process.execPath, [cli, 'hook', 'post-tool-use'], '{"tool_name":"Write"}').stdout, '');
+    const stop = run(process.execPath, [cli, 'hook', 'stop'], '{}');
+    assert.equal(stop.status, 2);
+    assert.match(stop.stderr, /no active task\. Start the one it belongs to \(T001, T002\)/);
+    fs.writeFileSync(path.join(dir, 'pdf-export.js'), 'x\n');
+    assert.match(run(process.execPath, [cli, 'hook', 'post-tool-use'], '{"tool_name":"Write"}').stdout, /T002 started automatically .*mention: export, pdf/);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});

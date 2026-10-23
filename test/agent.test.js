@@ -178,3 +178,23 @@ test('pause and resume exclude paused time from actual work', () => {
   text = Agent.done(text, 'T001', {}, at('11:20')).text;
   assert.equal(parse(text).items[0].actual, 20 / 60);
 });
+
+test('pickForFiles starts a ready task only when the touched files point at it', () => {
+  const text = `---
+title: Pick
+---
+## Releases
+### v1 · Work
+| Item | Estado | Esfuerzo | Nota |
+| --- | --- | --- | --- |
+| T001 Search filters by ingredient | planned | 30m | — |
+| T002 Checkout payment flow | planned | 30m | Stripe webhooks |
+| T003 Export to PDF | planned | 30m | — |
+`;
+  assert.deepEqual(Agent.pickForFiles(text, ['src/search/filters.js', 'test/search.test.js']), { id: 'T001', matched: ['filters', 'search'] });
+  assert.equal(Agent.pickForFiles(text, ['api/stripe-webhook.ts']).id, 'T002', 'notes count too');
+  assert.equal(Agent.pickForFiles(text, ['src/utils.js']), null, 'nothing points anywhere');
+  assert.equal(Agent.pickForFiles(text, ['search-checkout.js']), null, 'a tie is not a choice');
+  const one = text.split('\n').filter(l => !/T00[23]/.test(l)).join('\n');
+  assert.deepEqual(Agent.pickForFiles(one, ['src/utils.js']), { id: 'T001', matched: [] }, 'a single ready task needs no evidence');
+});
