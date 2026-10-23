@@ -35,3 +35,11 @@ npm run screenshots
 Edita las fuentes de `viewer/` y vuelve a ejecutar `npm run build` antes de distribuir la herramienta o probar el HTML portátil. `dist/roadmap.html` está versionado porque `init` lo copia sin requerir un paso de compilación en el proyecto del usuario. La CI falla si `dist/roadmap.html` no coincide con las fuentes. Registra los cambios relevantes en `CHANGELOG.md`.
 
 La sincronización usa un servidor en `127.0.0.1` y eventos SSE. El visor portátil también permite seleccionar un archivo manualmente. No requiere cuenta ni servicio remoto.
+
+## Releasing
+
+1. Move `## [Unreleased]` in `CHANGELOG.md` under the new version and set `"version"` in `package.json`.
+2. `npm publish` from a clean `main` (runs the build and the tests first; npm asks for 2FA in the browser).
+3. Commit `chore(release): vX.Y.Z`, tag `vX.Y.Z`, push both, and create the GitHub release from the changelog section.
+
+The `Release` workflow runs on the tag: it checks that the tag matches `package.json`, runs the tests and publishes only if that version is not on npm yet. Once trusted publishing is set up for `release.yml` on npmjs.com, step 2 can be skipped and the tag publishes.

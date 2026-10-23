@@ -3,7 +3,7 @@ title: Visual Roadmap
 subtitle: HOJA DE RUTA
 owner: DesvoSoft
 started: 2026-10-23 01:05
-updated: 2026-10-23 01:48
+updated: 2026-10-23 13:33
 capacity: 1
 version: "0.1"
 ---
@@ -20,7 +20,7 @@ Hoja de ruta del propio proyecto: lo que falta para que más gente lo pruebe y c
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | T001 npx visual-roadmap instala, inicializa y abre el viewer | done | 100% | 1h | 2026-10-23 01:06 | 2026-10-23 01:06 | — | 50m | test/setup.test.js verde |
 | T002 Paquete listo para npm y workflow de release por tag | done | 100% | 30m | 2026-10-23 01:06 | 2026-10-23 01:06 | — | 25m | npm pack ok, 63/63 tests |
-| T003 Primer npm publish manual y trusted publishing configurado | planned | 0% | 20m | — | — | — | — | — |
+| T003 Primer npm publish manual y trusted publishing configurado | done | 100% | 20m | 2026-10-23 13:33 | 2026-10-23 13:33 | — | 1h | 0.7.0 en npm a mano; trusted publishing pendiente (npm devuelve 400) |
 
 ### v0.8 · Un roadmap que no miente
 
@@ -45,6 +45,8 @@ Hoja de ruta del propio proyecto: lo que falta para que más gente lo pruebe y c
 
 ## Últimos cambios
 
+- 13:33 | ✓ | T003 · Primer npm publish manual y trusted publishing configurado — 0.7.0 en npm a mano; trusted publishing pendiente (npm devuelve 400) | +8 -0
+- 13:33 | ▶ | T003 · Primer npm publish manual y trusted publishing configurado
 - 01:48 | ✓ | T009 · Hooks para Cursor y Codex — agent-hooks.test.js: Cursor JSON + Codex stop/apply_patch | +346 -44
 - 01:46 | ▶ | T009 · Hooks para Cursor y Codex
 - 01:45 | ✓ | T008 · Arranque automático que no elige la tarea equivocada — pickForFiles + e2e; 76 tests | +111 -10
